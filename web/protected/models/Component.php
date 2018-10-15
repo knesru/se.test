@@ -130,7 +130,13 @@ class Component extends CActiveRecord
 
 		$criteria=new CDbCriteria;
 
-		$criteria->compare('partnumberid',$this->partnumberid);
+//		$criteria->with = 'componentproperty';
+//		for($i=1;$i<=20;$i++){
+//		    $criteria->compare('p_'.$i,$this->componentproperty->{'p_'.$i});
+//        }
+//        $criteria->compare('availabilid',$this->componentproperty->availabilid);
+
+        $criteria->compare('partnumberid',$this->partnumberid);
 		$criteria->compare('partnumber',$this->partnumber,true);
 		$criteria->compare('type',$this->type);
 		$criteria->compare('pathid',$this->pathid);

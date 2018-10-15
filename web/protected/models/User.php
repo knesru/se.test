@@ -7,6 +7,8 @@
  * @property string $password
  * @property string $email
  * @property string $profile
+ *
+ * @property bool $STMSnative
  */
 class User extends CActiveRecord
 {
@@ -67,6 +69,7 @@ class User extends CActiveRecord
             'last_login'=> 'Last login',
             'creaded_at'=> 'Create date',
             'updated_at'=> 'Update date',
+            'STMSnative'=> 'Доступ к STMS'
 		);
 	}
 
@@ -88,5 +91,10 @@ class User extends CActiveRecord
 	public function hashPassword($password)
 	{
 		return sha1($this->salt.$password);
+	}
+
+    public function getSTMSnative()
+    {
+        return false;
 	}
 }
