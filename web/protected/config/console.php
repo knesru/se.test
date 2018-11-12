@@ -7,7 +7,7 @@ return array(
 	'name'=>'My Console Application',
     'components'=>array(
         'db'=>array(
-            'connectionString' => 'pgsql:host=se.test;port=5432;dbname=yu1',
+            'connectionString' => 'pgsql:host=se.test;port=5432;dbname=stms',
             'emulatePrepare' => true,
             'username' => 'postgres',
             'password' => 'postgres',

@@ -297,3 +297,20 @@ div.breadcrumbs span
 {
 	color:red;
 }
+
+span.saving
+{
+	display:none;
+	font-size:large;
+}
+
+.row label, .row input, .row select, .row textarea{
+	display: inline-block !important;
+	vertical-align: center;
+}
+.row label{
+	width: 100px;
+}
+.row {
+	border-top: 1px solid #eee;
+}

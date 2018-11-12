@@ -2,6 +2,17 @@
 /* @var $this ToAssemblyController */
 /* @var $model Extcomponents */
 /* @var $form CActiveForm */
+
+
+$baseUrl = Yii::app()->baseUrl;
+/** @var CClientScript $cs */
+$cs = Yii::app()->getClientScript();
+$cs->registerScriptFile($baseUrl . '/js/jquery-1.8.3.js');
+$cs->registerScriptFile($baseUrl . '/js/jquery-ui-1.9.2.custom.min.js');
+//$cs->registerScriptFile($baseUrl . '/js/pq/pqgrid.min.js');
+//$cs->registerScriptFile($baseUrl . '/js/common.js');
+//$cs->registerCssFile($baseUrl . '/js/pq/pqgrid.min.css');
+//$cs->registerCssFile($baseUrl . '/js/themes/office/pqgrid.css');
 ?>
 
 <div class="form">
@@ -21,13 +32,13 @@
 
     <div class="row">
         <?php echo $form->labelEx($model, 'partnumber'); ?>
-        <?php echo $form->dropDownList($model, 'partnumberid', CHtml::listData(Component::model()->findAll('1=1 limit 100'), 'partnumberid', 'partnumber')); ?>
+        <?php echo $form->textField($model, 'partnumber', array('size' => 60, 'maxlength' => 255)); ?>
         <?php echo $form->error($model, 'partnumberid'); ?>
     </div>
 
     <div class="row">
         <?php echo $form->labelEx($model, 'partnumberid'); ?>
-        <?php echo $form->textField($model, 'partnumber', array('size' => 60, 'maxlength' => 255)); ?>
+        <?php echo $form->textField($model, 'partnumberid', array('size' => 60, 'maxlength' => 255)); ?>
         <?php echo $form->error($model, 'partnumber'); ?>
     </div>
 
@@ -93,7 +104,8 @@
 
     <div class="row">
         <?php echo $form->labelEx($model, 'priority'); ?>
-        <?php echo $form->dropDownList($model, 'priority',array(0=>'низкий',1=>'обычный',2=>'высокий',3=>'горит!',10=>'критический')); ?>
+        <?php //echo $form->dropDownList($model, 'priority',array(0=>'низкий',1=>'обычный',2=>'высокий',3=>'горит!',10=>'критический')); ?>
+        <?php echo $form->checkBox($model, 'priority'); ?>
         <?php echo $form->error($model, 'priority'); ?>
     </div>
 
@@ -114,4 +126,31 @@
     document.getElementById('Extcomponents_partnumberid').onchange = function () {
         document.getElementById('Extcomponents_partnumber').value = document.getElementById('Extcomponents_partnumberid').value;
     };
+    $(function(){
+        $inp = $('#Extcomponents_partnumber');
+        $inp.autocomplete({
+            //appendTo: ui.$cell, //for grid in maximized state.
+            source: '/component/ajaxList',
+            selectItem: { on: true }, //custom option
+            highlightText: { on: true }, //custom option
+            minLength: 2,
+            select: function (a,b,c) {
+                // console.log(a,b,c);
+                $.ajax({
+                    url: '/component/ajaxComponent',
+                    data: {partnumber: b.item.value},
+                    success: function (res) {
+                        if (typeof res === 'string') {
+                            $('#Extcomponents_partnumberid').val(res).addClass('success');
+                            $inp.parent().addClass('success');
+                        }
+                    }
+                });
+            }
+        }).focus(function () {
+            //open the autocomplete upon focus
+            $(this).autocomplete("search", "");
+        });
+    });
+
 </script>

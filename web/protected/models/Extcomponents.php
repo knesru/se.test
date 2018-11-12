@@ -45,10 +45,10 @@ class Extcomponents extends CActiveRecord
 			array('partnumber, amount, userid', 'required'),
 			array('amount, userid, delivered, priority, requestid', 'numerical', 'integerOnly'=>true),
 			array('partnumber', 'length', 'max'=>255),
-			array('purpose, created_at, assembly_to, install_to, deficite, description, install_from', 'safe'),
+			array('purpose,partnumberid, created_at, assembly_to, install_to, deficite, description, install_from', 'safe'),
 			// The following rule is used by search().
 			// @todo Please remove those attributes that should not be searched.
-			array('id, partnumberid, partnumber, amount, userid, purpose, created_at, delivered, assembly_to, install_to, deficite, description, install_from, priority, requestid', 'safe', 'on'=>'search'),
+			array('id, partnumberid, partnumber, amount, purpose, created_at, delivered, assembly_to, install_to, deficite, description, install_from, priority, requestid', 'safe', 'on'=>'search'),
 		);
 	}
 
@@ -106,6 +106,12 @@ class Extcomponents extends CActiveRecord
 		// @todo Please modify the following code to remove attributes that should not be searched.
 
 		$criteria=new CDbCriteria;
+
+		//$criteria->with = ;
+        $criteria->with = array(
+            'user.userinfo' => array('together' => true, ),
+            'component' => array('together' => true, ),
+        );
 
 		$criteria->compare('id',$this->id);
 		$criteria->compare('partnumberid',$this->partnumberid);

@@ -1,12 +1,12 @@
 <?php
 
-class ToAssemblyController extends Controller
+class ComponentController extends Controller
 {
 	/**
 	 * @var string the default layout for the views. Defaults to '//layouts/column2', meaning
 	 * using two-column layout. See 'protected/views/layouts/column2.php'.
 	 */
-	public $layout='//layouts/main';
+	public $layout='//layouts/column2';
 
 	/**
 	 * @return array action filters
@@ -28,7 +28,7 @@ class ToAssemblyController extends Controller
 	{
 		return array(
 			array('allow',  // allow all users to perform 'index' and 'view' actions
-				'actions'=>array('index','view'),
+				'actions'=>array('index','view','ajaxList','ajaxComponent'),
 				'users'=>array('*'),
 			),
 			array('allow', // allow authenticated user to perform 'create' and 'update' actions
@@ -36,7 +36,7 @@ class ToAssemblyController extends Controller
 				'users'=>array('@'),
 			),
 			array('allow', // allow admin user to perform 'admin' and 'delete' actions
-				'actions'=>array('admin','delete','request'),
+				'actions'=>array('admin','delete'),
 				'users'=>array('admin'),
 			),
 			array('deny',  // deny all users
@@ -62,32 +62,17 @@ class ToAssemblyController extends Controller
 	 */
 	public function actionCreate()
 	{
-		$model=new Extcomponents;
-		$model->created_at = date('Y-m-d H:i:s');
-		$model->userid = Yii::app()->user->id;
+		$model=new Component;
 
 		// Uncomment the following line if AJAX validation is needed
 		// $this->performAjaxValidation($model);
 
-		if(isset($_POST['Extcomponents']))
+		if(isset($_POST['Component']))
 		{
-			$model->attributes=$_POST['Extcomponents'];
-			if(empty($model->created_at)){
-			    $model->created_at = null;
-            }
-            if(empty($model->assembly_to)){
-			    $model->assembly_to = null;
-            }
-            if(empty($model->install_to)){
-			    $model->install_to = null;
-            }
-            if(empty($model->install_from)){
-			    $model->install_from = null;
-            }
-			if($model->save()) {
-                $this->redirect(array('view', 'id' => $model->id));
-            }
-        }
+			$model->attributes=$_POST['Component'];
+			if($model->save())
+				$this->redirect(array('view','id'=>$model->partnumberid));
+		}
 
 		$this->render('create',array(
 			'model'=>$model,
@@ -99,46 +84,23 @@ class ToAssemblyController extends Controller
 	 * If update is successful, the browser will be redirected to the 'view' page.
 	 * @param integer $id the ID of the model to be updated
 	 */
-	public function actionUpdate($id=null)
+	public function actionUpdate($id)
 	{
-	    if(empty($id)){
-	        $this->actionCreate();
-	        Yii::app()->end();
-        }
 		$model=$this->loadModel($id);
 
 		// Uncomment the following line if AJAX validation is needed
 		// $this->performAjaxValidation($model);
 
-		if(isset($_POST['Extcomponents']))
+		if(isset($_POST['Component']))
 		{
-			$model->attributes=$_POST['Extcomponents'];
+			$model->attributes=$_POST['Component'];
 			if($model->save())
-				$this->redirect(array('view','id'=>$model->id));
+				$this->redirect(array('view','id'=>$model->partnumberid));
 		}
 
 		$this->render('update',array(
 			'model'=>$model,
 		));
-	}
-
-    public function actionRequest()
-    {
-        $id = $_POST['id'];
-        $model = new Extcomponents();
-        $criteria=new CDbCriteria;
-        $criteria->select='max(requestid) AS requestid';
-        $row = $model->model()->find($criteria);
-        $maxRequestId = $row['requestid'];
-        $new_id = 0;
-        if(!empty($maxRequestId)) {
-            $id_parts = explode('.' , $maxRequestId);
-            $new_id = intval($id_parts[0])+1;
-        }
-        $extcomponent = Extcomponents::model()->findByPk($id);
-        $extcomponent->requestid = str_pad($new_id,6,0, STR_PAD_LEFT).'.СБ.'.date('y');
-        $extcomponent->save(false);
-        Yii::app()->end();
 	}
 
 	/**
@@ -160,13 +122,38 @@ class ToAssemblyController extends Controller
 	 */
 	public function actionIndex()
 	{
-	    $criteria = new CDbCriteria();
-		$model = Extcomponents::model();
-		$model->scenario = 'search';
-		$model->attributes = Yii::app()->request->getPost(get_class($model));
+		$dataProvider=new CActiveDataProvider('Component');
 		$this->render('index',array(
-			'dataProvider'=>$model->search(),
+			'dataProvider'=>$dataProvider,
 		));
+	}
+
+    public function actionAjaxList()
+    {
+        $criteria = new CDbCriteria();
+//        $criteria->compare('partnumber',Yii::app()->request->getParam('term'),true);
+        $criteria->addCondition('partnumber ilike :term');
+        $criteria->params = array(':term'=>Yii::app()->request->getParam('term')."%");
+        $criteria->limit = 50;
+
+        $listData = array();
+        $models = Component::model()->findAll($criteria);
+        foreach($models as $model)
+        {
+            $listData[]=array('label'=>$model->partnumber,'value'=>$model->partnumber);
+        }
+
+        echo json_encode($listData);
+        Yii::app()->end();
+	}
+
+    public function actionAjaxComponent()
+    {
+        $criteria = new CDbCriteria();
+        $criteria->compare('partnumber',Yii::app()->request->getParam('partnumber'));
+        $model = Component::model()->find($criteria);
+        echo json_encode($model->partnumberid);
+        Yii::app()->end();
 	}
 
 	/**
@@ -174,10 +161,10 @@ class ToAssemblyController extends Controller
 	 */
 	public function actionAdmin()
 	{
-		$model=new Extcomponents('search');
+		$model=new Component('search');
 		$model->unsetAttributes();  // clear any default values
-		if(isset($_GET['Extcomponents']))
-			$model->attributes=$_GET['Extcomponents'];
+		if(isset($_GET['Component']))
+			$model->attributes=$_GET['Component'];
 
 		$this->render('admin',array(
 			'model'=>$model,
@@ -188,12 +175,12 @@ class ToAssemblyController extends Controller
 	 * Returns the data model based on the primary key given in the GET variable.
 	 * If the data model is not found, an HTTP exception will be raised.
 	 * @param integer $id the ID of the model to be loaded
-	 * @return Extcomponents the loaded model
+	 * @return Component the loaded model
 	 * @throws CHttpException
 	 */
 	public function loadModel($id)
 	{
-		$model=Extcomponents::model()->findByPk($id);
+		$model=Component::model()->findByPk($id);
 		if($model===null)
 			throw new CHttpException(404,'The requested page does not exist.');
 		return $model;
@@ -201,11 +188,11 @@ class ToAssemblyController extends Controller
 
 	/**
 	 * Performs the AJAX validation.
-	 * @param Extcomponents $model the model to be validated
+	 * @param Component $model the model to be validated
 	 */
 	protected function performAjaxValidation($model)
 	{
-		if(isset($_POST['ajax']) && $_POST['ajax']==='extcomponents-form')
+		if(isset($_POST['ajax']) && $_POST['ajax']==='component-form')
 		{
 			echo CActiveForm::validate($model);
 			Yii::app()->end();
