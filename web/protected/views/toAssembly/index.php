@@ -199,7 +199,32 @@ $cs->registerCssFile($baseUrl . '/js/themes/office/pqgrid.css');
             }
         };
         arbitraryComponentsTable.colModel = [
-            {title: "Заявка", dataType:"string", dataIndx:14, editable: false},
+            {title: "Заявка", dataType:"string",
+                render: function (ui) {
+                    var rowData = ui.rowData,
+                        dataIndx = ui.dataIndx;
+                        return rowData[dataIndx].replace(/^0+/,'');
+                },
+                sortType: function (rowData1, rowData2, dataIndx) {
+                    var val1 = rowData1[dataIndx],
+                        val2 = rowData2[dataIndx],
+                        data1 = $.trim(val1).split('.'),
+                        data2 = $.trim(val2).split('.');
+
+                    var c1 = parseInt(data1[0]),
+                    c2 = parseInt(data2[0]),
+                    y1 = parseInt(data1[2]),
+                    y2 = parseInt(data2[2]);
+
+                    if (y1 > y2 || (y1===y2 && c1 > c2)) {
+                        return -1;
+                    }
+                    else if (y1 < y2 || (y1===y2 && c1 < c2)) {
+                        return 1;
+                    }
+                    return 0;
+                },
+                dataIndx:14, editable: false},
             {title: "ID", dataType: "integer", dataIndx:0, editable: false},
             {title: "Партномер", dataType: "string", dataIndx:1,
                 editor: {

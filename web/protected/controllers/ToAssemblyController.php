@@ -127,13 +127,20 @@ class ToAssemblyController extends Controller
         $id = $_POST['id'];
         $model = new Extcomponents();
         $criteria=new CDbCriteria;
-        $criteria->select='max(requestid) AS requestid';
+        //select requestid from extcomponents where requestid is not null order by substr(requestid,10) desc, requestid desc limit 1
+        $criteria->select='requestid';
+        $criteria->condition = 'requestid is not null';
+        $criteria->order = 'substr(requestid,10) desc, requestid desc';
+        $criteria->limit = 1;
         $row = $model->model()->find($criteria);
         $maxRequestId = $row['requestid'];
-        $new_id = 0;
+        $new_id = 1;
         if(!empty($maxRequestId)) {
             $id_parts = explode('.' , $maxRequestId);
-            $new_id = intval($id_parts[0])+1;
+            $year = intval($id_parts[2]);
+            if($year==intval(date('y'))){
+                $new_id = intval($id_parts[0]) + 1;
+            }
         }
         $extcomponent = Extcomponents::model()->findByPk($id);
         $extcomponent->requestid = str_pad($new_id,6,0, STR_PAD_LEFT).'.СБ.'.date('y');
