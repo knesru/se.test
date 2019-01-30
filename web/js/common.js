@@ -1,5 +1,5 @@
 function tableToArray(sourceSelector, destinationSelector, newObj) {
-    if(typeof newObj === 'undefined'){
+    if (typeof newObj === 'undefined') {
         newObj = {};
     }
     let tbl = $(sourceSelector);
@@ -21,13 +21,13 @@ function tableToArray(sourceSelector, destinationSelector, newObj) {
     }
 
     let composed_data = [];
-    for(let line = 0; line<obj.data.length; line++){
+    for (let line = 0; line < obj.data.length; line++) {
         composed_data[line] = {};
-        for(let col=0;col<newObj.colModel.length;col++){
+        for (let col = 0; col < newObj.colModel.length; col++) {
             colname = newObj.colModel[col].title;
             // console.log(obj.data[line][col]);
             newObj.colModel[col].dataIndx = colname;
-            if(typeof obj.data[line][col] !== 'undefined') {
+            if (typeof obj.data[line][col] !== 'undefined') {
                 composed_data[line][colname] = obj.data[line][col];
             } else {
                 composed_data[line][colname] = null;
@@ -42,6 +42,7 @@ function tableToArray(sourceSelector, destinationSelector, newObj) {
     tbl.css("display", "none");
     return newObj;
 }
+
 function autoCompleteEditor(ui) {
     var $inp = ui.$cell.find("input");
     var url = ui.column.editor.url;
@@ -50,14 +51,15 @@ function autoCompleteEditor(ui) {
     $inp.autocomplete({
         appendTo: ui.$cell, //for grid in maximized state.
         source: url,
-        selectItem: { on: true }, //custom option
-        highlightText: { on: true }, //custom option
+        selectItem: {on: true}, //custom option
+        highlightText: {on: true}, //custom option
         minLength: 2
     }).focus(function () {
         //open the autocomplete upon focus
         $(this).autocomplete("search", "");
     })
 }
+
 function dateEditor(ui) {
     var $inp = ui.$cell.find("input"),
         $grid = $(this),
@@ -94,18 +96,35 @@ function dateEditor(ui) {
             }
         });
 }
-function formatDate(format){
+
+function formatDate(format) {
     let date = new Date();
-    let month = date.getMonth()+1;
+    let month = date.getMonth() + 1;
     let day = date.getDate();
     let hour = date.getHours();
     let minute = date.getMinutes();
     let second = date.getSeconds();
-    format = format.replace(/Y/,date.getFullYear());
-    format = format.replace(/m/,'00'.slice(month.toString().length)+month);
-    format = format.replace(/d/,'00'.slice(day.toString().length)+day);
-    format = format.replace(/H/,'00'.slice(hour.toString().length)+hour);
-    format = format.replace(/i/,'00'.slice(minute.toString().length)+minute);
-    format = format.replace(/s/,'00'.slice(second.toString().length)+second);
+    format = format.replace(/Y/, date.getFullYear());
+    format = format.replace(/m/, '00'.slice(month.toString().length) + month);
+    format = format.replace(/d/, '00'.slice(day.toString().length) + day);
+    format = format.replace(/H/, '00'.slice(hour.toString().length) + hour);
+    format = format.replace(/i/, '00'.slice(minute.toString().length) + minute);
+    format = format.replace(/s/, '00'.slice(second.toString().length) + second);
     return format;
+}
+
+function pf(n, t1, t2, t5) {
+    if (typeof n === "number") {
+        if (n % 100 > 10 && n % 100 < 20) {
+            return t5;
+        }
+        if (n % 10 === 1) {
+            return t1;
+        }
+        if (n % 10 === 2 || n % 10 === 3 || n % 10 === 4) {
+            return t2;
+        }
+        return t5;
+    }
+    return t5;
 }

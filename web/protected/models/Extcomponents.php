@@ -19,6 +19,7 @@
  * @property string $install_from
  * @property integer $priority
  * @property integer $requestid
+ * @property integer $status
  *
  * The followings are the available model relations:
  * @property Component $component
@@ -26,6 +27,7 @@
  */
 class Extcomponents extends CActiveRecord
 {
+
 	/**
 	 * @return string the associated database table name
 	 */
@@ -42,9 +44,11 @@ class Extcomponents extends CActiveRecord
 		// NOTE: you should only define rules for those attributes that
 		// will receive user inputs.
 		return array(
-			array('partnumber, amount, userid', 'required'),
-			array('amount, userid, delivered, priority, requestid', 'numerical', 'integerOnly'=>true),
+			array('partnumber, amount, userid, purpose', 'required'),
+			array('amount, userid, delivered, priority', 'numerical', 'integerOnly'=>true),
 			array('partnumber', 'length', 'max'=>255),
+            //array('requestid','numerical', 'allowEmpty'=>true),
+            array('requestid','default','setOnEmpty' => true, 'value' => null),
 			array('purpose,partnumberid, created_at, assembly_to, install_to, deficite, description, install_from', 'safe'),
 			// The following rule is used by search().
 			// @todo Please remove those attributes that should not be searched.
@@ -72,20 +76,21 @@ class Extcomponents extends CActiveRecord
 	{
 		return array(
 			'id' => 'ID',
-			'partnumberid' => 'Partnumberid',
-			'partnumber' => 'Partnumber',
-			'amount' => 'Amount',
-			'userid' => 'Userid',
-			'purpose' => 'Purpose',
-			'created_at' => 'Created At',
-			'delivered' => 'Delivered',
-			'assembly_to' => 'Assembly To',
-			'install_to' => 'Install To',
-			'deficite' => 'Deficite',
-			'description' => 'Description',
-			'install_from' => 'Install From',
-			'priority' => 'Priority',
-			'requestid' => 'Requestid',
+			'partnumberid' => 'Порядковый номер',
+			'partnumber' => 'Партномер',
+			'amount' => 'Кол-во',
+			'userid' => 'Пользователь',
+			'purpose' => 'Назначение',
+			'created_at' => 'Добавлено',
+			'delivered' => 'Сдано',
+			'assembly_to' => 'Скомплектовать до',
+			'install_to' => 'Монтаж до',
+			'deficite' => 'Дефицит',
+			'description' => 'Примечание',
+			'install_from' => 'Монтаж с',
+			'priority' => 'Приоритет',
+			'requestid' => 'Заявка',
+			'status' => 'Статус',
 		);
 	}
 
@@ -131,6 +136,9 @@ class Extcomponents extends CActiveRecord
 
 		return new CActiveDataProvider($this, array(
 			'criteria'=>$criteria,
+            'pagination'=>array(
+                'pageSize'=>10000
+            ),
 		));
 	}
 
@@ -144,4 +152,25 @@ class Extcomponents extends CActiveRecord
 	{
 		return parent::model($className);
 	}
+
+    /**
+     * @param $criteria
+     * @return CActiveDataProvider
+     */
+    public function findbyCriteria($criteria)
+    {
+        return new CActiveDataProvider($this, array(
+            'criteria'=>$criteria,
+            'pagination'=>array(
+                'pageSize'=>10000
+            ),
+        ));
+    }
+
+    public static function removeRequest($id){
+        /** @var Extcomponents $model */
+        $model = self::model()->findByPk($requestid);
+        $model->requestid = null;
+        $model->save();
+    }
 }

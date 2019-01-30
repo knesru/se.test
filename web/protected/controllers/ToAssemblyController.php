@@ -28,7 +28,7 @@ class ToAssemblyController extends Controller
 	{
 		return array(
 			array('allow',  // allow all users to perform 'index' and 'view' actions
-				'actions'=>array('index','view'),
+				'actions'=>array('index','view','export'),
 				'users'=>array('*'),
 			),
 			array('allow', // allow authenticated user to perform 'create' and 'update' actions
@@ -36,7 +36,7 @@ class ToAssemblyController extends Controller
 				'users'=>array('@'),
 			),
 			array('allow', // allow admin user to perform 'admin' and 'delete' actions
-				'actions'=>array('admin','delete','request'),
+				'actions'=>array('admin','delete','request','removecomponent'),
 				'users'=>array('admin'),
 			),
 			array('deny',  // deny all users
@@ -84,6 +84,9 @@ class ToAssemblyController extends Controller
             if(empty($model->install_from)){
 			    $model->install_from = null;
             }
+            if(empty($model->partnumberid)){
+                $model->partnumberid = null;
+            }
 			if($model->save()) {
                 $this->redirect(array('view', 'id' => $model->id));
             }
@@ -101,21 +104,111 @@ class ToAssemblyController extends Controller
 	 */
 	public function actionUpdate($id=null)
 	{
+	    if (isset($_POST['list'])){
+            if($data = json_decode($_POST['list'],true)){
+                if(isset($data['updateList']) && count($data['updateList'])>0){
+                    if(isset($data['updateList'][0]['ID'])){
+                        $id = $data['updateList'][0]['ID'];
+                        $new_status = $data['updateList'][0]['Статус'];
+                    }
+                }
+            }
+        }
 	    if(empty($id)){
 	        $this->actionCreate();
 	        Yii::app()->end();
         }
 		$model=$this->loadModel($id);
-
 		// Uncomment the following line if AJAX validation is needed
 		// $this->performAjaxValidation($model);
-
 		if(isset($_POST['Extcomponents']))
 		{
 			$model->attributes=$_POST['Extcomponents'];
 			if($model->save())
 				$this->redirect(array('view','id'=>$model->id));
-		}
+		}elseif(isset($new_status)){
+            $old_status = $model->status;
+            $options =  array(
+                0=>'Не активен',
+                1=>'Комплектация',
+                2=>'Скомпонован',
+                3=>'На монтаже',
+                4=>'Закрыт',
+                5=>'Отмена'
+            );
+            if($old_status==4 or $old_status==5){
+                print('{"status":"error","message":"Нельзя менять статус "'.$options[$old_status].'}');
+                Yii::app()->end();
+            }
+		    $model->status = $new_status;
+            if($new_status==4){
+                /**
+                 * @property integer $id
+                 * @property integer $initiatoruserid
+                 * @property string $updatedate
+                 * @property integer $partnumberid
+                 * @property string $operation
+                 * @property integer $qty
+                 * @property integer $userid
+                 * @property integer $prevqty
+                 * @property integer $postqty
+                 * @property string $description
+                 * @property integer $storeid
+                 */
+                $condition = new CDbCriteria();
+                $condition->compare('partnumberid',$data['updateList'][0]['ID компонента']);
+                $condition->compare('storeid',1);
+                $store = Store::model()->find($condition);
+                if(is_null($store)){
+                    $store = new Store();
+                    $store->partnumberid = $data['updateList'][0]['ID компонента'];
+                    $store->storeid = 1;
+                    $store->qty = 0;
+                }
+                $correction_model = new Storecorrection();
+                $correction_model->initiatoruserid = Yii::app()->user->id;
+                $correction_model->userid = 0;
+                $correction_model->updatedate = date('Y.m.d H:i:s.000000');
+                $correction_model->partnumberid = $data['updateList'][0]['ID компонента'];
+                $correction_model->operation = 'add';
+                $correction_model->qty = $data['updateList'][0]['Кол-во'];
+                $correction_model->prevqty = $store->qty;
+                $store->qty+=$data['updateList'][0]['Кол-во'];
+                $correction_model->postqty = $store->qty;
+                $correction_model->storeid = $store->storeid;
+                $correction_model->description = $data['updateList'][0]['Заявка']."; Описание: ".$data['updateList'][0]['Примечание'];
+
+                /**
+                Заявка":"000002.СБ.18",
+                 * "ID":"4",
+                 * "Партномер":"GTXO-92V/GS+24.00MHz",
+                 * "ID+компонента":"9213",
+                 * "Кол-во":"455",
+                 * "Пользователь":"&nbsp;",
+                 * "Назначение":"fsdafds",
+                 * "Добавлено":"2018-11-30+16:07:18",
+                 * "Сдано":"&nbsp;",
+                 * "Скомплектовать+до":"2018-11-01+00:00:00",
+                 * "Монтаж+до":"2018-11-10+00:00:00",
+                 * "Дефицит":"fdsafsd",
+                 * "Примечание":"fdsafds",
+                 * "Монтаж+с":"2018-11-24+00:00:00",
+                 * "Приоритет":"0",
+                 * "Статус":3,
+                 * "pq_rowselect":false
+                 */
+
+
+            }
+            if($model->save() && $store->save() && $correction_model->save()){
+                print('ok');
+                Yii::app()->end();
+            }else{
+                print __LINE__.'\n';
+                print_r($model->errors);
+            }
+                //$this->redirect(array('list','id'=>$model->id));
+        }
 
 		$this->render('update',array(
 			'model'=>$model,
@@ -124,7 +217,8 @@ class ToAssemblyController extends Controller
 
     public function actionRequest()
     {
-        $id = $_POST['id'];
+        $ids = $_POST['ids'];
+        $requestids = $_POST['requestid'];
         $model = new Extcomponents();
         $criteria=new CDbCriteria;
         //select requestid from extcomponents where requestid is not null order by substr(requestid,10) desc, requestid desc limit 1
@@ -133,18 +227,46 @@ class ToAssemblyController extends Controller
         $criteria->order = 'substr(requestid,10) desc, requestid desc';
         $criteria->limit = 1;
         $row = $model->model()->find($criteria);
-        $maxRequestId = $row['requestid'];
-        $new_id = 1;
-        if(!empty($maxRequestId)) {
-            $id_parts = explode('.' , $maxRequestId);
-            $year = intval($id_parts[2]);
-            if($year==intval(date('y'))){
-                $new_id = intval($id_parts[0]) + 1;
+        if(count($requestids)==0) {
+            $maxRequestId = $row['requestid'];
+            $new_id = 1;
+            if (!empty($maxRequestId)) {
+                $id_parts = explode('.', $maxRequestId);
+                $year = intval($id_parts[2]);
+                if ($year == intval(date('y'))) {
+                    $new_id = intval($id_parts[0]) + 1;
+                }
             }
+        }elseif (count($requestids)==1){
+            $requestModel = Extcomponents::model()->findByPk($requestids[0]);
+            $requestId = $requestModel->requestid;
+            $id_parts = explode('.', $requestId);
+            $new_id = $id_parts[0];
+        }else{
+            print 'ERR';
+            Yii::app()->end();
         }
-        $extcomponent = Extcomponents::model()->findByPk($id);
-        $extcomponent->requestid = str_pad($new_id,6,0, STR_PAD_LEFT).'.СБ.'.date('y');
-        $extcomponent->save(false);
+        foreach ($ids as $id) {
+            $extcomponent = Extcomponents::model()->findByPk($id);
+            $extcomponent->requestid = str_pad($new_id, 6, 0, STR_PAD_LEFT) . '.СБ.' . date('y');
+            $extcomponent->save(false);
+        }
+        Yii::app()->end();
+	}
+
+    public function actionRemoveComponent()
+    {
+        $requestids = $_POST['requestid'];
+        foreach ($requestids as $requestid) {
+
+//            print_r($model->errors);
+//            print_r($model->attributes);
+            $model = Extcomponents::model()->findByPk($requestid);
+            $model->requestid = null;
+            $model->save();
+//            print_r($model->attributes);
+        }
+
         Yii::app()->end();
 	}
 
@@ -168,11 +290,26 @@ class ToAssemblyController extends Controller
 	public function actionIndex()
 	{
 	    $criteria = new CDbCriteria();
+	    $criteria->addCondition('requestid is not null');
+        $criteria->with = array(
+            'user.userinfo' => array('together' => true, ),
+            'component' => array('together' => true, ),
+        );
 		$model = Extcomponents::model();
 		$model->scenario = 'search';
 		$model->attributes = Yii::app()->request->getPost(get_class($model));
-		$this->render('index',array(
-			'dataProvider'=>$model->search(),
+
+        $criteria2 = new CDbCriteria();
+        $criteria2->addCondition('requestid is null');
+        $criteria2->with = array(
+            'user.userinfo' => array('together' => true, ),
+            'component' => array('together' => true, ),
+        );
+        $criteria2->order = 'priority desc, t.id asc';
+
+        $this->render('index',array(
+			'dataProviderRequests'=>$model->findbyCriteria($criteria),
+            'dataProviderAssemblies'=>$model->findbyCriteria($criteria2),
 		));
 	}
 
@@ -183,12 +320,49 @@ class ToAssemblyController extends Controller
 	{
 		$model=new Extcomponents('search');
 		$model->unsetAttributes();  // clear any default values
-		if(isset($_GET['Extcomponents']))
-			$model->attributes=$_GET['Extcomponents'];
+		if(isset($_GET['Extcomponents'])) {
+            $model->attributes = $_GET['Extcomponents'];
+        }
 
 		$this->render('admin',array(
 			'model'=>$model,
 		));
+	}
+
+    public function actionExport()
+    {
+        if (isset($_POST["excel"]) && isset($_POST["extension"]))
+        {
+            $extension = $_POST["extension"];
+            if ($extension == "csv" || $extension == "xml")
+            {
+                session_start();
+                $_SESSION['excel'] = $_POST['excel'];
+                $filename = "pqGrid." . $extension;
+                echo $filename;
+            }
+        }
+        else if(isset($_GET["filename"]))
+        {
+            $filename = $_GET["filename"];
+            if ($filename == "pqGrid.csv" || $filename == "pqGrid.xml")
+            {
+                $filename = str_replace('.xml','.xlsx', $filename);
+                session_start();
+                if (isset($_SESSION['excel'])) {
+                    $excel = $_SESSION['excel'];
+                    $excel = str_replace('&nbsp;','',$excel);
+                    $excel = iconv('utf-8','windows-1251',$excel);
+                    $_SESSION['excel']=null;
+                    header('Content-Disposition: attachment; filename="'.$filename.'"');
+                    header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+                    header('Content-Length: ' . strlen($excel));
+                    header('Connection: close');
+                    echo $excel;
+                    Yii::app()->end();
+                }
+            }
+        }
 	}
 
 	/**

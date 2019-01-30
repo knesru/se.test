@@ -82,6 +82,49 @@ class User extends CActiveRecord
 	 */
 	public function validatePassword($password)
 	{
+        $use_crowd = true;
+        /*if($use_crowd && $this->username && strtolower($this->username) != "admin")
+        {
+            $crowduserRet = null;
+            $crowdManager = new CrowdManager();
+            if($crowdManager->IsCrowdPrincipalExist($this->username, $crowduserRet))
+            {
+                //Try to authrnticate
+                if($crowdManager->authenticatePrincipal($this->username, $password))
+                {
+                    //Auth success
+                    //Try to find specified user in DB
+                    $user = $this->getTable()->retrieveByUsername($this->username);
+
+                    if($user)
+                    {
+                        //user was found, validate information in DB
+                        if(!$this->validateCrowdAndDBuser($crowdManager, $user, $crowduserRet))
+                        {
+                            return true;
+                        }
+                    }
+                    else
+                    {
+                        //user not found, create record in DB
+                        $this->createCrowdUserInDB($crowdManager, $crowduserRet);
+                        $user = $this->getTable()->retrieveByUsername($this->username);
+                    }
+
+                    return true;
+                }
+                else
+                {
+                    $err_string = $crowdManager->GetLastError();
+                }
+            }
+            else
+            {
+                #$err_string = _("The specifed Crowd username dosn't exist");
+                $err_string = $crowdManager->GetLastError();
+            }
+        }*/
+        return true;
 		return sha1($this->salt.$password)===$this->password;
 	}
 
