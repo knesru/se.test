@@ -425,34 +425,64 @@ $cs->registerCssFile($baseUrl . '/js/themes/office/pqgrid.css');
                 }, dataIndx: 12
             },
             {title: "Приоритет", dataType: "integer", dataIndx: 13},
+            // { title: "Статус", dataType: "integer", dataIndx: 14,
+            //     //custom editor.
+            //     editor: {
+            //         options: [
+            //             'Не активен',
+            //             'Комплектация',
+            //             'Скомпонован',
+            //             'На монтаже',
+            //             'Закрыт',
+            //             'Отмена'
+            //         ],
+            //         type: function (ui) {
+            //             //debugger;
+            //             var str = "",
+            //                 options = ui.column.editor.options;
+            //             $(options).each(function (i, option) {
+            //                 var checked = '';
+            //                 if (option == ui.cellData) {
+            //                     checked = "selected = 'selected'";
+            //                 }
+            //                 str += "<option id='status_changer' " + checked + " ' style='margin-left:5px;' value='" + i + "'>  " + option+"</option>";
+            //             });
+            //             ui.$cell.append("<div class='pq-editor-focus' style='background: white' tabindex='0' style='padding:5px;'><select name='" + ui.dataIndx + "'>" + str + "</select></div>");
+            //             $('#status_changer').click(function(e){
+            //                 e.stopPropagation();
+            //                 e.stopImmediatePropagation();
+            //             });
+            //         },
+            //         getData: function (ui) {
+            //             console.log($("select[name='" + ui.dataIndx + "']").val());
+            //             return $("select[name='" + ui.dataIndx + "']").val();
+            //         }
+            //     },
+            //     render: function (ui) {
+            //         var rowData = ui.rowData,
+            //             dataIndx = ui.dataIndx;
+            //         let options = ui.column.editor.options;
+            //         return options[rowData[dataIndx]];
+            //     },
+            // },
             { title: "Статус", dataType: "integer", dataIndx: 14,
                 //custom editor.
                 editor: {
-                    options: [
-                        'Не активен',
-                        'Комплектация',
-                        'Скомпонован',
-                        'На монтаже',
-                        'Закрыт',
-                        'Отмена'
-                    ],
-                    type: function (ui) {
-                        //debugger;
-                        var str = "",
-                            options = ui.column.editor.options;
-                        $(options).each(function (i, option) {
-                            var checked = '';
-                            if (option == ui.cellData) {
-                                checked = "selected = 'selected'";
-                            }
-                            str += "<option " + checked + " ' style='margin-left:5px;' value='" + i + "'>  " + option+"</option>";
-                        });
-                        ui.$cell.append("<div class='pq-editor-focus' style='background: white' tabindex='0' style='padding:5px;'><select name='" + ui.dataIndx + "'>" + str + "</select></div>");
+                    type: 'select',
+                    init: function (ui) {
+                        ui.$cell.find("select").pqSelect();
                     },
-                    getData: function (ui) {
-                        console.log($("select[name='" + ui.dataIndx + "']").val());
-                        return $("select[name='" + ui.dataIndx + "']").val();
-                    }
+                    valueIndx: "value",
+                    labelIndx: "text",
+                    mapIndices: {"text": "Статус", "value": "status"},
+                    options: [
+                        {"value":0,"text":'Не активен'},
+                        {"value":1,"text":'Комплектация'},
+                        {"value":2,"text":'Скомпонован'},
+                        {"value":3,"text":'На монтаже'},
+                        {"value":4,"text":'Закрыт'},
+                        {"value":5,"text":'Отмена'}
+                            ]
                 },
                 render: function (ui) {
                     var rowData = ui.rowData,

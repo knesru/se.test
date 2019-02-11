@@ -169,8 +169,32 @@ class Extcomponents extends CActiveRecord
 
     public static function removeRequest($id){
         /** @var Extcomponents $model */
-        $model = self::model()->findByPk($requestid);
+        $model = self::model()->findByPk($id);
         $model->requestid = null;
         $model->save();
     }
+
+    public function getNewComponents()
+    {
+        $criteria = new CDbCriteria();
+        $criteria->addCondition('requestid is null');
+        $criteria->with = array(
+            'user.userinfo' => array('together' => true, ),
+            'component' => array('together' => true, ),
+        );
+        $criteria->order = 'priority desc, t.id asc';
+        return $this->findbyCriteria($criteria);
+    }
+
+    public function getRequests()
+    {
+        $criteria = new CDbCriteria();
+        $criteria->addCondition('requestid is not null');
+        $criteria->with = array(
+            'user.userinfo' => array('together' => true, ),
+            'component' => array('together' => true, ),
+        );
+        return $this->findbyCriteria($criteria);
+    }
+
 }
