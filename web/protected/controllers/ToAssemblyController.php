@@ -28,15 +28,15 @@ class ToAssemblyController extends Controller
     {
         return array(
             array('allow',  // allow all users to perform 'index' and 'view' actions
-                'actions' => array('index', 'newIndex', 'view', 'export', 'requestslist', 'componentslist','receive'),
+                'actions' => array('index', 'newIndex', 'view', 'export', 'requestslist', 'componentslist'),
                 'users' => array('*'),
             ),
             array('allow', // allow authenticated user to perform 'create' and 'update' actions
-                'actions' => array('create', 'update'),
+                'actions' => array('create', 'update','receive', 'request', 'removecomponent'),
                 'users' => array('@'),
             ),
             array('allow', // allow admin user to perform 'admin' and 'delete' actions
-                'actions' => array('admin', 'delete', 'request', 'removecomponent'),
+                'actions' => array('admin', 'delete'),
                 'users' => array('admin'),
             ),
             array('deny',  // deny all users
@@ -202,7 +202,7 @@ class ToAssemblyController extends Controller
                     $store->qty += $data['updateList'][0]['Кол-во'];
                     $correction_model->postqty = $store->qty;
                     $correction_model->storeid = $store->storeid;
-                    $correction_model->description = $data['updateList'][0]['Заявка'] . "; Описание: " . $data['updateList'][0]['Примечание'];
+                    $correction_model->description = $data['updateList'][0]['Заявка'] . "; " . $data['updateList'][0]['Примечание'];
 
                     /**
                      * Заявка":"000002.СБ.18",
@@ -351,8 +351,10 @@ class ToAssemblyController extends Controller
     {
         $model = Extcomponents::model();
         $result = array('data' => array());
+        $showall = Yii::app()->request->getPost('showall', false);
+        $showall = ($showall=='true'?true:false);
         /** @var Extcomponents $request */
-        foreach ($model->getRequests()->getData() as $request) {
+        foreach ($model->getRequests($showall)->getData() as $request) {
             $result['data'][] = $request->attributes;
         }
         print json_encode($result);
@@ -435,6 +437,7 @@ class ToAssemblyController extends Controller
         $condition = new CDbCriteria();
         $condition->compare('partnumberid', $model->partnumberid);
         $condition->compare('storeid', $_POST['storeid']);
+        $condition->compare('place', $_POST['place']);
         $store = Store::model()->find($condition);
         if (is_null($store)) {
             $store = new Store();
@@ -451,6 +454,7 @@ class ToAssemblyController extends Controller
         $correction_model->qty = $_POST['amount'];
         $correction_model->prevqty = $store->qty;
         $store->qty += $_POST['amount'];
+        $store->place = $_POST['place'];
         $correction_model->postqty = $store->qty;
         $correction_model->storeid = $store->storeid;
         $correction_model->description = ltrim($model->requestid, '0') . "; Описание: " . $model->description . "; Дефицит: " . $model->deficite;

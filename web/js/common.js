@@ -60,6 +60,25 @@ function autoCompleteEditor(ui) {
     })
 }
 
+function pqDatePicker(ui) {
+    let $this = $(this);
+    $this
+    //.css({ zIndex: 3, position: "relative" })
+        .datepicker({
+            yearRange: "-25:+0", //25 years prior to present.
+            changeYear: true,
+            changeMonth: true,
+            showButtonPanel: true,
+            onClose: function (evt, ui) {
+                $(this).focus();
+            }
+        });
+    //default From date
+    $this.filter(".pq-from").datepicker("option", "defaultDate", new Date("01/01/1996"));
+    //default To date
+    $this.filter(".pq-to").datepicker("option", "defaultDate", new Date("12/31/1998"));
+}
+
 function dateEditor(ui) {
     var $inp = ui.$cell.find("input"),
         $grid = $(this),

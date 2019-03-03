@@ -1,5 +1,5 @@
 function filterhandler(evt, ui) {
-
+    $requestsGrid.pqGrid("option", "filterModel.type", 'local');
     var $toolbar = $componentsGrid.find('.pq-toolbar-search'),
         $value = $toolbar.find(".filterValue"),
         value = $value.val(),
@@ -23,7 +23,10 @@ function filterhandler(evt, ui) {
         data: filterObject
     });
     $requestsGrid.refresh();
+    $requestsGrid.pqGrid("option", "filterModel.type", 'remote');
 }
+
+
 
 function saveChangesComponents() {
     let grid = $componentsGrid.pqGrid('getInstance').grid;
@@ -84,7 +87,12 @@ let ComponentsTableColumnModel = [
         title: "ID",
         dataIndx: 'id',
         dataType: "integer",
-        editable: false
+        editable: false,
+        filter: {
+            type: 'textbox',
+            condition: 'contain',
+            listeners: ['change']
+        }
     },
     {
         title: "Партномер",
@@ -112,29 +120,54 @@ let ComponentsTableColumnModel = [
                 });
             },
             url: 'component/ajaxList'
+        },
+        filter: {
+            type: 'textbox',
+            condition: 'contain',
+            listeners: ['change']
         }
     },
     {
         title: "ID компонента",
         dataIndx: 'partnumberid',
         dataType: "string",
-        align: "right"
+        align: "right",
+        filter: {
+            type: 'textbox',
+            condition: 'begin',
+            listeners: ['change']
+        }
     },
     {
         title: "Кол-во",
         dataIndx: 'amount',
         dataType: "integer",
         align: "right",
+        filter: {
+            type: 'textbox',
+            condition: 'between',
+            listeners: ['change']
+        }
     },
     {
         title: "Пользователь",
         dataIndx: 'user',
         dataType: "string",
+        filter: {
+            type: 'textbox',
+            condition: 'contain',
+            listeners: ['change']
+        }
     },
     {
         title: "Назначение",
         dataIndx: 'purpose',
         dataType: "string",
+        filter: {
+            type: 'textbox',
+            condition: 'contain',
+            listeners: ['change']
+        }
     },
     {
         title: "Добавлено",
@@ -142,8 +175,14 @@ let ComponentsTableColumnModel = [
         dataType: "date",
         editor: {
             type: 'textbox',
-            init: dateEditor
+            init: pqDatePicker
         },
+        filter: {
+            type: 'textbox',
+            condition: 'between',
+            init: pqDatePicker,
+            listeners: ['change']
+        }
     },
     /*{
         title: "Сдано",
@@ -159,6 +198,12 @@ let ComponentsTableColumnModel = [
             type: 'textbox',
             init: dateEditor
         },
+        filter: {
+            type: 'textbox',
+            condition: 'between',
+            init: pqDatePicker,
+            listeners: ['change']
+        }
     },
     {
         title: "Монтаж до",
@@ -168,16 +213,32 @@ let ComponentsTableColumnModel = [
             type: 'textbox',
             init: dateEditor
         },
+        filter: {
+            type: 'textbox',
+            condition: 'between',
+            init: pqDatePicker,
+            listeners: ['change']
+        }
     },
     {
         title: "Дефицит",
         dataIndx: 'deficite',
         dataType: "string",
+        filter: {
+            type: 'textbox',
+            condition: 'contain',
+            listeners: ['change']
+        }
     },
     {
         title: "Примечание",
         dataIndx: 'description',
         dataType: "string",
+        filter: {
+            type: 'textbox',
+            condition: 'contain',
+            listeners: ['change']
+        }
     },
     {
         title: "Монтаж с",
@@ -187,11 +248,22 @@ let ComponentsTableColumnModel = [
             type: 'textbox',
             init: dateEditor
         },
+        filter: {
+            type: 'textbox',
+            condition: 'between',
+            init: pqDatePicker,
+            listeners: ['change']
+        }
     },
     {
         title: "Приоритет",
         dataIndx: 'priority',
         dataType: "integer",
+        filter: {
+            type: 'checkbox',
+            condition: 'contain',
+            listeners: ['change']
+        }
     },
     {
         title: "Статус",
@@ -220,6 +292,14 @@ let ComponentsTableColumnModel = [
             let options = ui.column.editor.options;
             return options[rowData[dataIndx]]['text'];
         },
+        filter: { type: 'select',
+            condition: 'equal',
+            //init: multiSelect,
+            valueIndx: "status",
+            labelIndx: "status",
+            prepend: { '': '--Select--' },
+            listeners: ['change']
+        }
     },
 ];
 
@@ -239,7 +319,14 @@ let ComponentsTableDataModel = {
 let ComponentsTable = {
     flexHeight: true,
     scrollModel: {autoFit: true, horizontal: false},
-    pageModel: {type: 'local', curPage: 1},
+    pageModel: {
+        curPage: 1,
+        type: "local",
+        rPP: 10,
+        strRpp: "{0}",
+        strDisplay: "с {0} до {1} из {2}",
+        rPPOptions: [5,10, 20, 50, 100, 500, 1000, 2000, 5000, 10000]
+    },
     stringify: false, //for PHP
     dataModel: ComponentsTableDataModel,
     colModel: ComponentsTableColumnModel,
@@ -323,7 +410,7 @@ let ComponentsTable = {
             },
             {type: 'separator'},
             {
-                type: 'button', attr: 'id="requestbutton"', icon: 'ui-icon-plus', label: 'Создать заявку',
+                type: 'button', attr: 'id="requestbutton"',  icon: 'ui-icon-plus', label: 'Создать заявку',
                 listener:
                     {
                         "click": function (evt, ui) {
@@ -350,17 +437,18 @@ let ComponentsTable = {
                                 });
                             }
                         }
-                    }
+                    },
+                options: {disabled: isGuest}
             }
         ]
     },
     history: function (evt, ui) {
         let $grid = $(this);
         if (ui.canUndo != null) {
-            $("button.changes", $grid).button("option", {disabled: !ui.canUndo});
+            $("button.changes", $grid).button("option", {disabled: !ui.canUndo || isGuest});
         }
         if (ui.canRedo != null) {
-            $("button:contains('Redo')", $grid).button("option", "disabled", !ui.canRedo);
+            $("button:contains('Redo')", $grid).button("option", "disabled", !ui.canRedo || isGuest);
         }
         $("button:contains('Undo')", $grid).button("option", {label: 'Undo (' + ui.num_undo + ')'});
         $("button:contains('Redo')", $grid).button("option", {label: 'Redo (' + ui.num_redo + ')'});

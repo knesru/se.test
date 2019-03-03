@@ -174,10 +174,13 @@ class Extcomponents extends CActiveRecord
         $model->save();
     }
 
-    public function getNewComponents()
+    public function getNewComponents($show_closed=false)
     {
         $criteria = new CDbCriteria();
         $criteria->addCondition('requestid is null');
+        if(!$show_closed) {
+            $criteria->addCondition('status != 4 and status != 5');
+        }
         $criteria->with = array(
             'user.userinfo' => array('together' => true, ),
             'component' => array('together' => true, ),
@@ -186,10 +189,13 @@ class Extcomponents extends CActiveRecord
         return $this->findbyCriteria($criteria);
     }
 
-    public function getRequests()
+    public function getRequests($show_closed=false)
     {
         $criteria = new CDbCriteria();
         $criteria->addCondition('requestid is not null');
+        if(!$show_closed) {
+            $criteria->addCondition('status != 4 and status != 5');
+        }
         $criteria->with = array(
             'user.userinfo' => array('together' => true, ),
             'component' => array('together' => true, ),

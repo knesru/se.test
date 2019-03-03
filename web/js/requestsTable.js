@@ -1,5 +1,5 @@
 function filterhandler(evt, ui) {
-
+    $requestsGrid.pqGrid("option", "filterModel.type", 'local');
     var $toolbar = $requestsGrid.find('.pq-toolbar-search'),
         $value = $toolbar.find(".filterValue"),
         value = $value.val(),
@@ -12,17 +12,18 @@ function filterhandler(evt, ui) {
         var CM = $requestsGrid.pqGrid("getColModel");
         for (var i = 0, len = CM.length; i < len; i++) {
             dataIndx = CM[i].dataIndx;
-            filterObject.push({ dataIndx: dataIndx, condition: condition, value: value });
+            filterObject.push({dataIndx: dataIndx, condition: condition, value: value});
         }
     }
     else {//search through selected field.
-        filterObject = [{ dataIndx: dataIndx, condition: condition, value: value}];
+        filterObject = [{dataIndx: dataIndx, condition: condition, value: value}];
     }
     $requestsGrid.pqGrid("filter", {
         oper: 'replace',
         data: filterObject
     });
     $requestsGrid.refresh();
+    $requestsGrid.pqGrid("option", "filterModel.type", 'remote');
 }
 
 function saveChangesRequests() {
@@ -257,12 +258,28 @@ let RequestsTableDataModel = {
     url: "/toAssembly/requestslist",
     getData: function (response) {
         return {data: response.data};
+    },
+    beforeSend: function (jqXHR, settings) {
+        console.log(jqXHR);
+        console.log(settings);
+        if (settings.data.length > 0) {
+            settings.data += '&';
+        }
+        settings.data += 'showall=' + !!$('#showAll').is(":checked");
     }
 };
 let RequestsTable = {
-    flexHeight: true,
+    // flexHeight: true,
+    //height: '50%',
     scrollModel: {autoFit: true, horizontal: false},
-    pageModel: {type: 'local', curPage: 1},
+    pageModel: {
+        curPage: 1,
+        type: "local",
+        rPP: 10,
+        strRpp: "{0}",
+        strDisplay: "с {0} до {1} из {2}",
+        rPPOptions: [5,10, 20, 50, 100, 500, 1000, 2000, 5000, 10000]
+    },
     stringify: false, //for PHP
     dataModel: RequestsTableDataModel,
     colModel: RequestsTableColumnModel,
@@ -271,7 +288,7 @@ let RequestsTable = {
         mode: 'single',
         fireSelectChange: true
     },
-    filterModel: {on: true, mode: "OR", header: false, type: 'local'},
+    filterModel: {on: true, mode: "OR", header: false},
     toolbar: {
         cls: "pq-toolbar-search",
         items: [
@@ -302,7 +319,7 @@ let RequestsTable = {
                             saveChangesRequests();
                         }
                     },
-                options: {disabled: true}
+                options: {disabled: true, hidden: true}
             },
             {
                 type: 'button', icon: 'ui-icon-cancel', label: 'Сбросить', cls: 'changes', listener:
@@ -343,20 +360,22 @@ let RequestsTable = {
                             var row = $requestsGrid.pqGrid('getRowData', {rowIndx: rowIndx});
 
                             let $frm = $("form#receive-form");
-                            let delta = row['amount']-row['delivered'];
-                            if(delta<0){
+                            let delta = row['amount'] - row['delivered'];
+                            if (delta < 0) {
                                 delta = 0;
                             }
                             $frm.find("input[name='amount']").val(delta);
                             $frm.find("#received_request").text(row['requestid'].replace(/^0+/, ''));
+                            $frm.find("input[name='partnumberid']").val(row['partnumberid']);
                             $frm.find("#received_component").text(row['partnumber']);
 
-                            $("#popup-dialog-receive").dialog({ title: row['requestid'].replace(/^0+/, ''), buttons: {
-                                    Принять: function () {
+                            $("#popup-dialog-receive").dialog({
+                                title: row['requestid'].replace(/^0+/, '') + ': ' + row['partnumber'], buttons: {
+                                    "Принять": function () {
 
 
-                                        if($frm.find("input[name='amount']").val()>=row['amount']-row['delivered']){
-                                            if(!confirm("Компонент будет закрыт!")){
+                                        if ($frm.find("input[name='amount']").val() >= row['amount'] - row['delivered']) {
+                                            if (!confirm("Компонент будет закрыт!")) {
                                                 return;
                                             }
                                         }
@@ -372,7 +391,8 @@ let RequestsTable = {
                                             data: {
                                                 requestid: row['id'],
                                                 amount: $frm.find("input[name='amount']").val(),
-                                                storeid: $frm.find("input[name='storeid']").val()
+                                                storeid: $frm.find("input[name='storeid']").val(),
+                                                place: $frm.find("#place").val()
                                             },
                                             success: function (changes) {
                                                 //debugger;
@@ -386,27 +406,39 @@ let RequestsTable = {
 
                                         $(this).dialog("close");
                                     },
-                                    Отмена: function () {
+                                    "Отмена": function () {
                                         $(this).dialog("close");
                                     }
                                 }
                             }).dialog("open");
 
 
-
                         }
                     },
                 options: {disabled: true}
+            },
+            {type: 'separator'},
+            {
+                type: "<span style='margin:5px;'>Все заявки</span>"
+            },
+            {
+                type: 'checkbox',
+                listeners: [{
+                    'change': function () {
+                        $(this).attr('id', 'showAll');
+                        $requestsGrid.pqGrid('refreshDataAndView');
+                    }
+                }]
             },
         ]
     },
     history: function (evt, ui) {
         let $grid = $(this);
         if (ui.canUndo != null) {
-            $("button.changes", $grid).button("option", {disabled: !ui.canUndo});
+            $("button.changes", $grid).button("option", {disabled: !ui.canUndo || isGuest});
         }
         if (ui.canRedo != null) {
-            $("button:contains('Вернуть')", $grid).button("option", "disabled", !ui.canRedo);
+            $("button:contains('Вернуть')", $grid).button("option", "disabled", !ui.canRedo || isGuest);
         }
         $("button:contains('Отменить')", $grid).button("option", {label: 'Отменить (' + ui.num_undo + ')'});
         $("button:contains('Вернуть')", $grid).button("option", {label: 'Вернуть (' + ui.num_redo + ')'});
@@ -422,7 +454,7 @@ let RequestsTable = {
 };
 
 function getRowIndx() {
-    var arr = $requestsGrid.pqGrid("selection", { type: 'row', method: 'getSelection' });
+    var arr = $requestsGrid.pqGrid("selection", {type: 'row', method: 'getSelection'});
     if (arr && arr.length > 0) {
         return arr[0].rowIndx;
     }
@@ -450,7 +482,7 @@ RequestsTable.selectChange = function (evt, ui) {
     }
     if (controlData.requestSelection.length > 0) {
         $('#requestbutton').find('span.ui-button-text').text('Добавить в заявку');
-        $("button.receive", $requestsGrid).button("option", {disabled: false});
+        $("button.receive", $requestsGrid).button("option", {disabled: isGuest});
     } else {
         $('#requestbutton').find('span.ui-button-text').text('Создать заявку');
         $("button.receive", $requestsGrid).button("option", {disabled: true});
