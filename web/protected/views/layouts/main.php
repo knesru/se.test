@@ -17,7 +17,7 @@
     <link rel="stylesheet" type="text/css" href="<?php echo Yii::app()->request->baseUrl; ?>/css/main.css"/>
     <link rel="stylesheet" type="text/css" href="<?php echo Yii::app()->request->baseUrl; ?>/css/form.css"/>
     <link rel="stylesheet" type="text/css"
-          href="<?php echo Yii::app()->request->baseUrl; ?>/css/redmond/jquery-ui-1.9.2.custom.min.css"/>
+          href="<?php echo Yii::app()->request->baseUrl; ?>/css/redmond/jquery-ui.min.css"/>
 
     <title><?php echo CHtml::encode($this->pageTitle); ?></title>
 </head>

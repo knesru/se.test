@@ -165,6 +165,9 @@ let RequestsTableColumnModel = [
         title: "Добавлено",
         dataIndx: 'created_at',
         dataType: "date",
+        render: function (ui) {
+            return renderDateOnly(ui);
+        },
         editor: {
             type: 'textbox',
             init: dateEditor
@@ -180,6 +183,9 @@ let RequestsTableColumnModel = [
         title: "Скомпл. до",
         dataIndx: 'assembly_to',
         dataType: "date",
+        render: function (ui) {
+            return renderDateOnly(ui);
+        },
         editor: {
             type: 'textbox',
             init: dateEditor
@@ -189,6 +195,9 @@ let RequestsTableColumnModel = [
         title: "Монтаж до",
         dataIndx: 'install_to',
         dataType: "date",
+        render: function (ui) {
+            return renderDateOnly(ui);
+        },
         editor: {
             type: 'textbox',
             init: dateEditor
@@ -208,6 +217,9 @@ let RequestsTableColumnModel = [
         title: "Монтаж с",
         dataIndx: 'install_from',
         dataType: "date",
+        render: function (ui) {
+            return renderDateOnly(ui);
+        },
         editor: {
             type: 'textbox',
             init: dateEditor
@@ -217,6 +229,18 @@ let RequestsTableColumnModel = [
         title: "Приоритет",
         dataIndx: 'priority',
         dataType: "integer",
+        render: function (ui) {
+            let rowData = ui.rowData,
+                dataIndx = ui.dataIndx;
+
+            rowData.pq_cellcls = rowData.pq_cellcls || {};
+            if (rowData[dataIndx] > 0){
+                rowData.pq_cellcls[dataIndx] = 'high-priority';
+                return "<span class='ui-icon ui-icon-alert'> </span>&nbsp;высокий";
+            }else {
+                return '';
+            }
+        }
     },
     {
         title: "Статус",
@@ -254,7 +278,7 @@ let RequestsTableDataModel = {
     dataType: "JSON",
     method: "POST",
     sortIndx: "priority",
-    sortDir: "up",
+    sortDir: "down",
     url: "/toAssembly/requestslist",
     getData: function (response) {
         return {data: response.data};
@@ -278,7 +302,13 @@ let RequestsTable = {
         rPP: 10,
         strRpp: "{0}",
         strDisplay: "с {0} до {1} из {2}",
-        rPPOptions: [5,10, 20, 50, 100, 500, 1000, 2000, 5000, 10000]
+        rPPOptions: function () {
+            let rpp = [5, 10, 20];
+            for (let i=0; i<11; i++){
+                rpp.push(rpp[i]*10);
+            }
+            return rpp;
+        }()
     },
     stringify: false, //for PHP
     dataModel: RequestsTableDataModel,
@@ -430,6 +460,17 @@ let RequestsTable = {
                     }
                 }]
             },
+            {type: 'separator'},
+            {
+                type: 'button',
+                label: "Экспорт в Excel",
+                icon: 'ui-icon-document',
+                listeners: [{
+                    "click": function (evt) {
+                        $requestsGrid.pqGrid("exportCsv", {url: "/toAssembly/export", sheetName: "Заявки"});
+                    }
+                }]
+            }
         ]
     },
     history: function (evt, ui) {
@@ -481,10 +522,10 @@ RequestsTable.selectChange = function (evt, ui) {
         controlData.prevSelection = null;
     }
     if (controlData.requestSelection.length > 0) {
-        $('#requestbutton').find('span.ui-button-text').text('Добавить в заявку');
+        $('#requestbutton').button('option','label','Добавить в заявку');
         $("button.receive", $requestsGrid).button("option", {disabled: isGuest});
     } else {
-        $('#requestbutton').find('span.ui-button-text').text('Создать заявку');
+        $('#requestbutton').button('option','label','Создать заявку');
         $("button.receive", $requestsGrid).button("option", {disabled: true});
     }
 };

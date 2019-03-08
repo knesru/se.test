@@ -320,3 +320,13 @@ span.saving
 .row {
 	border-top: 1px solid #eee;
 }
+.controlgroup {
+	display: inline-block;
+}
+.splitbutton-select{
+	width: 1em;
+}
+
+.high-priority{
+	background: #FBC2C4;
+}

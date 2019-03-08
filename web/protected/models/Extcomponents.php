@@ -137,7 +137,7 @@ class Extcomponents extends CActiveRecord
 		return new CActiveDataProvider($this, array(
 			'criteria'=>$criteria,
             'pagination'=>array(
-                'pageSize'=>10000
+                'pageSize'=>100000
             ),
 		));
 	}
@@ -157,12 +157,13 @@ class Extcomponents extends CActiveRecord
      * @param $criteria
      * @return CActiveDataProvider
      */
-    public function findbyCriteria($criteria)
+    public function findbyCriteria($criteria,$pagesize=10000)
     {
         return new CActiveDataProvider($this, array(
             'criteria'=>$criteria,
             'pagination'=>array(
-                'pageSize'=>10000
+                'pageSize'=>$pagesize,
+                'pageVar'=>'pq_curpage'
             ),
         ));
     }
@@ -174,9 +175,33 @@ class Extcomponents extends CActiveRecord
         $model->save();
     }
 
-    public function getNewComponents($show_closed=false)
+    public function getNewComponents($params=array())
     {
+        $default_params = array(
+            'show_closed' => false,
+            'page_size' => 10000,
+            'page' => 0,
+            'filter'=>array()
+        );
+        $params = array_merge($default_params,$params);
+        $show_closed = $params['show_closed'];
         $criteria = new CDbCriteria();
+        /*
+         *  pq_filter[mode]	OR
+            pq_filter[data][0][dataIndx]	partnumber
+            pq_filter[data][0][value]	p_
+            pq_filter[data][0][condition]	contain
+            pq_filter[data][0][dataType]	string
+            pq_filter[data][0][cbFn]
+         * */
+
+        if(!empty($params['filter'])){
+            $filter = $params['filter'];
+            $mode = $filter['mode'];
+            foreach ($filter['data'] as $datum){
+                $criteria->compare('component.'.$datum['dataIndx'],$datum['value'],$datum['condition']=='contain',$mode);
+            }
+        }
         $criteria->addCondition('requestid is null');
         if(!$show_closed) {
             $criteria->addCondition('status != 4 and status != 5');
@@ -186,7 +211,7 @@ class Extcomponents extends CActiveRecord
             'component' => array('together' => true, ),
         );
         $criteria->order = 'priority desc, t.id asc';
-        return $this->findbyCriteria($criteria);
+        return $this->findbyCriteria($criteria,$params['page_size']);
     }
 
     public function getRequests($show_closed=false)

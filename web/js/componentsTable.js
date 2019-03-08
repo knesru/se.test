@@ -1,5 +1,4 @@
 function filterhandler(evt, ui) {
-    $requestsGrid.pqGrid("option", "filterModel.type", 'local');
     var $toolbar = $componentsGrid.find('.pq-toolbar-search'),
         $value = $toolbar.find(".filterValue"),
         value = $value.val(),
@@ -23,7 +22,6 @@ function filterhandler(evt, ui) {
         data: filterObject
     });
     $requestsGrid.refresh();
-    $requestsGrid.pqGrid("option", "filterModel.type", 'remote');
 }
 
 
@@ -177,6 +175,9 @@ let ComponentsTableColumnModel = [
             type: 'textbox',
             init: pqDatePicker
         },
+        render: function (ui) {
+            return renderDateOnly(ui);
+        },
         filter: {
             type: 'textbox',
             condition: 'between',
@@ -191,12 +192,15 @@ let ComponentsTableColumnModel = [
         align: "right",
     },*/
     {
-        title: "Скомплектовать до",
+        title: "Скомпл. до",
         dataIndx: 'assembly_to',
         dataType: "date",
         editor: {
             type: 'textbox',
             init: dateEditor
+        },
+        render: function (ui) {
+            return renderDateOnly(ui);
         },
         filter: {
             type: 'textbox',
@@ -212,6 +216,9 @@ let ComponentsTableColumnModel = [
         editor: {
             type: 'textbox',
             init: dateEditor
+        },
+        render: function (ui) {
+            return renderDateOnly(ui);
         },
         filter: {
             type: 'textbox',
@@ -248,6 +255,9 @@ let ComponentsTableColumnModel = [
             type: 'textbox',
             init: dateEditor
         },
+        render: function (ui) {
+            return renderDateOnly(ui);
+        },
         filter: {
             type: 'textbox',
             condition: 'between',
@@ -263,6 +273,18 @@ let ComponentsTableColumnModel = [
             type: 'checkbox',
             condition: 'contain',
             listeners: ['change']
+        },
+        render: function (ui) {
+            let rowData = ui.rowData,
+                dataIndx = ui.dataIndx;
+
+            rowData.pq_cellcls = rowData.pq_cellcls || {};
+            if (rowData[dataIndx] > 0){
+                rowData.pq_cellcls[dataIndx] = 'high-priority';
+                return "<span class='ui-icon ui-icon-alert'> </span>&nbsp;высокий";
+            }else {
+                return '';
+            }
         }
     },
     {
@@ -306,26 +328,32 @@ let ComponentsTableColumnModel = [
 let ComponentsTableDataModel = {
     recIndx: "id", //primary key
     location: "remote",
-    sorting: "local",
+    sorting: "remote",
     dataType: "JSON",
     method: "POST",
     sortIndx: "priority",
-    sortDir: "up",
+    sortDir: "down",
     url: "/toAssembly/componentslist",
     getData: function (response) {
-        return {data: response.data};
+        return {curPage: response.curPage, totalRecords: response.totalRecords,data: response.data};
     }
 };
 let ComponentsTable = {
-    flexHeight: true,
+    // flexHeight: false,
     scrollModel: {autoFit: true, horizontal: false},
     pageModel: {
         curPage: 1,
-        type: "local",
+        type: "remote",
         rPP: 10,
         strRpp: "{0}",
         strDisplay: "с {0} до {1} из {2}",
-        rPPOptions: [5,10, 20, 50, 100, 500, 1000, 2000, 5000, 10000]
+        rPPOptions: function () {
+            let rpp = [5, 10, 20];
+            for (let i=0; i<11; i++){
+                rpp.push(rpp[i]*10);
+            }
+            return rpp;
+        }()
     },
     stringify: false, //for PHP
     dataModel: ComponentsTableDataModel,
@@ -335,7 +363,7 @@ let ComponentsTable = {
         mode: 'range',
         fireSelectChange: true
     },
-    filterModel: {on: true, mode: "OR", header: false, type: 'local'},
+    filterModel: {on: true, mode: "OR", header: false},
     toolbar: {
         cls: "pq-toolbar-search",
         items: [
@@ -439,6 +467,28 @@ let ComponentsTable = {
                         }
                     },
                 options: {disabled: isGuest}
+            },
+            {type: 'separator'},
+            {
+                type: 'button',
+                label: "Экспорт в Excel",
+                icon: 'ui-icon-document',
+                listeners: [{
+                    "click": function (evt) {
+                        $componentsGrid.pqGrid("exportCsv", {url: "/toAssembly/export", sheetName: "Компоненты"});
+                    }
+                }]
+            },
+            {type: 'separator'},
+            {
+                type:
+                    '<div class="controlgroup">\n' +
+                    '    <button class="ui-corner-left">Создать заявку</button>\n' +
+                    '    <select>\n' +
+                    '      <option>Создать заявку</option>\n' +
+                    '      <option>Добавить&nbsp;в&nbsp;заявку</option>\n' +
+                    '    </select>\n' +
+                    '  </div>'
             }
         ]
     },

@@ -78,6 +78,12 @@ return array(
                     'enabled' =>TRUE,
                     'categories' => 'system.db.*',
                 ),
+                array(
+                    'class'=>'CFileLogRoute',
+                    'enabled' =>TRUE,
+                    'logFile' => 'mysql.log',
+                    'categories' => 'system.db.*',
+                ),
 				// uncomment the following to show log messages on web pages
 				/*
 				array(

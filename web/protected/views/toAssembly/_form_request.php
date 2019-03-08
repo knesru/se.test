@@ -7,8 +7,8 @@
 $baseUrl = Yii::app()->baseUrl;
 /** @var CClientScript $cs */
 $cs = Yii::app()->getClientScript();
-$cs->registerScriptFile($baseUrl . '/js/jquery-1.8.3.js');
-$cs->registerScriptFile($baseUrl . '/js/jquery-ui-1.9.2.custom.min.js');
+$cs->registerScriptFile($baseUrl . '/js/jquery.js');
+$cs->registerScriptFile($baseUrl . '/js/jquery-ui.min.js');
 //$cs->registerScriptFile($baseUrl . '/js/pq/pqgrid.min.js');
 //$cs->registerScriptFile($baseUrl . '/js/common.js');
 //$cs->registerCssFile($baseUrl . '/js/pq/pqgrid.min.css');

@@ -8,6 +8,8 @@ class ToAssemblyController extends Controller
      */
     public $layout = '//layouts/main';
 
+    private $lettersArray;
+
     /**
      * @return array action filters
      */
@@ -32,11 +34,11 @@ class ToAssemblyController extends Controller
                 'users' => array('*'),
             ),
             array('allow', // allow authenticated user to perform 'create' and 'update' actions
-                'actions' => array('create', 'update','receive', 'request', 'removecomponent'),
+                'actions' => array('create', 'update', 'receive', 'request', 'removecomponent'),
                 'users' => array('@'),
             ),
             array('allow', // allow admin user to perform 'admin' and 'delete' actions
-                'actions' => array('admin', 'delete'),
+                'actions' => array('admin', 'delete','generatesome'),
                 'users' => array('admin'),
             ),
             array('deny',  // deny all users
@@ -152,7 +154,7 @@ class ToAssemblyController extends Controller
         if (isset($data)) {
             $model->attributes = $data['updateList'][0];
 
-            if(isset($new_status)) {
+            if (isset($new_status)) {
                 $old_status = $model->status;
                 $options = array(
                     0 => 'Не активен',
@@ -162,7 +164,7 @@ class ToAssemblyController extends Controller
                     4 => 'Закрыт',
                     5 => 'Отмена'
                 );
-                if (($old_status == 4 or $old_status == 5) && $new_status!=$old_status) {
+                if (($old_status == 4 or $old_status == 5) && $new_status != $old_status) {
                     print('{"status":"error","message":"Нельзя менять статус "' . $options[$old_status] . '}');
                     Yii::app()->end();
                 }
@@ -226,7 +228,7 @@ class ToAssemblyController extends Controller
                     $status_save_ok = ($store->save() && $correction_model->save());
                 }
                 $status_save_ok = true;
-            }else{
+            } else {
                 $status_save_ok = true;
             }
             if ($model->save() && $status_save_ok) {
@@ -352,7 +354,7 @@ class ToAssemblyController extends Controller
         $model = Extcomponents::model();
         $result = array('data' => array());
         $showall = Yii::app()->request->getPost('showall', false);
-        $showall = ($showall=='true'?true:false);
+        $showall = ($showall == 'true' ? true : false);
         /** @var Extcomponents $request */
         foreach ($model->getRequests($showall)->getData() as $request) {
             $result['data'][] = $request->attributes;
@@ -362,12 +364,33 @@ class ToAssemblyController extends Controller
 
     public function actionComponentslist()
     {
+        $_GET['pq_curpage']=Yii::app()->request->getParam('pq_curpage');
         $model = Extcomponents::model();
         $result = array('data' => array());
-        /** @var Extcomponents $request */
-        foreach ($model->getNewComponents()->getData() as $request) {
-            $result['data'][] = $request->attributes;
+        /** @var CActiveDataProvider $dp */
+        $dp = $model->getNewComponents(
+            array(
+                'page_size'=>Yii::app()->request->getParam('pq_rpp',10),
+                'filter'=>Yii::app()->request->getParam('pq_filter',array())
+                )
+        );
+        $sort_attrs = array();
+        foreach (Yii::app()->request->getParam('pq_sort') as $sort_item){
+            $sort_attrs[] = $sort_item['dataIndx'].($sort_item['dir']=='down'?' DESC':'');
         }
+        $dp->setSort(array(
+            'class' => 'CSort',
+            'attributes' => $sort_attrs,
+        ));
+
+//        print(json_encode($dp->getSort()));
+
+        /** @var Extcomponents $requestedComponent */
+        foreach ($dp->getData() as $requestedComponent) {
+            $result['data'][] = $requestedComponent->attributes;
+        }
+        $result['totalRecords'] = $dp->totalItemCount;
+        $result['curPage']=Yii::app()->request->getParam('pq_curpage');
         print json_encode($result);
     }
 
@@ -387,35 +410,113 @@ class ToAssemblyController extends Controller
         ));
     }
 
+    public function actionGetFile($fileId)
+    {
+
+    }
+
     public function actionExport()
     {
         if (isset($_POST["excel"]) && isset($_POST["extension"])) {
-            $extension = $_POST["extension"];
-            if ($extension == "csv" || $extension == "xml") {
-                session_start();
-                $_SESSION['excel'] = $_POST['excel'];
-                $filename = "pqGrid." . $extension;
-                echo $filename;
-            }
-        } else if (isset($_GET["filename"])) {
-            $filename = $_GET["filename"];
-            if ($filename == "pqGrid.csv" || $filename == "pqGrid.xml") {
-                $filename = str_replace('.xml', '.xlsx', $filename);
-                session_start();
-                if (isset($_SESSION['excel'])) {
-                    $excel = $_SESSION['excel'];
-                    $excel = str_replace('&nbsp;', '', $excel);
-                    $excel = iconv('utf-8', 'windows-1251', $excel);
-                    $_SESSION['excel'] = null;
-                    header('Content-Disposition: attachment; filename="' . $filename . '"');
-                    header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-                    header('Content-Length: ' . strlen($excel));
-                    header('Connection: close');
-                    echo $excel;
-                    Yii::app()->end();
+            $url = Yii::app()->basePath . '/extensions/Excel/PHPExcel.php';
+            require_once $url;
+            $this->lettersArrayPrepare();
+            $objPHPExcel = new PHPExcel();
+            $objPHPExcel->getProperties()->setCreator("STMS-components-extension")
+                ->setLastModifiedBy("STMS-components-extension")
+                ->setTitle("Components Requests Export")
+                ->setSubject("Components Requests Export")
+                ->setDescription("Components Requests Export")
+                ->setKeywords("components requests stms")
+                ->setCategory("Export info");
+            $activeSheet = $objPHPExcel->setActiveSheetIndex(0);
+
+            $rows = explode("\n", $_POST['excel']);
+            $cell = 'A1';
+            foreach ($rows as $row) {
+                $row_data = str_getcsv($row);
+                $i = 0;
+                foreach ($row_data as $cell_value) {
+                    $cell_value = str_replace('null','',$cell_value);
+                    $cell_value = str_replace('undefined','',$cell_value);
+                    $activeSheet->setCellValue($cell, $cell_value);
+                    $cell = $this->dc($cell, array(1, 0));
+                    $i++;
                 }
+                $cell = $this->dc($cell, array(-$i, 1));
+            }
+
+//        header('Content-Disposition: attachment; filename="' . 'xxx.xlsx' . '"');
+//        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+//
+//        header('Connection: close');
+
+            $objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel2007');
+//        ob_start();
+
+            $filename = date('Y-m-d_H-i-s') . '_' . md5(microtime()) . 'xlsx';
+
+            ob_start();
+            $objWriter->save('php://output');
+            $_SESSION['excel'] = ob_get_contents();
+            ob_clean();
+            $_SESSION['filename'] = 'Заявки '.date('Y-m-d_His').'.xlsx';
+            echo $filename;
+
+
+        } else if (isset($_GET["filename"])) {
+            $filename = $_SESSION['filename'];
+            if (isset($_SESSION['excel'])) {
+                $excel = $_SESSION['excel'];
+                $_SESSION['excel'] = null;
+                header('Content-Disposition: attachment; filename="' . $filename . '"');
+                header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+                header('Content-Length: ' . strlen($excel));
+                header('Connection: close');
+                echo $excel;
+                Yii::app()->end();
             }
         }
+        Yii::app()->end();
+
+
+    }
+
+    private function dc($c, $delta)
+    {
+        preg_match_all('/([a-zA-Z]+)(\d+)/', $c, $m);
+        $letters = $m[1][0];
+        $digits = $m[2][0];
+        $digits += $delta[1];
+
+        $letter_postition = $this->lettersArray[0][$letters];
+        $letter_postition += $delta[0];
+        if (isset($this->lettersArray[1][$letter_postition])) {
+            $letters = $this->lettersArray[1][$letter_postition];
+        } else {
+            throw new Exception('Cannot represent negative letters!!!');
+        }
+
+//        print $c.'('.json_encode($delta).')->'.$letters.$digits.'<br/>';
+        return $letters . $digits;
+    }
+
+    private function decrementLetters($l)
+    {
+
+    }
+
+    private function lettersArrayPrepare()
+    {
+        $lettersArray = array();
+        $numbersArray = array();
+        $a = 'A';
+        for ($i = 0; $i < 10000; $i++) {
+            $lettersArray[$a] = $i;
+            $numbersArray[$i] = $a;
+            $a++;
+        }
+        $this->lettersArray = array($lettersArray, $numbersArray);
     }
 
     public function actionReceive()
@@ -460,14 +561,14 @@ class ToAssemblyController extends Controller
         $correction_model->description = ltrim($model->requestid, '0') . "; Описание: " . $model->description . "; Дефицит: " . $model->deficite;
 
 
-        $model->delivered+=$_POST['amount'];
-        if($model->delivered>$model->amount){
+        $model->delivered += $_POST['amount'];
+        if ($model->delivered > $model->amount) {
             $model->status = 4;
         }
 
-        if($store->save() && $correction_model->save() && $model->save()){
+        if ($store->save() && $correction_model->save() && $model->save()) {
             print 'OK';
-        }else{
+        } else {
             print 'ERR';
         }
 
@@ -495,7 +596,6 @@ class ToAssemblyController extends Controller
     }
 
 
-
     /**
      * Returns the data model based on the primary key given in the GET variable.
      * If the data model is not found, an HTTP exception will be raised.
@@ -521,6 +621,70 @@ class ToAssemblyController extends Controller
             echo CActiveForm::validate($model);
             Yii::app()->end();
         }
+    }
+
+    public function actionGenerateSome(){
+        $n = Yii::app()->request->getParam('n',10000);
+        print 'Preparing to generate '.$n;
+        $done = 0;
+        $start_time = time();
+        $stms = 0;
+        $stmn = 1;
+        $fcms = 0;
+        $fcmn = 1;
+        $fums = 0;
+        $fumn = 1;
+        while ((time()-$start_time)<29 && $n>0){
+            $model = new Extcomponents();
+            if(rand(1,100)>20){
+                $saveTime = microtime(true);
+                $comp = Component::model()->findByPk(rand(1,25882));
+                $fcms+=(microtime(true)-$saveTime);
+                $fcmn++;
+                if($comp!=null){
+                    $model->partnumber = $comp->partnumber;
+                    $model->partnumberid = $comp->partnumberid;
+                }else{
+                    print 'Component not found'.'<br />';
+                    continue;
+                }
+            }else{
+                $model->partnumber = md5(microtime());
+            }
+            $model->amount = rand(1,100);
+            $model->purpose = md5(microtime().'X');
+            if(rand(1,100)>95){
+                $model->priority = rand(0,1);
+            }else{
+                $model->priority = 0;
+            }
+            $saveTime = microtime(true);
+            $user = User::model()->findByPk(rand(1,143));
+            $fums+=(microtime(true)-$saveTime);
+            $fumn++;
+            if(is_null($user)){
+                print 'User not found'.'<br />';
+                continue;
+            }
+            $model->userid = $user->id;
+            $saveTime = microtime(true);
+            if($model->save()){
+                $done++;
+            }else{
+                print json_encode($model->errors).'<br/>';
+            }
+            $stms+=(microtime(true)-$saveTime);
+            $stmn++;
+            $n--;
+        }
+        print 'Прошло времени '.(time()-$start_time).'<br/>';
+        print 'Сгенерировано '.$done.'<br/>';
+        print 'Среднее время генерации '.($stms/$stmn).'<br/>';
+        print 'Среднее время поиска компонента '.($fcms/$fcmn).'<br/>';
+        print 'Среднее время поиска юзера '.($fums/$fumn).'<br/>';
+        print '<script type="application/javascript">
+location.reload(); 
+</script>';
     }
 
 }

@@ -23,16 +23,18 @@ $cs = Yii::app()->getClientScript();
     isGuest = <?php print ((Yii::app()->user->isGuest)?'true':'false'); ?>;
 </script>
 <?php
-$cs->registerScriptFile($baseUrl . '/js/jquery-1.8.3.js');
-$cs->registerScriptFile($baseUrl . '/js/jquery-ui-1.9.2.custom.min.js');
-$cs->registerScriptFile($baseUrl . '/js/pq/pqgrid.min.js');
+//$min = '.min';
+$min = '.dev';
+$cs->registerScriptFile($baseUrl . '/js/jquery.js');
+$cs->registerScriptFile($baseUrl . '/js/jquery-ui.min.js');
+$cs->registerScriptFile($baseUrl . '/js/pq/pqgrid'.$min.'.js');
 $cs->registerScriptFile($baseUrl . '/js/pq/pqselect.min.js');
 $cs->registerScriptFile($baseUrl . '/js/common.js');
 $cs->registerScriptFile($baseUrl . '/js/requestsTable.js',CClientScript::POS_END);
 $cs->registerScriptFile($baseUrl . '/js/componentsTable.js',CClientScript::POS_END);
 $cs->registerCssFile($baseUrl . '/js/pq/pqselect.bootstrap.min.css');
-$cs->registerCssFile($baseUrl . '/js/pq/pqgrid.min.css');
-$cs->registerCssFile($baseUrl . '/js/pq/pqselect.min.css');
+$cs->registerCssFile($baseUrl . '/js/pq/pqgrid'.$min.'.css');
+$cs->registerCssFile($baseUrl . '/js/pq/pqselect'.$min.'.css');
 $cs->registerCssFile($baseUrl . '/js/themes/office/pqgrid.css');
 ?>
 <script type="application/javascript">
@@ -126,6 +128,24 @@ $cs->registerCssFile($baseUrl . '/js/themes/office/pqgrid.css');
         }).click(function () {
             $(this).autocomplete("search", "");
         });
+        $('.controlgroup').controlgroup();
+        //$('.controlgroup button').button()/*.css('border-radius','4px 0px 0px 4px')*/;
+        $('.ui-button').css('padding','3px').not('.ui-selectmenu-button').css({
+            'padding-right':'5px'
+        });
+        $('.controlgroup select').selectmenu({
+            classes: {
+                "ui-selectmenu-button": "ui-button-icon-only splitbutton-select"
+            },
+            change: function(){
+                $( ".output" ).append( "<li>" + this.value + "</li>" );
+                $(this).parent().find('button').text(this.value);
+            }
+        })/*.css({
+            'border-radius':'0px 4px 4px 0px',
+            'margin-left':'-3px'
+        })*/;
+        $('.splitbutton-select').css('width','2em');
     });
 </script>
 <?php

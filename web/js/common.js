@@ -147,3 +147,14 @@ function pf(n, t1, t2, t5) {
     }
     return t5;
 }
+
+function renderDateOnly(ui) {
+    //return "hello";
+    let cellData = ui.cellData;
+    if (cellData) {
+        return $.datepicker.formatDate('yy-mm-dd', new Date(cellData));
+    }
+    else {
+        return "";
+    }
+}
