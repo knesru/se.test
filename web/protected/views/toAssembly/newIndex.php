@@ -56,6 +56,13 @@ $cs->registerCssFile($baseUrl . '/js/themes/office/pqgrid.css');
             },
             autoOpen: false
         });
+        $("#popup-dialog-replace").dialog({
+            width: 400, modal: true,
+            open: function () {
+                $(".ui-dialog").position({of: "#grid_requests"});
+            },
+            autoOpen: false
+        });
         $('#storeid').autocomplete({
             //appendTo: ui.$cell, //for grid in maximized state.
             source: '/component/storesList',
@@ -139,13 +146,87 @@ $cs->registerCssFile($baseUrl . '/js/themes/office/pqgrid.css');
             },
             change: function(){
                 $( ".output" ).append( "<li>" + this.value + "</li>" );
-                $(this).parent().find('button').text(this.value);
+                $(this).parent().find('button').text($(this).find(':selected').text());
+                //let action = $(this).val();
+                //requestsAction(action);
             }
         })/*.css({
             'border-radius':'0px 4px 4px 0px',
             'margin-left':'-3px'
         })*/;
+        $('.controlgroup button').click(function () {
+            let action = $(this).parent().find('select').val();
+            requestsAction(action);
+        });
         $('.splitbutton-select').css('width','2em');
+        function requestsAction(action) {
+            alert(action);
+            if (typeof controlData.selection !== 'undefined') {
+                let datM = $("#grid_requests").pqGrid("option", "dataModel");
+                let grid = $("#grid_requests").pqGrid();
+                let data = {};
+                data.ids = controlData.selection;
+                if(action==='append'){
+                    if(controlData.requestSelection.length==0){
+                        alert('Выберие заявку для добавления');
+                        return;
+                    }
+                    data.requestid = controlData.requestSelection;
+                    let rowIndx = getRowIndx();
+                    var row = $requestsGrid.pqGrid('getRowData', {rowIndx: rowIndx});
+                    if(!confirm('Добавить компоненты к заявке '+row['requestid'].replace(/^0+/, '')+'?')){
+                        return;
+                    }
+                }
+                $.ajax({
+                    url: '/toassembly/request',
+                    data: data,
+                    dataType: "json",
+                    type: "POST",
+                    async: true,
+                    beforeSend: function (jqXHR, settings) {
+                        $(".saving", grid).show();
+                    },
+                    success: function () {
+                        //commit the changes.
+                        $("#grid_requests").pqGrid('refreshDataAndView');
+                        $("#grid_new_components").pqGrid('refreshDataAndView');
+                    },
+                    complete: function () {
+                        $(".saving", grid).hide();
+                    }
+                });
+            }
+        }
+
+        $(function(){
+            $inp = $('#replace_component');
+            $inp.autocomplete({
+                //appendTo: ui.$cell, //for grid in maximized state.
+                source: '/component/ajaxList',
+                selectItem: { on: true }, //custom option
+                highlightText: { on: true }, //custom option
+                minLength: 2,
+                select: function (a,b,c) {
+                    // console.log(a,b,c);
+                    $.ajax({
+                        url: '/component/ajaxComponent',
+                        data: {partnumber: b.item.value},
+                        success: function (res) {
+                            if (typeof res === 'string') {
+                                $('#newpartnumberid').val(res).addClass('success');
+                                $inp.parent().addClass('success');
+                            }
+                        }
+                    });
+                }
+            }).focus(function () {
+                //open the autocomplete upon focus
+                $(this).autocomplete("search", "");
+            });
+        });
+        $( document ).tooltip();
+
     });
 </script>
 <?php
@@ -176,6 +257,32 @@ $cs->registerCssFile($baseUrl . '/js/themes/office/pqgrid.css');
             <tr>
                 <td>Место</td>
                 <td><input type="text" id="place"/></td>
+            </tr>
+            </tbody>
+        </table>
+    </form>
+</div>
+<div id="popup-dialog-replace" style="display:none;">
+    <form id="replace-form">
+        <table align="center">
+            <tbody>
+            <tr>
+                <td>Заявка</td>
+                <td><span id="replace_request"></span></td>
+            </tr>
+            <tr>
+                <td>Компонент</td>
+                <td><span id="old_component"></span></td>
+            </tr>
+            <tr>
+                <td><label for="replace_component">Замена</label><span class="ui-icon ui-icon-help" title="Принцип
+                работы: будет создан новый элемент в
+                    данной заявке с количеством, равным непринятому остатку. У заменяемого компонента будет выставлен
+                     статус «Отмена»"></span></td>
+                <td><input type="text" name="replace_component" id="replace_component"/>
+                    <input type="hidden" id="newpartnumberid"
+                           name="newpartnumberid"
+                    /></td>
             </tr>
             </tbody>
         </table>

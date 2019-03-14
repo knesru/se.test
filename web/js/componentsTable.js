@@ -438,38 +438,6 @@ let ComponentsTable = {
             },
             {type: 'separator'},
             {
-                type: 'button', attr: 'id="requestbutton"',  icon: 'ui-icon-plus', label: 'Создать заявку',
-                listener:
-                    {
-                        "click": function (evt, ui) {
-                            if (typeof controlData.selection !== 'undefined') {
-                                let datM = $("#grid_requests").pqGrid("option", "dataModel");
-                                let grid = $("#grid_requests").pqGrid();
-
-                                $.ajax({
-                                    url: '/toassembly/request',
-                                    data: {ids: controlData.selection, requestid: controlData.requestSelection},
-                                    dataType: "json",
-                                    type: "POST",
-                                    async: true,
-                                    beforeSend: function (jqXHR, settings) {
-                                        $(".saving", grid).show();
-                                    },
-                                    success: function () {
-                                        //commit the changes.
-                                        location.reload();
-                                    },
-                                    complete: function () {
-                                        $(".saving", grid).hide();
-                                    }
-                                });
-                            }
-                        }
-                    },
-                options: {disabled: isGuest}
-            },
-            {type: 'separator'},
-            {
                 type: 'button',
                 label: "Экспорт в Excel",
                 icon: 'ui-icon-document',
@@ -483,12 +451,12 @@ let ComponentsTable = {
             {
                 type:
                     '<div class="controlgroup">\n' +
-                    '    <button class="ui-corner-left">Создать заявку</button>\n' +
+                    '    <button id="requestbutton" class="ui-corner-left">Создать заявку</button>\n' +
                     '    <select>\n' +
-                    '      <option>Создать заявку</option>\n' +
-                    '      <option>Добавить&nbsp;в&nbsp;заявку</option>\n' +
+                    '      <option value="create">Создать заявку</option>\n' +
+                    '      <option value="append">Добавить&nbsp;в&nbsp;заявку</option>\n' +
                     '    </select>\n' +
-                    '  </div>'
+                    '  </div>',
             }
         ]
     },

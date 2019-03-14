@@ -274,10 +274,10 @@ let RequestsTableColumnModel = [
 let RequestsTableDataModel = {
     recIndx: "id", //primary key
     location: "remote",
-    sorting: "local",
+    sorting: "remote",
     dataType: "JSON",
     method: "POST",
-    sortIndx: "priority",
+    sortIndx: ["priority","requestid"],
     sortDir: "down",
     url: "/toAssembly/requestslist",
     getData: function (response) {
@@ -325,7 +325,7 @@ let RequestsTable = {
             {
                 type: "<span style='margin:5px;'>Фильтр</span>"
             },
-            /*{
+            {
                 type: 'checkbox',
                 listeners: [{
                     'change': function () {
@@ -334,7 +334,7 @@ let RequestsTable = {
                     }
                 }]
             },
-            {type: 'separator'},*/
+            {type: 'separator'},
             {
                 type: 'textbox',
                 attr: 'placeholder="быстрый поиск"',
@@ -382,7 +382,7 @@ let RequestsTable = {
             },
             {type: 'separator'},
             {
-                type: 'button', icon: 'ui-icon-arrowrefresh-1-s', cls: 'receive', label: 'Принять', listener:
+                type: 'button', icon: 'ui-icon-check', cls: 'receive', label: 'Принять', listener:
                     {
                         "click": function (evt, ui) {
                             let grid = $requestsGrid.pqGrid('getInstance').grid;
@@ -404,8 +404,13 @@ let RequestsTable = {
                                     "Принять": function () {
 
 
-                                        if ($frm.find("input[name='amount']").val() >= row['amount'] - row['delivered']) {
-                                            if (!confirm("Компонент будет закрыт!")) {
+                                        if ($frm.find("input[name='amount']").val() == row['amount'] - row['delivered']) {
+                                            if (!confirm("Заявка удовлетворена. Компонент будет закрыт.")) {
+                                                return;
+                                            }
+                                        }else if($frm.find("input[name='amount']").val() > row['amount'] - row['delivered']){
+                                            if (!confirm("Количество принятых больше, чем заказано. Компонент будет" +
+                                                " закрыт. Все равно принять?")) {
                                                 return;
                                             }
                                         }
@@ -449,7 +454,7 @@ let RequestsTable = {
             },
             {type: 'separator'},
             {
-                type: "<span style='margin:5px;'>Все заявки</span>"
+                type: "<span style='margin:5px;' title='Отображать закрытые и отмененные компоненты'>Все заявки</span>"
             },
             {
                 type: 'checkbox',
@@ -468,6 +473,60 @@ let RequestsTable = {
                 listeners: [{
                     "click": function (evt) {
                         $requestsGrid.pqGrid("exportCsv", {url: "/toAssembly/export", sheetName: "Заявки"});
+                    }
+                }]
+            },
+            {type: 'separator'},
+            {
+                type: 'button',
+                label: "Замена",
+                icon: 'ui-icon-transferthick-e-w',
+                listeners: [{
+                    "click": function (evt) {
+                        let grid = $requestsGrid.pqGrid('getInstance').grid;
+                        let rowIndx = getRowIndx();
+                        if(rowIndx === null){
+                            return;
+                        }
+                        var row = $requestsGrid.pqGrid('getRowData', {rowIndx: rowIndx});
+
+                        let $frm = $("form#replace-form");
+                        $frm.find("#replace_request").text(row['requestid'].replace(/^0+/, ''));
+                        $frm.find("#old_component").text(row['partnumber']);
+
+                        $("#popup-dialog-replace").dialog({
+                            title: row['requestid'].replace(/^0+/, '') + ': ' + row['partnumber'], buttons: {
+                                "Заменить": function () {
+                                    $.ajax({
+                                        dataType: "json",
+                                        type: "POST",
+                                        async: true,
+                                        beforeSend: function (jqXHR, settings) {
+                                            grid.showLoading();
+                                        },
+                                        url: "/toAssembly/replace", //for ASP.NET, java
+                                        data: {
+                                            requestid: row['id'],
+                                            partnumber: $frm.find("input#replace_component").val(),
+                                            partnumberid: $frm.find("input#newpartnumberid").val()
+                                        },
+                                        success: function (changes) {
+                                            //debugger;
+                                            grid.history({method: 'reset'});
+                                        },
+                                        complete: function () {
+                                            grid.hideLoading();
+                                            grid.refreshDataAndView();
+                                        }
+                                    });
+
+                                    $(this).dialog("close");
+                                },
+                                "Отмена": function () {
+                                    $(this).dialog("close");
+                                }
+                            }
+                        }).dialog("open");
                     }
                 }]
             }
@@ -522,10 +581,10 @@ RequestsTable.selectChange = function (evt, ui) {
         controlData.prevSelection = null;
     }
     if (controlData.requestSelection.length > 0) {
-        $('#requestbutton').button('option','label','Добавить в заявку');
+        //$('#requestbutton').button('option','label','Добавить в заявку');
         $("button.receive", $requestsGrid).button("option", {disabled: isGuest});
     } else {
-        $('#requestbutton').button('option','label','Создать заявку');
+        //$('#requestbutton').button('option','label','Создать заявку');
         $("button.receive", $requestsGrid).button("option", {disabled: true});
     }
 };

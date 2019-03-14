@@ -34,7 +34,7 @@ class ToAssemblyController extends Controller
                 'users' => array('*'),
             ),
             array('allow', // allow authenticated user to perform 'create' and 'update' actions
-                'actions' => array('create', 'update', 'receive', 'request', 'removecomponent'),
+                'actions' => array('create', 'update', 'receive', 'request', 'replace', 'removecomponent'),
                 'users' => array('@'),
             ),
             array('allow', // allow admin user to perform 'admin' and 'delete' actions
@@ -274,7 +274,8 @@ class ToAssemblyController extends Controller
             $id_parts = explode('.', $requestId);
             $new_id = $id_parts[0];
         } else {
-            print 'ERR';
+            print json_encode(array('success'=>false,'error'=>'Не поддерживается несколько заяввок. Как вам это 
+            удалось?!'));;
             Yii::app()->end();
         }
         foreach ($ids as $id) {
@@ -282,8 +283,33 @@ class ToAssemblyController extends Controller
             $extcomponent->requestid = str_pad($new_id, 6, 0, STR_PAD_LEFT) . '.СБ.' . date('y');
             $extcomponent->save(false);
         }
+        print json_encode(array('success'=>true,'requestid'=>$extcomponent->requestid));
         Yii::app()->end();
     }
+
+	public function actionReplace()
+	{
+		/** @var Extcomponents $model */
+		$model = Extcomponents::model()->findByPk(Yii::app()->request->getPost('requestid', -1));
+		if (is_null($model)) {
+			print json_encode(array('success' => false, 'error' => 'Не найден заменяемый компонент.'));
+			Yii::app()->end();
+		}
+		$newModel = new Extcomponents();
+		$newModel->attributes = $model->attributes;
+		$newModel->id = null;
+		$newModel->partnumber = Yii::app()->request->getPost('partnumber');
+		$newModel->partnumberid = Yii::app()->request->getPost('partnumberid');
+		$model->status = 5;
+		if ($newModel->save() && $model->save()) {
+			print json_encode(array('success' => true, 'requestid' => $newModel->requestid));
+		} else {
+			print json_encode(array('success' => false, 'error' => 'Не получилось сохранить. ' .
+				print_r($newModel->errors, 1).'Attrs:'.print_r($model->attributes,1)));
+			Yii::app()->end();
+		}
+		Yii::app()->end();
+	}
 
     public function actionRemoveComponent()
     {
@@ -336,7 +362,7 @@ class ToAssemblyController extends Controller
             'user.userinfo' => array('together' => true,),
             'component' => array('together' => true,),
         );
-        $criteria2->order = 'priority desc, t.id asc';
+        $criteria2->order = 'priority desc, t.requestid desc';
 
         $this->render('index', array(
             'dataProviderRequests' => $model->findbyCriteria($criteria),
