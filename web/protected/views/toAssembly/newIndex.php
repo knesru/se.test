@@ -160,7 +160,6 @@ $cs->registerCssFile($baseUrl . '/js/themes/office/pqgrid.css');
         });
         $('.splitbutton-select').css('width','2em');
         function requestsAction(action) {
-            alert(action);
             if (typeof controlData.selection !== 'undefined') {
                 let datM = $("#grid_requests").pqGrid("option", "dataModel");
                 let grid = $("#grid_requests").pqGrid();
