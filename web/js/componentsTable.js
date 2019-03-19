@@ -1,4 +1,4 @@
-function filterhandler(evt, ui) {
+function filterHandlerComponents(evt, ui) {
     var $toolbar = $componentsGrid.find('.pq-toolbar-search'),
         $value = $toolbar.find(".filterValue"),
         value = $value.val(),
@@ -8,8 +8,8 @@ function filterhandler(evt, ui) {
 
     if (dataIndx == "") {//search through all fields when no field selected.
         filterObject = [];
-        var CM = $componentsGrid.pqGrid("getColModel");
-        for (var i = 0, len = CM.length; i < len; i++) {
+        let CM = $componentsGrid.pqGrid("getColModel");
+        for (let i = 0, len = CM.length; i < len; i++) {
             dataIndx = CM[i].dataIndx;
             filterObject.push({ dataIndx: dataIndx, condition: condition, value: value });
         }
@@ -21,7 +21,7 @@ function filterhandler(evt, ui) {
         oper: 'replace',
         data: filterObject
     });
-    $requestsGrid.refresh();
+    $requestsGrid.pqGrid('refresh');
 }
 
 
@@ -75,253 +75,37 @@ function saveChangesComponents() {
 }
 
 let ComponentsTableColumnModel = [
+    getIdColumn(),
     {
         title: "Заявка",
         dataIndx: 'requestid',
         dataType: "string",
-        editable: false
-    },
-    {
-        title: "ID",
-        dataIndx: 'id',
-        dataType: "integer",
         editable: false,
-        filter: {
-            type: 'textbox',
-            condition: 'contain',
-            listeners: ['change']
+        sortable: false,
+        render: function (ui) {
+            return "<button type='button' class='create_request_btn ui-button'>Создать</button>";
         }
-    },
-    {
-        title: "Партномер",
-        dataIndx: 'partnumber',
-        dataType: "string",
-        editor: {
-            type: 'textbox',
-            init: function (ui) {
-                console.log('inline');
-                let $inp = ui.$cell.find("input");
-                let url = ui.column.editor.url;
 
-                //initialize the editor
-                $inp.autocomplete({
-                    appendTo: ui.$cell, //for grid in maximized state.
-                    source: url,
-                    selectItem: {on: true}, //custom option
-                    highlightText: {on: true}, //custom option
-                    minLength: 2
-                }).focus(function () {
-                    //open the autocomplete upon focus
-                    $(this).autocomplete("search", "");
-                }).select(function () {
-
-                });
-            },
-            url: 'component/ajaxList'
-        },
-        filter: {
-            type: 'textbox',
-            condition: 'contain',
-            listeners: ['change']
-        }
     },
+    getPartnumberColumn(),
+    getPartnumberIdColumn(),
+    getAmountColumn(),
+    getUserColumn(),
+    getPurposeColumn(),
+    getCreated_atColumn(),
+    getAssembly_toColumn(),
+    getInstall_toColumn(),
+    getDeficiteColumn(),
+    getDescriptionColumn(),
+    getInstall_fromColumn(),
+    getPriorityColumn(),
     {
-        title: "ID компонента",
-        dataIndx: 'partnumberid',
-        dataType: "string",
-        align: "right",
-        filter: {
-            type: 'textbox',
-            condition: 'begin',
-            listeners: ['change']
-        }
-    },
-    {
-        title: "Кол-во",
-        dataIndx: 'amount',
-        dataType: "integer",
-        align: "right",
-        filter: {
-            type: 'textbox',
-            condition: 'between',
-            listeners: ['change']
-        }
-    },
-    {
-        title: "Пользователь",
-        dataIndx: 'user',
-        dataType: "string",
-        filter: {
-            type: 'textbox',
-            condition: 'contain',
-            listeners: ['change']
-        }
-    },
-    {
-        title: "Назначение",
-        dataIndx: 'purpose',
-        dataType: "string",
-        filter: {
-            type: 'textbox',
-            condition: 'contain',
-            listeners: ['change']
-        }
-    },
-    {
-        title: "Добавлено",
-        dataIndx: 'created_at',
-        dataType: "date",
-        editor: {
-            type: 'textbox',
-            init: pqDatePicker
-        },
+        title: "",
+        editable: false,
+        sortable: false,
         render: function (ui) {
-            return renderDateOnly(ui);
+            return "<button type='button' class='delete_component_btn ui-button'>Удалить</button>";
         },
-        filter: {
-            type: 'textbox',
-            condition: 'between',
-            init: pqDatePicker,
-            listeners: ['change']
-        }
-    },
-    /*{
-        title: "Сдано",
-        dataIndx: 'delivered',
-        dataType: "integer",
-        align: "right",
-    },*/
-    {
-        title: "Скомпл. до",
-        dataIndx: 'assembly_to',
-        dataType: "date",
-        editor: {
-            type: 'textbox',
-            init: dateEditor
-        },
-        render: function (ui) {
-            return renderDateOnly(ui);
-        },
-        filter: {
-            type: 'textbox',
-            condition: 'between',
-            init: pqDatePicker,
-            listeners: ['change']
-        }
-    },
-    {
-        title: "Монтаж до",
-        dataIndx: 'install_to',
-        dataType: "date",
-        editor: {
-            type: 'textbox',
-            init: dateEditor
-        },
-        render: function (ui) {
-            return renderDateOnly(ui);
-        },
-        filter: {
-            type: 'textbox',
-            condition: 'between',
-            init: pqDatePicker,
-            listeners: ['change']
-        }
-    },
-    {
-        title: "Дефицит",
-        dataIndx: 'deficite',
-        dataType: "string",
-        filter: {
-            type: 'textbox',
-            condition: 'contain',
-            listeners: ['change']
-        }
-    },
-    {
-        title: "Примечание",
-        dataIndx: 'description',
-        dataType: "string",
-        filter: {
-            type: 'textbox',
-            condition: 'contain',
-            listeners: ['change']
-        }
-    },
-    {
-        title: "Монтаж с",
-        dataIndx: 'install_from',
-        dataType: "date",
-        editor: {
-            type: 'textbox',
-            init: dateEditor
-        },
-        render: function (ui) {
-            return renderDateOnly(ui);
-        },
-        filter: {
-            type: 'textbox',
-            condition: 'between',
-            init: pqDatePicker,
-            listeners: ['change']
-        }
-    },
-    {
-        title: "Приоритет",
-        dataIndx: 'priority',
-        dataType: "integer",
-        filter: {
-            type: 'checkbox',
-            condition: 'contain',
-            listeners: ['change']
-        },
-        render: function (ui) {
-            let rowData = ui.rowData,
-                dataIndx = ui.dataIndx;
-
-            rowData.pq_cellcls = rowData.pq_cellcls || {};
-            if (rowData[dataIndx] > 0){
-                rowData.pq_cellcls[dataIndx] = 'high-priority';
-                return "<span class='ui-icon ui-icon-alert'> </span>&nbsp;высокий";
-            }else {
-                return '';
-            }
-        }
-    },
-    {
-        title: "Статус",
-        dataIndx: 'status',
-        dataType: "integer",
-        editor: {
-            type: 'select',
-            init: function (ui) {
-                ui.$cell.find("select").pqSelect();
-            },
-            valueIndx: "value",
-            labelIndx: "text",
-            mapIndices: {"text": "Статус", "value": "status"},
-            options: [
-                {"value": 0, "text": 'Не активен'},
-                {"value": 1, "text": 'Комплектация'},
-                {"value": 2, "text": 'Скомпонован'},
-                {"value": 3, "text": 'На монтаже'},
-                {"value": 4, "text": 'Закрыт'},
-                {"value": 5, "text": 'Отмена'}
-            ]
-        },
-        render: function (ui) {
-            let rowData = ui.rowData,
-                dataIndx = ui.dataIndx;
-            let options = ui.column.editor.options;
-            return options[rowData[dataIndx]]['text'];
-        },
-        filter: { type: 'select',
-            condition: 'equal',
-            //init: multiSelect,
-            valueIndx: "status",
-            labelIndx: "status",
-            prepend: { '': '--Select--' },
-            listeners: ['change']
-        }
     },
 ];
 
@@ -339,22 +123,8 @@ let ComponentsTableDataModel = {
     }
 };
 let ComponentsTable = {
-    // flexHeight: false,
     scrollModel: {autoFit: true, horizontal: false},
-    pageModel: {
-        curPage: 1,
-        type: "remote",
-        rPP: 10,
-        strRpp: "{0}",
-        strDisplay: "с {0} до {1} из {2}",
-        rPPOptions: function () {
-            let rpp = [5, 10, 20];
-            for (let i=0; i<11; i++){
-                rpp.push(rpp[i]*10);
-            }
-            return rpp;
-        }()
-    },
+    pageModel: getPageModel(),
     stringify: false, //for PHP
     dataModel: ComponentsTableDataModel,
     colModel: ComponentsTableColumnModel,
@@ -363,14 +133,13 @@ let ComponentsTable = {
         mode: 'range',
         fireSelectChange: true
     },
-    filterModel: {on: true, mode: "OR", header: false},
+    filterModel: {on: true, mode: "AND", header: false},
     toolbar: {
         cls: "pq-toolbar-search",
         items: [
+            getClearFilterButton(),
+            getFilterWord(),
             {
-                type: "<span style='margin:5px;'>Фильтр</span>"
-            },
-            /*{
                 type: 'checkbox',
                 listeners: [{
                     'change': function () {
@@ -379,12 +148,12 @@ let ComponentsTable = {
                     }
                 }]
             },
-            {type: 'separator'},*/
+            {type: 'separator'},
             {
                 type: 'textbox',
                 attr: 'placeholder="быстрый поиск"',
                 cls: "filterValue",
-                listeners: [{'keyup': filterhandler}]
+                listeners: [{'keyup': filterHandlerComponents}]
             },
             {type: 'separator'},
             /*{ type: 'button', icon: 'ui-icon-plus', label: 'New Product', listener:
@@ -399,50 +168,31 @@ let ComponentsTable = {
             },
             { type: 'separator' },*/
             {
-                type: 'button', icon: 'ui-icon-disk', label: 'Сохранить', cls: 'changes', listener:
-                    {
-                        "click": function (evt, ui) {
-                            saveChangesComponents();
-                        }
-                    },
-                options: {disabled: true}
-            },
-            {
-                type: 'button', icon: 'ui-icon-cancel', label: 'Сбросить', cls: 'changes', listener:
-                    {
-                        "click": function (evt, ui) {
-                            $componentsGrid.pqGrid("rollback");
-                            $componentsGrid.pqGrid("history", {method: 'resetUndo'});
-                        }
-                    },
-                options: {disabled: true}
-            },
-            {type: 'separator'},
-            {
-                type: 'button', icon: 'ui-icon-arrowreturn-1-s', label: 'Отменить', cls: 'changes', listener:
-                    {
-                        "click": function (evt, ui) {
-                            $componentsGrid.pqGrid("history", {method: 'undo'});
-                        }
-                    },
-                options: {disabled: true}
-            },
-            {
-                type: 'button', icon: 'ui-icon-arrowrefresh-1-s', label: 'Вернуть', listener:
-                    {
-                        "click": function (evt, ui) {
-                            $componentsGrid.pqGrid("history", {method: 'redo'});
-                        }
-                    },
-                options: {disabled: true}
-            },
-            {type: 'separator'},
-            {
                 type: 'button',
                 label: "Экспорт в Excel",
                 icon: 'ui-icon-document',
                 listeners: [{
                     "click": function (evt) {
+                        let date1 = new Date();
+                        userLog('Получаю экспорт таблицы компонентов');
+                        $componentsGrid.pqGrid("showLoading");
+                        let initial_amount_of_iframes = $("body").find('iframe').length;
+                        let stopit = setInterval(function(){
+                            let date2 = new Date();
+                            let diff = date2 - date1;
+                            if (initial_amount_of_iframes != $("body").find('iframe').length){
+                                clearInterval(stopit);
+                                $componentsGrid.pqGrid("hideLoading");
+                                let seconds_passed = Math.round(diff/100)/10;
+                                userLog('Похоже, экспорт компонентов сформирован за '+seconds_passed+'с');
+                            }
+                            if(diff>180000){
+                                clearInterval(stopit);
+                                $componentsGrid.pqGrid("hideLoading");
+                                let seconds_passed = Math.round(diff/100)/10;
+                                userLog('Прошло уже '+seconds_passed+'с, а экспорта компонентов еще нет. Возможно, что-то пошло не так...','error');
+                            }
+                        },300);
                         $componentsGrid.pqGrid("exportCsv", {url: "/toAssembly/export", sheetName: "Компоненты"});
                     }
                 }]
@@ -475,17 +225,74 @@ let ComponentsTable = {
     editor: {
         select: true
     },
+    change: function(event, ui){
+        //debugger;
+        if (ui.source == 'commit' || ui.source == 'rollback') {
+            return;
+        }
+        saveChangesComponents();
+    },
     trackModel: {on: true},
     showTitle: false,
     numberCell: {show: false},
-    columnBorders: true
+    columnBorders: true,
+    refresh: function () {
+        $("#grid_new_components").find("button.create_request_btn").button()
+            .unbind("click")
+            .bind("click", function (evt) {
+                requestsAction('create');
+            });
+
+        $("#grid_new_components").find("button.delete_component_btn").button()
+            .unbind("click")
+            .bind("click", function (evt) {
+                let $tr = $(this).parents('tr');
+                let grid = $componentsGrid.pqGrid('getInstance').grid;
+                let rowIndx = grid.getRowIndx({$tr: $tr}).rowIndx;
+                let row = $componentsGrid.pqGrid('getRowData', {rowIndx: rowIndx});
+                userLog('Удаляю '+(row['priority']?'приоритетный ':'')+'компонент '+row['partnumber']+', строка '+row['id']+'...');
+                if(row['priority']) {
+                    if (!confirm('Внимание, удаляется компонент с высоким приоритетом. Продолжить?')) {
+                        userLog('Испугался и все отменил для компонента ' + row['partnumber'] + ', строки ' + row['id']);
+                        return;
+                    }
+                    userLog('Подтвердил удаление приоритетного компонента ' + row['partnumber'] + ', строки ' + row['id']);
+                }
+                $.ajax({
+                    dataType: "json",
+                    type: "POST",
+                    async: true,
+                    beforeSend: function (jqXHR, settings) {
+                        grid.showLoading();
+                    },
+                    url: "/toAssembly/removecomponent", //for ASP.NET, java
+                    data: {id: [row['id']]},
+                    success: function (result) {
+                        if(result.success){
+                            userLog('Успешно удален компонент '+result.pn);
+                            grid.refreshDataAndView();
+                            grid.history({method: 'reset'});
+                        }else{
+                            userLog(result.error,'error');
+                        }
+                    },
+                    error: function(err){
+                        userLog(err.responseText,'error');
+                    },
+                    complete: function () {
+                        grid.hideLoading();
+                    }
+                });
+
+            });
+    }
 };
 ComponentsTable.selectChange = function (evt, ui) {
     let rows = ui.rows;
     controlData.selection = [];
     if (rows && rows.length) {
         for (let i = 0; i < rows.length; i++) {
-            console.log(rows[i].rowData);
+            // console.log(rows[i].rowData);
             controlData.selection.push(rows[i].rowData.id);
         }
     }

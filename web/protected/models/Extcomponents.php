@@ -198,8 +198,49 @@ class Extcomponents extends CActiveRecord
         if(!empty($params['filter'])){
             $filter = $params['filter'];
             $mode = $filter['mode'];
+            $tables = array(
+                'partnumber'=>'component',
+                'user'=>'userinfo',
+            );
+            $search_columns = array(
+                'user'=>'fullname',
+            );
+
             foreach ($filter['data'] as $datum){
-                $criteria->compare('component.'.$datum['dataIndx'],$datum['value'],$datum['condition']=='contain',$mode);
+                $table = 't';
+                $search_column = $datum['dataIndx'];
+                if(isset($tables[$datum['dataIndx']])) {
+                    $table = $tables[$datum['dataIndx']];
+                }
+                if(isset($search_columns[$datum['dataIndx']])) {
+                    $search_column = $search_columns[$datum['dataIndx']];
+                }
+
+                if($datum['dataType']=='date'){
+                    $search_column.='::date';
+                    if(!empty($datum['value'])) {
+                        $datum['value'] = date('Y-m-d', date_create_from_format('m/d/Y', $datum['value'])->getTimestamp());
+                    }
+                    if(!empty($datum['value2'])) {
+                        $datum['value2'] = date('Y-m-d', date_create_from_format('m/d/Y', $datum['value2'])->getTimestamp());
+                    }
+                }
+
+                if($datum['dataType']=='bool') {
+                    $datum['value'] = ($datum['value']=='true'?1:0);
+                }
+
+                if($datum['condition']=='contain'){
+                    $criteria->addCondition($table.'.'.$search_column.' ilike \'%'.$datum['value'].'%\'',$mode);
+                }elseif ($datum['condition']=='between'){
+                    $criteria->addBetweenCondition($table.'.'.$search_column,$datum['value'],$datum['value2'],$mode);
+                }elseif ($datum['condition']=='equal'){
+                    $criteria->compare($table.'.'.$search_column,$datum['value'],false,$mode);
+                }elseif ($datum['condition']=='gte'){
+                    //NOT correct, but Oleg asked for that
+                    $criteria->compare($table.'.'.$search_column,$datum['value'],false,$mode);
+                }
+
             }
         }
         $criteria->addCondition('requestid is null');
@@ -210,13 +251,68 @@ class Extcomponents extends CActiveRecord
             'user.userinfo' => array('together' => true, ),
             'component' => array('together' => true, ),
         );
-        $criteria->order = 'priority desc, t.id asc';
         return $this->findbyCriteria($criteria,$params['page_size']);
     }
 
-    public function getRequests($show_closed=false)
+    public function getRequests($params=false)
     {
+        $default_params = array(
+            'show_closed' => false,
+            'page_size' => 10000,
+            'page' => 0,
+            'filter'=>array()
+        );
+        $params = array_merge($default_params,$params);
+        $show_closed = $params['show_closed'];
         $criteria = new CDbCriteria();
+        if(!empty($params['filter'])){
+            $filter = $params['filter'];
+            $mode = $filter['mode'];
+            $tables = array(
+                'partnumber'=>'component',
+                'user'=>'userinfo',
+            );
+            $search_columns = array(
+                'user'=>'fullname',
+            );
+
+            foreach ($filter['data'] as $datum){
+                $table = 't';
+                $search_column = $datum['dataIndx'];
+                if(isset($tables[$datum['dataIndx']])) {
+                    $table = $tables[$datum['dataIndx']];
+                }
+                if(isset($search_columns[$datum['dataIndx']])) {
+                    $search_column = $search_columns[$datum['dataIndx']];
+                }
+
+                if($datum['dataType']=='date'){
+                    $search_column.='::date';
+                    if(!empty($datum['value'])) {
+                        $datum['value'] = date('Y-m-d', date_create_from_format('m/d/Y', $datum['value'])->getTimestamp());
+                    }
+                    if(!empty($datum['value2'])) {
+                        $datum['value2'] = date('Y-m-d', date_create_from_format('m/d/Y', $datum['value2'])->getTimestamp());
+                    }
+                }
+
+                if($datum['dataType']=='bool') {
+                    $datum['value'] = ($datum['value']=='true'?1:0);
+                }
+
+                if($datum['condition']=='contain'){
+                    $criteria->addCondition($table.'.'.$search_column.' ilike \'%'.$datum['value'].'%\'',$mode);
+                }elseif ($datum['condition']=='between'){
+                    $criteria->addBetweenCondition($table.'.'.$search_column,$datum['value'],$datum['value2'],$mode);
+                }elseif ($datum['condition']=='equal'){
+                    $criteria->compare($table.'.'.$search_column,$datum['value'],false,$mode);
+                }elseif ($datum['condition']=='gte'){
+                    //NOT correct, but Oleg asked for that
+                    $criteria->compare($table.'.'.$search_column,$datum['value'],false,$mode);
+                }
+
+            }
+        }
         $criteria->addCondition('requestid is not null');
         if(!$show_closed) {
             $criteria->addCondition('status != 4 and status != 5');

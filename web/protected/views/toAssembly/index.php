@@ -98,7 +98,7 @@ $cs->registerCssFile($baseUrl . '/js/themes/office/pqgrid.css');
                 if (ui.source == 'commit' || ui.source == 'rollback') {
                     return;
                 }
-                console.log(ui);
+                //console.log(ui);
                 var $grid = $(this),
                     grid = $grid.pqGrid('getInstance').grid;
                 var rowList = ui.rowList,
@@ -192,7 +192,7 @@ $cs->registerCssFile($baseUrl . '/js/themes/office/pqgrid.css');
                             if (typeof controlData.selection !== 'undefined') {
                                 let datM = $("#grid_array_assemblies").pqGrid("option", "dataModel");
                                 let grid = $("#grid_array_assemblies").pqGrid();
-                                console.log('datM');
+                                //console.log('datM');
 
                                 $.ajax({
                                     url: '<?php print Yii::app()->controller->createUrl('toassembly/request') ?>',
@@ -368,7 +368,7 @@ $cs->registerCssFile($baseUrl . '/js/themes/office/pqgrid.css');
                 editor: {
                     type: 'textbox',
                     init: function (ui) {
-                        console.log('inline');
+                        //console.log('inline');
                         var $inp = ui.$cell.find("input");
                         var url = ui.column.editor.url;
 
@@ -499,7 +499,7 @@ $cs->registerCssFile($baseUrl . '/js/themes/office/pqgrid.css');
             controlData.selection = [];
             if (rows && rows.length) {
                 for (var i = 0; i < rows.length; i++) {
-                    console.log(rows[i].rowData);
+                    //console.log(rows[i].rowData);
                     controlData.selection.push(rows[i].rowData.ID);
                 }
             }
@@ -512,7 +512,7 @@ $cs->registerCssFile($baseUrl . '/js/themes/office/pqgrid.css');
             controlData.requestSelection = [];
             if (rows && rows.length) {
                 for (var i = 0; i < rows.length; i++) {
-                    console.log(rows[i].rowData);
+                    //console.log(rows[i].rowData);
                     controlData.requestSelection.push(rows[i].rowData.ID);
                 }
             }

@@ -37,7 +37,7 @@ function tableToArray(sourceSelector, destinationSelector, newObj) {
 
     newObj.dataModel = {data: composed_data};
 
-    console.log(newObj.colModel);
+    //console.log(newObj.colModel);
     newObj = $(destinationSelector).pqGrid(newObj);
     tbl.css("display", "none");
     return newObj;
@@ -62,13 +62,15 @@ function autoCompleteEditor(ui) {
 
 function pqDatePicker(ui) {
     let $this = $(this);
+    let d = new Date();
+    let rng = d.getFullYear() - 2015;
     $this
     //.css({ zIndex: 3, position: "relative" })
         .datepicker({
-            yearRange: "-25:+0", //25 years prior to present.
+            yearRange: "-"+rng+":+10", //25 years prior to present.
             changeYear: true,
             changeMonth: true,
-            showButtonPanel: true,
+            // showButtonPanel: true,
             onClose: function (evt, ui) {
                 $(this).focus();
             }
@@ -156,5 +158,58 @@ function renderDateOnly(ui) {
     }
     else {
         return "";
+    }
+}
+
+function clearFilter() {
+    userLog('Очистил фильтр','log');
+    $(this).parents('.pq-grid').find('.pq-grid-header').find('input, select, textarea').each(function () {
+        // Don't bother checking the field type, just check if property exists
+        // and set it
+        if (typeof(this.defaultChecked) !== "undefined")
+            this.checked = this.defaultChecked;
+        if (typeof(this.defaultValue) !== "undefined")
+            $(this).val($(this).attr('defaultValue'));
+
+        // Try to find an option with selected attribute (not property!)
+        var defaultOption = $(this).find('option[selected]');
+        // and fallback to the first option
+        if (defaultOption.length === 0)
+            defaultOption = $(this).find('option:first');
+        // if no option was found, then it was not a select
+        if (defaultOption.length > 0)
+            this.value = defaultOption.attr('value');
+        $(this).change();
+    });
+    $(this).parents('.pq-grid').find('.filterValue').each(function(){
+        let changed = $(this).val()!=$(this).attr('defaultValue');
+        $(this).val($(this).attr('defaultValue'));
+        if(changed){
+            $(this).keyup();
+        }
+    });
+}
+
+function userLog(action, severity, element, result) {
+    if(typeof result === 'undefined'){
+        result = '';
+    }
+    if(typeof severity === 'undefined'){
+        severity = 'info';
+    }
+    if(typeof element === 'undefined'){
+        element = '';
+    }
+    if(typeof action === 'undefined'){
+        return;
+    }
+    if(severity==='info') {
+        console.info(action, element, result);
+    }
+    if(severity==='log') {
+        console.log(action, element, result);
+    }
+    if(severity==='error') {
+        console.error(action, element, result);
     }
 }

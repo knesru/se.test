@@ -152,6 +152,7 @@ class ToAssemblyController extends Controller
         // Uncomment the following line if AJAX validation is needed
         // $this->performAjaxValidation($model);
         if (isset($data)) {
+            $data['updateList'][0]['priority'] = ($data['updateList'][0]['priority']=='true'?1:0);
             $model->attributes = $data['updateList'][0];
 
             if (isset($new_status)) {
@@ -313,15 +314,31 @@ class ToAssemblyController extends Controller
 
     public function actionRemoveComponent()
     {
-        $requestids = $_POST['requestid'];
-        foreach ($requestids as $requestid) {
+        $ids = $_POST['id'];
+        foreach ($ids as $id) {
+            $model = Extcomponents::model()->findByPk($id);
+            $pn = $model->partnumber;
+            $pnid = $model->partnumberid;
+            if(!empty($model->requestid)) {
 
-//            print_r($model->errors);
-//            print_r($model->attributes);
-            $model = Extcomponents::model()->findByPk($requestid);
-            $model->requestid = null;
-            $model->save();
-//            print_r($model->attributes);
+                $requestid = $model->requestid;
+                $model->requestid = null;
+                if($model->save()){
+                    print json_encode(array('success' => true, 'requestid' => $requestid, 'pn'=>$pn, 'pnid'=>$pnid));
+                }else{
+                    print json_encode(array('success' => false, 'error' => 'Не получилось сохранить. ' .print_r($model->errors, 1).'Attrs:'.print_r($model->attributes,1)));
+                }
+            }else{
+                try {
+                    if($model->delete()){
+                        print json_encode(array('success' => true, 'pn'=>$pn, 'pnid'=>$pnid));
+                    }else{
+                        print json_encode(array('success' => false, 'error' => 'Не получилось удалить. '.__METHOD__.' '. __LINE__));
+                    };
+                }catch (CDbException $e){
+                    print json_encode(array('success' => false, 'error' => 'Не получилось удалить. ' .$e->getMessage().'; '.$e->errorInfo));
+                }
+            }
         }
 
         Yii::app()->end();
@@ -377,14 +394,39 @@ class ToAssemblyController extends Controller
 
     public function actionRequestslist()
     {
+        $_GET['pq_curpage']=Yii::app()->request->getParam('pq_curpage');
         $model = Extcomponents::model();
         $result = array('data' => array());
         $showall = Yii::app()->request->getPost('showall', false);
         $showall = ($showall == 'true' ? true : false);
+        $dp = $model->getRequests(
+            array(
+                'page_size'=>Yii::app()->request->getParam('pq_rpp',10),
+                'filter'=>Yii::app()->request->getParam('pq_filter',array()),
+                'show_closed'=>$showall
+            )
+        );
+        $sortConfig = array(
+            'class' => 'CSort',
+            'multiSort' => true,
+            'sortVar'=>'sort',
+            'defaultOrder' => 'priority DESC, requestid asc'
+        );
+        $sort_attrs = array();
+        foreach (Yii::app()->request->getParam('pq_sort') as $sort_item){
+            $sort_attrs[] = $sort_item['dataIndx'].($sort_item['dir']=='down'?'.desc':'');
+        }
+        $_GET['sort'] = implode('-',$sort_attrs);
+        Yii::log(print_r($_GET,1),CLogger::LEVEL_INFO, 'system.db.manual');
+        Yii::log(print_r($this->getDirections(),1),CLogger::LEVEL_INFO, 'system.db.manual');
+
+        $dp->setSort($sortConfig);
         /** @var Extcomponents $request */
-        foreach ($model->getRequests($showall)->getData() as $request) {
+        foreach ($dp->getData() as $request) {
             $result['data'][] = $request->attributes;
         }
+        $result['totalRecords'] = $dp->totalItemCount;
+        $result['curPage']=Yii::app()->request->getParam('pq_curpage');
         print json_encode($result);
     }
 
@@ -402,11 +444,14 @@ class ToAssemblyController extends Controller
         );
         $sort_attrs = array();
         foreach (Yii::app()->request->getParam('pq_sort') as $sort_item){
-            $sort_attrs[] = $sort_item['dataIndx'].($sort_item['dir']=='down'?' DESC':'');
+            $sort_attrs[] = $sort_item['dataIndx'].($sort_item['dir']=='down'?'.desc':'');
         }
+        $_GET['sort'] = implode('-',$sort_attrs);
         $dp->setSort(array(
             'class' => 'CSort',
-            'attributes' => $sort_attrs,
+            'multiSort' => true,
+            'sortVar'=>'sort',
+            'defaultOrder' => 'priority DESC, partnumber asc'
         ));
 
 //        print(json_encode($dp->getSort()));
@@ -711,6 +756,27 @@ class ToAssemblyController extends Controller
         print '<script type="application/javascript">
 location.reload(); 
 </script>';
+    }
+
+    public function getDirections()
+    {
+        $sortVar = 'sort';
+        $_directions = array();
+        if (isset($_GET[$sortVar]) && is_string($_GET[$sortVar])) {
+            $attributes = explode('-', $_GET[$sortVar]);
+            foreach ($attributes as $attribute) {
+                if (($pos = strrpos($attribute, '.')) !== false) {
+                    $descending = substr($attribute, $pos + 1) === 'desc';
+                    if ($descending)
+                        $attribute = substr($attribute, 0, $pos);
+                } else
+                    $descending = false;
+
+                $_directions[$attribute] = $descending;
+            }
+        }
+
+        return $_directions;
     }
 
 }

@@ -1,4 +1,4 @@
-function filterHandlerRequests(evt, ui) {
+function filterHandlerHistory(evt, ui) {
     var $toolbar = $requestsGrid.find('.pq-toolbar-search'),
         $value = $toolbar.find(".filterValue"),
         value = $value.val(),
@@ -8,8 +8,8 @@ function filterHandlerRequests(evt, ui) {
 
     if (dataIndx == "") {//search through all fields when no field selected.
         filterObject = [];
-        let CM = $requestsGrid.pqGrid("getColModel");
-        for (let i = 0, len = CM.length; i < len; i++) {
+        var CM = $requestsGrid.pqGrid("getColModel");
+        for (var i = 0, len = CM.length; i < len; i++) {
             dataIndx = CM[i].dataIndx;
             filterObject.push({ dataIndx: dataIndx, condition: condition, value: value });
         }
@@ -21,13 +21,12 @@ function filterHandlerRequests(evt, ui) {
         oper: 'replace',
         data: filterObject
     });
-    $requestsGrid.pqGrid('refresh');
+    $requestsGrid.refresh();
 }
 
 function saveChangesRequests() {
     let grid = $requestsGrid.pqGrid('getInstance').grid;
 
-    userLog('Правка строки в заявках','log');
     //debugger;
     //attempt to save editing cell.
     if (grid.saveEditCell() === false) {
@@ -47,34 +46,6 @@ function saveChangesRequests() {
             }
         }
         let changes = grid.getChanges({format: "byVal"});
-        let oldData = grid.getChanges({format: "raw"}).updateList[0].oldRow;
-        let newData = grid.getChanges({format: "raw"}).updateList[0]['rowData'];
-        for (let x in oldData){
-            if(oldData.hasOwnProperty(x)){
-                if(typeof newData[x] !== 'undefined'){
-                    let identifier = '';
-                    identifier = newData['id'];
-                    if(typeof grid.getColumn({dataIndx: x}) !== 'undefined') {
-                        let oldval = oldData[x];
-                        let newval = newData[x];
-                        if(x==='status'){
-                            let statuses = getStatusesArray();
-                            for(let i=0;i<statuses.length;i++){
-                                if(statuses[i].value===oldval){
-                                    oldval = statuses[i].text;
-                                }
-                            }
-                            for(let i=0;i<statuses.length;i++){
-                                if(statuses[i].value===newval){
-                                    newval = statuses[i].text;
-                                }
-                            }
-                        }
-                        userLog('Поменял в строке ' + identifier + ' поле "' + grid.getColumn({dataIndx: x}).title + '": ' + oldval + ' -> ' + newval, 'log');
-                    }
-                }
-            }
-        }
 
         //post changes to server
         $.ajax({
@@ -102,48 +73,44 @@ function saveChangesRequests() {
 }
 
 let RequestsTableColumnModel = [
-    getIdColumn(),
     {
-        title: "Заявка",
-        dataIndx: 'requestid',
+        title: "Пользователь",
+        dataIndx: 'user',
         dataType: "string",
-        editable: false,
-        render: function (ui) {
-            let rowData = ui.rowData,
-                dataIndx = ui.dataIndx;
-            return rowData[dataIndx].replace(/^0+/, '');
-        },
-        sortType: function (rowData1, rowData2, dataIndx) {
-            let val1 = rowData1[dataIndx],
-                val2 = rowData2[dataIndx],
-                data1 = $.trim(val1).split('.'),
-                data2 = $.trim(val2).split('.');
-
-            let c1 = parseInt(data1[0]),
-                c2 = parseInt(data2[0]),
-                y1 = parseInt(data1[2]),
-                y2 = parseInt(data2[2]);
-
-            if (y1 > y2 || (y1 === y2 && c1 > c2)) {
-                return -1;
-            }
-            else if (y1 < y2 || (y1 === y2 && c1 < c2)) {
-                return 1;
-            }
-            return 0;
-        },
         filter: {
             type: 'textbox',
             condition: 'contain',
             listeners: ['change']
         }
     },
-    getPartnumberColumn(),
-    getPartnumberIdColumn(),
-    getAmountColumn(),
-    getUserColumn(),
-    getPurposeColumn(),
-    getCreated_atColumn(),
+    {
+        title: "Назначение",
+        dataIndx: 'purpose',
+        dataType: "string",
+        filter: {
+            type: 'textbox',
+            condition: 'contain',
+            listeners: ['change']
+        }
+    },
+    {
+        title: "Добавлено",
+        dataIndx: 'created_at',
+        dataType: "date",
+        render: function (ui) {
+            return renderDateOnly(ui);
+        },
+        editor: {
+            type: 'textbox',
+            init: dateEditor
+        },
+        filter: {
+            type: 'textbox',
+            condition: 'between',
+            init: pqDatePicker,
+            listeners: ['change']
+        }
+    },
     {
         title: "Сдано",
         dataIndx: 'delivered',
@@ -154,39 +121,47 @@ let RequestsTableColumnModel = [
             condition: 'between',
             listeners: ['change']
         }
-    },
-    getAssembly_toColumn(),
-    getInstall_toColumn(),
-    getDeficiteColumn(),
-    getDescriptionColumn(),
-    getInstall_fromColumn(),
-    getPriorityColumn(),
-    getStatusColumn(),
+    }
 ];
 let RequestsTableDataModel = {
     recIndx: "id", //primary key
-    location: "remote",
-    sorting: "remote",
+    // location: "remote",
+    // sorting: "remote",
     dataType: "JSON",
-    method: "POST",
-    sortIndx: "priority",
-    sortDir: "down",
-    url: "/toAssembly/requestslist",
-    getData: function (response) {
-        return {curPage: response.curPage, totalRecords: response.totalRecords,data: response.data};
-    },
-    beforeSend: function (jqXHR, settings) {
-        // console.log(jqXHR);
-        // console.log(settings);
-        if (settings.data.length > 0) {
-            settings.data += '&';
-        }
-        settings.data += 'showall=' + !!$('#showAll').is(":checked");
-    }
+    // method: "POST",
+    // sortIndx: ["priority","requestid"],
+    // sortDir: ["down","up"],
+    // url: "/toAssembly/requestslist",
+    // getData: function (response) {
+    //     return {data: response.data};
+    // },
+    // beforeSend: function (jqXHR, settings) {
+    //     console.log(jqXHR);
+    //     console.log(settings);
+    //     if (settings.data.length > 0) {
+    //         settings.data += '&';
+    //     }
+    //     settings.data += 'showall=' + !!$('#showAll').is(":checked");
+    // }
 };
 let RequestsTable = {
+    // flexHeight: true,
+    //height: '50%',
     scrollModel: {autoFit: true, horizontal: false},
-    pageModel: getPageModel(),
+    pageModel: {
+        curPage: 1,
+        type: "local",
+        rPP: 10,
+        strRpp: "{0}",
+        strDisplay: "с {0} до {1} из {2}",
+        rPPOptions: function () {
+            let rpp = [5, 10, 20];
+            for (let i=0; i<11; i++){
+                rpp.push(rpp[i]*10);
+            }
+            return rpp;
+        }()
+    },
     stringify: false, //for PHP
     dataModel: RequestsTableDataModel,
     colModel: RequestsTableColumnModel,
@@ -199,8 +174,9 @@ let RequestsTable = {
     toolbar: {
         cls: "pq-toolbar-search",
         items: [
-            getClearFilterButton(),
-            getFilterWord(),
+            {
+                type: "<span style='margin:5px;'>Фильтр</span>"
+            },
             {
                 type: 'checkbox',
                 listeners: [{
@@ -215,7 +191,46 @@ let RequestsTable = {
                 type: 'textbox',
                 attr: 'placeholder="быстрый поиск"',
                 cls: "filterValue",
-                listeners: [{'keyup': filterHandlerRequests}]
+                listeners: [{'keyup': filterHandlerHistory}]
+            },
+            {type: 'separator'},
+            {
+                type: 'button', icon: 'ui-icon-disk', label: 'Сохранить', cls: 'changes', listener:
+                    {
+                        "click": function (evt, ui) {
+                            saveChangesRequests();
+                        }
+                    },
+                options: {disabled: true, hidden: true}
+            },
+            {
+                type: 'button', icon: 'ui-icon-cancel', label: 'Сбросить', cls: 'changes', listener:
+                    {
+                        "click": function (evt, ui) {
+                            $requestsGrid.pqGrid("rollback");
+                            $requestsGrid.pqGrid("history", {method: 'resetUndo'});
+                        }
+                    },
+                options: {disabled: true}
+            },
+            {type: 'separator'},
+            {
+                type: 'button', icon: 'ui-icon-arrowreturn-1-s', label: 'Отменить', cls: 'changes', listener:
+                    {
+                        "click": function (evt, ui) {
+                            $requestsGrid.pqGrid("history", {method: 'undo'});
+                        }
+                    },
+                options: {disabled: true}
+            },
+            {
+                type: 'button', icon: 'ui-icon-arrowrefresh-1-s', label: 'Вернуть', listener:
+                    {
+                        "click": function (evt, ui) {
+                            $requestsGrid.pqGrid("history", {method: 'redo'});
+                        }
+                    },
+                options: {disabled: true}
             },
             {type: 'separator'},
             {
@@ -309,24 +324,12 @@ let RequestsTable = {
                 icon: 'ui-icon-document',
                 listeners: [{
                     "click": function (evt) {
-                        let date1 = new Date();
-                        userLog('Получаю экспорт таблицы заявок');
                         $requestsGrid.pqGrid("showLoading");
                         let initial_amount_of_iframes = $("body").find('iframe').length;
                         let stopit = setInterval(function(){
-                            let date2 = new Date();
-                            let diff = date2 - date1;
                             if (initial_amount_of_iframes != $("body").find('iframe').length){
                                 clearInterval(stopit);
                                 $requestsGrid.pqGrid("hideLoading");
-                                let seconds_passed = Math.round(diff/100)/10;
-                                userLog('Похоже, экспорт заявок сформирован за '+seconds_passed+'с');
-                            }
-                            if(diff>180000){
-                                clearInterval(stopit);
-                                $requestsGrid.pqGrid("hideLoading");
-                                let seconds_passed = Math.round(diff*100)/100;
-                                userLog('Прошло уже '+seconds_passed+'с, а экспорта заявок нет. Что-то пошло не так...','error');
                             }
                         },300);
                         $requestsGrid.pqGrid("exportCsv", {url: "/toAssembly/export", sheetName: "Заявки"});
@@ -404,13 +407,6 @@ let RequestsTable = {
     editor: {
         select: true
     },
-    change: function(event, ui){
-        //debugger;
-        if (ui.source == 'commit' || ui.source == 'rollback') {
-            return;
-        }
-        saveChangesRequests();
-    },
     trackModel: {on: true},
     showTitle: false,
     numberCell: {show: false},
@@ -423,7 +419,7 @@ function getRowIndx() {
         return arr[0].rowIndx;
     }
     else {
-        showMessage("Выберите заявку");
+        alert("Select a row.");
         return null;
     }
 }
@@ -436,7 +432,7 @@ RequestsTable.selectChange = function (evt, ui) {
     controlData.requestSelection = [];
     if (rows && rows.length) {
         for (let i = 0; i < rows.length; i++) {
-            // console.log(rows[i].rowData);
+            console.log(rows[i].rowData);
             controlData.requestSelection.push(rows[i].rowData.id);
         }
     }

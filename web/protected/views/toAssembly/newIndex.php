@@ -21,6 +21,16 @@ $cs = Yii::app()->getClientScript();
     let $componentsGrid;
     isAdmin = <?php print ((Yii::app()->user->name=='admin')?'true':'false'); ?>;
     isGuest = <?php print ((Yii::app()->user->isGuest)?'true':'false'); ?>;
+    function getStatusesArray() {
+        return [
+            {"value": 0, "text": 'Не активен'},
+            {"value": 1, "text": 'Комплектация'},
+            {"value": 2, "text": 'Скомпонован'},
+            {"value": 3, "text": 'На монтаже'},
+            {"value": 4, "text": 'Закрыт'},
+            {"value": 5, "text": 'Отмена'}
+        ];
+    }
 </script>
 <?php
 //$min = '.min';
@@ -30,12 +40,13 @@ $cs->registerScriptFile($baseUrl . '/js/jquery-ui.min.js');
 $cs->registerScriptFile($baseUrl . '/js/pq/pqgrid'.$min.'.js');
 $cs->registerScriptFile($baseUrl . '/js/pq/pqselect.min.js');
 $cs->registerScriptFile($baseUrl . '/js/common.js');
+$cs->registerScriptFile($baseUrl . '/js/commonColumns.js',CClientScript::POS_END);
 $cs->registerScriptFile($baseUrl . '/js/requestsTable.js',CClientScript::POS_END);
 $cs->registerScriptFile($baseUrl . '/js/componentsTable.js',CClientScript::POS_END);
 $cs->registerCssFile($baseUrl . '/js/pq/pqselect.bootstrap.min.css');
 $cs->registerCssFile($baseUrl . '/js/pq/pqgrid'.$min.'.css');
-$cs->registerCssFile($baseUrl . '/js/pq/pqselect'.$min.'.css');
-$cs->registerCssFile($baseUrl . '/js/themes/office/pqgrid.css');
+$cs->registerCssFile($baseUrl . '/js/pq/pqselect.min.css');
+$cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
 ?>
 <script type="application/javascript">
 
@@ -146,57 +157,20 @@ $cs->registerCssFile($baseUrl . '/js/themes/office/pqgrid.css');
             },
             change: function(){
                 $( ".output" ).append( "<li>" + this.value + "</li>" );
-                $(this).parent().find('button').text($(this).find(':selected').text());
-                //let action = $(this).val();
-                //requestsAction(action);
+                // $(this).parent().find('button').text($(this).find(':selected').text());
+                let action = $(this).val();
+                requestsAction(action);
             }
         })/*.css({
             'border-radius':'0px 4px 4px 0px',
             'margin-left':'-3px'
         })*/;
         $('.controlgroup button').click(function () {
-            let action = $(this).parent().find('select').val();
+            let action = 'create';
             requestsAction(action);
         });
         $('.splitbutton-select').css('width','2em');
-        function requestsAction(action) {
-            if (typeof controlData.selection !== 'undefined') {
-                let datM = $("#grid_requests").pqGrid("option", "dataModel");
-                let grid = $("#grid_requests").pqGrid();
-                let data = {};
-                data.ids = controlData.selection;
-                if(action==='append'){
-                    if(controlData.requestSelection.length==0){
-                        alert('Выберие заявку для добавления');
-                        return;
-                    }
-                    data.requestid = controlData.requestSelection;
-                    let rowIndx = getRowIndx();
-                    var row = $requestsGrid.pqGrid('getRowData', {rowIndx: rowIndx});
-                    if(!confirm('Добавить компоненты к заявке '+row['requestid'].replace(/^0+/, '')+'?')){
-                        return;
-                    }
-                }
-                $.ajax({
-                    url: '/toassembly/request',
-                    data: data,
-                    dataType: "json",
-                    type: "POST",
-                    async: true,
-                    beforeSend: function (jqXHR, settings) {
-                        $(".saving", grid).show();
-                    },
-                    success: function () {
-                        //commit the changes.
-                        $("#grid_requests").pqGrid('refreshDataAndView');
-                        $("#grid_new_components").pqGrid('refreshDataAndView');
-                    },
-                    complete: function () {
-                        $(".saving", grid).hide();
-                    }
-                });
-            }
-        }
+
 
         $(function(){
             $inp = $('#replace_component');
@@ -225,14 +199,101 @@ $cs->registerCssFile($baseUrl . '/js/themes/office/pqgrid.css');
             });
         });
         $( document ).tooltip();
-
     });
+    function showMessage(message, type) {
+        if(typeof type === 'undefined'){
+            type = 'info';
+        }
+        showDialogMessage({title: type, message: message});
+    }
+    function showWarning(message) {
+        showMessage(message,'warning');
+    }
+    function showError(message) {
+        showMessage(message,'error');
+    }
+    function showDialogMessage(params) {
+        defaultParams = {
+            header: 'info',
+            type: 'info',
+            message: 'info',
+            buttons: {
+                ok: function () {
+                    $(this).dialog("close");
+                }
+            }
+        };
+        params = $.extend(defaultParams,params);
+        $("#popup-dialog-message").html(params.message).removeClass('ui-state-error').removeClass('ui-state-highlight');
+        if(params.type==='warning'){
+            $("#popup-dialog-message").addClass('ui-state-highlight');
+        }
+        if(params.type==='error'){
+            $("#popup-dialog-message").addClass('ui-state-error');
+        }
+        $("#popup-dialog-message").dialog({
+            title: params.title,
+            buttons: params.buttons,
+            // dialogClass: "ui-state-highlight",
+            // classes: {
+            //     "ui-dialog": "ui-state-highlight",
+            //     "ui-dialog-title": "ui-state-highlight"
+            // }
+        }).dialog("open");
+    }
+
+    function requestsAction(action) {
+        if (typeof controlData.selection !== 'undefined') {
+            if(controlData.selection.length==0){
+                showWarning('Не выбран компонент для создания заявки.');
+                return;
+            }
+            // console.log(controlData.selection);
+            let datM = $("#grid_requests").pqGrid("option", "dataModel");
+            let grid = $("#grid_requests").pqGrid();
+            let data = {};
+            data.ids = controlData.selection;
+            if(action==='append'){
+                if(controlData.requestSelection.length==0){
+                    showWarning('Выберие заявку для добавления');
+                    return;
+                }
+
+                //userLog('Добавляю компонент '+row['partnumber']+' к заявке '+row['requestid']);
+                data.requestid = controlData.requestSelection;
+                let rowIndx = getRowIndx();
+                var row = $requestsGrid.pqGrid('getRowData', {rowIndx: rowIndx});
+                if(!confirm('Добавить компоненты к заявке '+row['requestid'].replace(/^0+/, '')+'?')){
+                    return;
+                }
+            }
+            $.ajax({
+                url: '/toassembly/request',
+                data: data,
+                dataType: "json",
+                type: "POST",
+                async: true,
+                beforeSend: function (jqXHR, settings) {
+                    $(".saving", grid).show();
+                },
+                success: function () {
+                    //commit the changes.
+                    $("#grid_requests").pqGrid('refreshDataAndView');
+                    $("#grid_new_components").pqGrid('refreshDataAndView');
+                },
+                complete: function () {
+                    $(".saving", grid).hide();
+                }
+            });
+        }
+    }
 </script>
 <?php
 
 ?>
 <div id="grid_requests"></div>
 <div id="grid_new_components" style="height: 300px"></div>
+<div id="grid_history"></div>
 <div id="popup-dialog-receive" style="display:none;">
     <form id="receive-form">
         <table align="center">
@@ -287,3 +348,4 @@ $cs->registerCssFile($baseUrl . '/js/themes/office/pqgrid.css');
         </table>
     </form>
 </div>
+<div id="popup-dialog-message"></div>
