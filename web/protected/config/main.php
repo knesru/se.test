@@ -41,7 +41,7 @@ return array(
 			'tablePrefix' => 'tbl_',
 		),
 		'db'=>array(
-			'connectionString' => 'pgsql:host=se.test;port=5432;dbname=stms',
+			'connectionString' => 'pgsql:host=se.test;port=5432;dbname=postgres',
 			'emulatePrepare' => true,
 			'username' => 'postgres',
 			'password' => 'postgres',

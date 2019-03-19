@@ -297,3 +297,19 @@ ComponentsTable.selectChange = function (evt, ui) {
         }
     }
 };
+
+function getSelectedCompsRowsIndx() {
+    let arr = $componentsGrid.pqGrid("selection", {type: 'row', method: 'getSelection'});
+    console.log(arr);
+    let rowIndexes = [];
+    if (arr && arr.length > 0) {
+        for(let i=0;i<arr.length;i++){
+            rowIndexes.push(arr[i].rowIndx);
+        }
+    }
+    else {
+        showMessage("Выберите заявку");
+        return null;
+    }
+    return rowIndexes;
+}

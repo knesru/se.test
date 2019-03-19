@@ -249,21 +249,36 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
                 return;
             }
             // console.log(controlData.selection);
-            let datM = $("#grid_requests").pqGrid("option", "dataModel");
             let grid = $("#grid_requests").pqGrid();
             let data = {};
             data.ids = controlData.selection;
+            $("#grid_new_components").pqGrid('getRowIndx',{rowData:{}});
+            let components = '';
+            let pns = [];
             if(action==='append'){
                 if(controlData.requestSelection.length==0){
                     showWarning('Выберие заявку для добавления');
                     return;
                 }
-
-                //userLog('Добавляю компонент '+row['partnumber']+' к заявке '+row['requestid']);
-                data.requestid = controlData.requestSelection;
                 let rowIndx = getRowIndx();
                 var row = $requestsGrid.pqGrid('getRowData', {rowIndx: rowIndx});
+                let selectedCompRowsIndexes = getSelectedCompsRowsIndx();
+                let compsRow = null;
+
+                for (let i=0; i<selectedCompRowsIndexes.length; i++){
+                    compsRow = $componentsGrid.pqGrid('getRowData', {rowIndx: selectedCompRowsIndexes[i]});
+                    pns.push(compsRow.partnumber);
+                }
+
+                if(pns.length===1){
+                    components = 'компонент';
+                }else{
+                    components = 'компоненты';
+                }
+                userLog('Добавляю '+components+' '+pns.join(',')+' к заявке '+row['requestid'].replace(/^0+/, ''));
+                data.requestid = controlData.requestSelection;
                 if(!confirm('Добавить компоненты к заявке '+row['requestid'].replace(/^0+/, '')+'?')){
+                    userLog('Отменил');
                     return;
                 }
             }
@@ -276,13 +291,22 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
                 beforeSend: function (jqXHR, settings) {
                     $(".saving", grid).show();
                 },
-                success: function () {
+                success: function (result) {
+                    if(result && typeof result.success !== 'undefined'){
+                        userLog('Успешно добавлены '+components+' '+pns.join(',')+' к заявке '+result.requestid.replace(/^0+/, ''));
+                    }else if(typeof result.error !== 'undefined'){
+                        userLog('Произошла ошибка '+result.error);
+                    }
                     //commit the changes.
                     $("#grid_requests").pqGrid('refreshDataAndView');
                     $("#grid_new_components").pqGrid('refreshDataAndView');
+
                 },
                 complete: function () {
                     $(".saving", grid).hide();
+                },
+                error(err){
+                    userLog(err.responseText,'error');
                 }
             });
         }
