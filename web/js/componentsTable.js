@@ -28,7 +28,7 @@ function filterHandlerComponents(evt, ui) {
 
 function saveChangesComponents() {
     let grid = $componentsGrid.pqGrid('getInstance').grid;
-    userLog('Правка строки в компонентах','log');
+    userLog('Правка строки в компонентах');
     //debugger;
     //attempt to save editing cell.
     if (grid.saveEditCell() === false) {
@@ -98,6 +98,15 @@ function saveChangesComponents() {
             url: "/toAssembly/update", //for ASP.NET, java
             data: {list: JSON.stringify(changes)},
             success: function (changes) {
+                userLog(changes);
+                if(typeof changes.data !== 'undefined'){
+                    let rowIndx = $componentsGrid.pqGrid('getRowIndx',{rowData:changes.data[0].id});
+                    $componentsGrid.pqGrid("goToPage", { rowIndx: rowIndx });
+                    $componentsGrid.pqGrid("setSelection", null);
+                    $componentsGrid.pqGrid("setSelection", { rowIndx: rowIndx, dataIndx: 'partnumber' });
+                    $componentsGrid.pqGrid("editFirstCellInRow", { rowIndx: rowIndx });
+                    return;
+                }
                 //debugger;
                 grid.commit({type: 'add', rows: changes.addList});
                 grid.commit({type: 'update', rows: changes.updateList});
@@ -105,6 +114,9 @@ function saveChangesComponents() {
 
                 grid.history({method: 'reset'});
                 grid.refresh();
+            },
+            error: function(err){
+                userLog(err.responseText,'error');
             },
             complete: function () {
                 grid.hideLoading();
@@ -250,17 +262,12 @@ let ComponentsTable = {
             {type: 'separator'},
             {
                 type: 'button',
-                label: 'Добавть компонент',
+                label: 'Добавить компонент',
                 listeners: [
                     {
                         'click': function (evt, ui) {
                             //append empty row at the end.
-                            var rowData = { partnumber: 'новый компонент', purpose: 'назначение', amonunt: 1 }; //empty row
-                            var rowIndx = $componentsGrid.pqGrid("addRow", { rowData: rowData });
-                            $componentsGrid.pqGrid("goToPage", { rowIndx: rowIndx });
-                            $componentsGrid.pqGrid("setSelection", null);
-                            $componentsGrid.pqGrid("setSelection", { rowIndx: rowIndx, dataIndx: 'partnumber' });
-                            $componentsGrid.pqGrid("editFirstCellInRow", { rowIndx: rowIndx });
+                            $('#popup-dialog-form-new-component').dialog('open');
                         },
                     }
                 ]
@@ -397,6 +404,12 @@ let ComponentsTable = {
                 .tooltip();
 
         });
+    },
+    rowSelect: function( event, ui ) {
+        $('.shorttext').not('.folded-text').addClass('folded-text',150);
+        if(typeof ui.$tr !== 'undefined'){
+            ui.$tr.find('.shorttext').removeClass('folded-text');
+        }
     }
 };
 ComponentsTable.selectChange = function (evt, ui) {

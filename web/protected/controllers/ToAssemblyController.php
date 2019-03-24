@@ -72,7 +72,7 @@ class ToAssemblyController extends Controller
         // $this->performAjaxValidation($model);
 
         if (isset($_POST['Extcomponents'])) {
-            $data = $_POST['Extcomponents'];
+            $data = array($_POST['Extcomponents']);
         } elseif (
             isset($_POST['list']) &&
             ($data = json_decode($_POST['list'], true)) &&
@@ -80,36 +80,51 @@ class ToAssemblyController extends Controller
             count($data['addList']) > 0) {
             $data = $data['addList'];
         }
+        if (isset($data) && count($data)>0) {
+            $result = array('success'=>true, 'data'=>array());
 
-        if (isset($data)) {
-            $model->attributes = $_POST['Extcomponents'];
-            if (empty($model->created_at)) {
-                $model->created_at = null;
-            }
-            if (empty($model->assembly_to)) {
-                $model->assembly_to = null;
-            }
-            if (empty($model->install_to)) {
-                $model->install_to = null;
-            }
-            if (empty($model->install_from)) {
-                $model->install_from = null;
-            }
-            if (empty($model->partnumberid)) {
-                $model->partnumberid = null;
-            }
-            if ($model->save()) {
-                if (Yii::app()->request->isAjaxRequest) {
-                    print 'OKAY';
-                    Yii::app()->end();
+            foreach ($data as $datum) {
+                $model->attributes = $datum;
+                if (empty($model->created_at)) {
+                    $model->created_at = null;
                 }
-                $this->redirect(array('view', 'id' => $model->id));
-            } else {
-                if (Yii::app()->request->isAjaxRequest) {
-                    print json_encode($model->errors);
-                    Yii::app()->end();
+                if (empty($model->assembly_to)) {
+                    $model->assembly_to = null;
+                }
+                if (empty($model->install_to)) {
+                    $model->install_to = null;
+                }
+                if (empty($model->install_from)) {
+                    $model->install_from = null;
+                }
+                if (empty($model->partnumberid)) {
+                    $model->partnumberid = null;
+                }
+                if (empty($model->priority)) {
+                    $model->priority = 0;
+                }
+                if ($model->save()) {
+                    if (Yii::app()->request->isAjaxRequest) {
+                        $result['data'][] = array(
+                          'id'=>$model->id,
+                          'partnumber'=>$model->partnumber,
+                          'success'=>true
+                        );
+                    }
+                } else {
+                    if (Yii::app()->request->isAjaxRequest) {
+                        $result['data'][] = array(
+                          'id'=>$model->id,
+                          'partnumber'=>$model->partnumber,
+                          'success'=>false,
+                          'errors'=>$model->errors
+                        );
+                        $result['success']=false;
+                    }
                 }
             }
+            print json_encode($result);
+            Yii::app()->end();
         }
 
         $this->render('create', array(
@@ -131,6 +146,12 @@ class ToAssemblyController extends Controller
             ($data = json_decode($_POST['list'], true)) &&
             isset($data['updateList']) &&
             count($data['updateList']) > 0) {
+            $data = $data['updateList'][0];
+        }elseif (
+            isset($_POST['list']) &&
+            ($data = json_decode($_POST['list'], true)) &&
+            isset($data['addList']) &&
+            count($data['addList']) > 0) {
             $data = $data['addList'][0];
         }
 
@@ -140,6 +161,11 @@ class ToAssemblyController extends Controller
                     if (isset($data['updateList'][0]['id'])) {
                         $id = $data['updateList'][0]['id'];
                         $new_status = $data['updateList'][0]['status'];
+                    }
+                }elseif (isset($data['addList']) && count($data['addList']) > 0) {
+                    if (isset($data['addList'][0]['id'])) {
+                        $id = $data['addList'][0]['id'];
+                        $new_status = $data['addList'][0]['status'];
                     }
                 }
             }
@@ -409,25 +435,39 @@ class ToAssemblyController extends Controller
                 'show_closed'=>$showall
             )
         );
-        $sortConfig = array(
-            'class' => 'CSort',
-            'multiSort' => true,
-            'sortVar'=>'sort',
-            'defaultOrder' => 'priority DESC, requestid asc'
-        );
         $sort_attrs = array();
         foreach (Yii::app()->request->getParam('pq_sort') as $sort_item){
-            $sort_attrs[] = $sort_item['dataIndx'].($sort_item['dir']=='down'?'.desc':'');
+            $sort_attrs[] = $sort_item['dataIndx'] . ($sort_item['dir'] == 'down' ? '.desc' : '');
         }
         $_GET['sort'] = implode('-',$sort_attrs);
-        Yii::log(print_r($_GET,1),CLogger::LEVEL_INFO, 'system.db.manual');
-        Yii::log(print_r($this->getDirections(),1),CLogger::LEVEL_INFO, 'system.db.manual');
 
-        $dp->setSort($sortConfig);
+        $dp->setSort(array(
+          'class' => 'CSort',
+          'multiSort' => true,
+          'sortVar' => 'sort',
+          'attributes' => array('*',
+            'user' => array(
+              'asc' => 'userinfo.fullname, "user".username',
+              'desc' => 'userinfo.fullname desc, "user".username desc'
+            ),
+            'partnumber' => array(
+              'asc' => 't.partnumber',
+              'desc' => 't.partnumber desc',
+            ),
+            'partnumberid' => array(
+              'asc' => 't.partnumberid',
+              'desc' => 't.partnumberid desc',
+            )
+          ),
+          'defaultOrder' => 'priority DESC, requestid asc'
+        ));
         /** @var Extcomponents $request */
         foreach ($dp->getData() as $request) {
             $row = $request->attributes;
             $row['user'] = $request->user->userinfo->fullname;
+            if(empty($row['user'])){
+                $row['user'] = $request->user->username;
+            }
             $result['data'][] = $row;
         }
         $result['totalRecords'] = $dp->totalItemCount;
@@ -449,14 +489,33 @@ class ToAssemblyController extends Controller
         );
         $sort_attrs = array();
         foreach (Yii::app()->request->getParam('pq_sort') as $sort_item){
-            $sort_attrs[] = $sort_item['dataIndx'].($sort_item['dir']=='down'?'.desc':'');
+            $sort_attrs[] = $sort_item['dataIndx'] . ($sort_item['dir'] == 'down' ? '.desc' : '');
         }
         $_GET['sort'] = implode('-',$sort_attrs);
         $dp->setSort(array(
-            'class' => 'CSort',
-            'multiSort' => true,
-            'sortVar'=>'sort',
-            'defaultOrder' => 'priority DESC, partnumber asc'
+          'class' => 'CSort',
+          'multiSort' => true,
+          'sortVar' => 'sort',
+          'attributes' => array(
+            'user' => array(
+              'asc' => 'userinfo.fullname, "user".username',
+              'desc' => 'userinfo.fullname desc, "user".username desc'
+            ),
+            'priority'=>array(
+              'asc'=>'t.priority, t.id',
+              'desc'=>'t.priority desc, t.id',
+            ),
+            'partnumber' => array(
+              'asc' => 't.partnumber',
+              'desc' => 't.partnumber desc',
+            ),
+            'partnumberid' => array(
+              'asc' => 't.partnumberid',
+              'desc' => 't.partnumberid desc',
+            ),
+            '*',
+          ),
+          'defaultOrder' => 't.partnumber'
         ));
 
 //        print(json_encode($dp->getSort()));
@@ -465,6 +524,9 @@ class ToAssemblyController extends Controller
         foreach ($dp->getData() as $requestedComponent) {
             $row = $requestedComponent->attributes;
             $row['user'] = $requestedComponent->user->userinfo->fullname;
+            if(empty($row['user'])){
+                $row['user'] = $requestedComponent->user->username;
+            }
             $result['data'][] = $row;
         }
         $result['totalRecords'] = $dp->totalItemCount;

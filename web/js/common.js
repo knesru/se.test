@@ -161,6 +161,11 @@ function renderDateOnly(ui) {
     }
 }
 
+function renderShortText(ui) {
+    let cellData = ui.cellData;
+    return '<div class="shorttext folded-text">'+cellData+'</div>';
+}
+
 function clearFilter() {
     userLog('Очистил фильтр','log');
     $(this).parents('.pq-grid').find('.pq-grid-header').find('input, select, textarea').each(function () {
@@ -195,7 +200,7 @@ function userLog(action, severity, element, result) {
         result = '';
     }
     if(typeof severity === 'undefined'){
-        severity = 'info';
+        severity = 'log';
     }
     if(typeof element === 'undefined'){
         element = '';
@@ -252,4 +257,15 @@ function getDateTime() {
     }
     var dateTime = year+'.'+month+'.'+day+' '+hour+':'+minute+':'+second;
     return dateTime;
+}
+
+function getFormData(form) {
+    let rawJson = form.serializeArray();
+    let model = {};
+
+    $.map(rawJson, function (n, i) {
+        model[n['name']] = n['value'];
+    });
+
+    return model;
 }

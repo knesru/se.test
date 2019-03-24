@@ -334,3 +334,9 @@ span.saving
 #footer{
 	overflow-y: scroll;
 }
+
+.folded-text {
+	height: 1em;
+	width: 100%;
+	overflow: hidden;
+}

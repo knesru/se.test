@@ -18,6 +18,9 @@ function getPartnumberColumn() {
         title: "Партномер",
         dataIndx: 'partnumber',
         dataType: "string",
+        render: function(ui){
+            return renderShortText(ui);
+        },
         editor: {
             type: 'textbox',
             init: function (ui) {
@@ -91,6 +94,9 @@ function getPurposeColumn() {
         title: "Назначение",
         dataIndx: 'purpose',
         dataType: "string",
+        render: function(ui){
+            return renderShortText(ui);
+        },
         filter: {
             type: 'textbox',
             condition: 'contain',
@@ -167,6 +173,9 @@ function getDeficiteColumn() {
         title: "Дефицит",
         dataIndx: 'deficite',
         dataType: "string",
+        render: function(ui){
+            return renderShortText(ui);
+        },
         filter: {
             type: 'textbox',
             condition: 'contain',
@@ -180,6 +189,9 @@ function getDescriptionColumn() {
         title: "Примечание",
         dataIndx: 'description',
         dataType: "string",
+        render: function(ui){
+            return renderShortText(ui);
+        },
         filter: {
             type: 'textbox',
             condition: 'contain',

@@ -112,6 +112,16 @@ div.form select.success
 	border-color: #C6D880;
 }
 
+div.form div.warning input,
+div.form div.warning textarea,
+div.form div.warning select,
+div.form input.warning,
+div.form textarea.warning,
+div.form select.warning
+{
+	background: #f6EF92;
+	border-color: #f6D830;
+}
 
 div.form .errorSummary
 {

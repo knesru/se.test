@@ -1,5 +1,9 @@
 <?php
 
+$db = include dirname(__FILE__).DIRECTORY_SEPARATOR.'/db.php';
+if(file_exists(dirname(__FILE__).DIRECTORY_SEPARATOR.'/db-local.php')){
+    $db = include dirname(__FILE__).DIRECTORY_SEPARATOR.'/db-local.php';
+}
 // uncomment the following to define a path alias
 // Yii::setPathOfAlias('local','path/to/local-folder');
 
@@ -40,14 +44,7 @@ return array(
 			'connectionString' => 'sqlite:protected/data/blog.db',
 			'tablePrefix' => 'tbl_',
 		),
-		'db'=>array(
-			'connectionString' => 'pgsql:host=se.test;port=5432;dbname=stms',
-			'emulatePrepare' => true,
-			'username' => 'postgres',
-			'password' => 'postgres',
-			'tablePrefix' => 't',
-            'enableProfiling'=>true,
-		),
+		'db'=>$db,
 
 		'errorHandler'=>array(
 			// use 'site/error' action to display errors

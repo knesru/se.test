@@ -74,7 +74,7 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
             },
             autoOpen: false
         });
-        $("#popup-dialog-new-component").dialog({
+        $("#popup-dialog-form-new-component").dialog({
             width: 400, modal: false,
             open: function () {
                 //$(".ui-dialog").position({of: "#grid_requests"});
@@ -282,7 +282,6 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
             let grid = $("#grid_requests").pqGrid();
             let data = {};
             data.ids = controlData.selection;
-            $("#grid_new_components").pqGrid('getRowIndx',{rowData:{}});
             let components = '';
             let pns = [];
             let selectedCompRowsIndexes = getSelectedCompsRowsIndx(true);
@@ -306,7 +305,7 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
                     showWarning('Выберие заявку для добавления');
                     return;
                 }
-                let rowIndx = getRowIndx();
+                let rowIndx = getRequestsSelectedRowIndx();
                 let row = $requestsGrid.pqGrid('getRowData', {rowIndx: rowIndx});
                 if(pns.length===1){
                     components = 'компонент';
@@ -427,3 +426,9 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
 </div>
 
 <div id="popup-dialog-message"></div>
+
+<div id="popup-dialog-form-new-component">
+    <?php
+        $this->renderPartial('_form_new_comp');
+    ?>
+</div>

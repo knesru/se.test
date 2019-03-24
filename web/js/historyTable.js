@@ -238,7 +238,7 @@ let RequestsTable = {
                     {
                         "click": function (evt, ui) {
                             let grid = $requestsGrid.pqGrid('getInstance').grid;
-                            let rowIndx = getRowIndx();
+                            let rowIndx = getRequestsSelectedRowIndx();
                             var row = $requestsGrid.pqGrid('getRowData', {rowIndx: rowIndx});
 
                             let $frm = $("form#receive-form");
@@ -344,7 +344,7 @@ let RequestsTable = {
                 listeners: [{
                     "click": function (evt) {
                         let grid = $requestsGrid.pqGrid('getInstance').grid;
-                        let rowIndx = getRowIndx();
+                        let rowIndx = getRequestsSelectedRowIndx();
                         if(rowIndx === null){
                             return;
                         }
