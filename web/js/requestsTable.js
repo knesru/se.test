@@ -93,6 +93,7 @@ function saveChangesRequests() {
                 grid.commit({type: 'delete', rows: changes.deleteList});
 
                 grid.history({method: 'reset'});
+                grid.refresh();
             },
             complete: function () {
                 grid.hideLoading();
@@ -235,23 +236,42 @@ let RequestsTable = {
                             $frm.find("#received_request").text(row['requestid'].replace(/^0+/, ''));
                             $frm.find("input[name='partnumberid']").val(row['partnumberid']);
                             $frm.find("#received_component").text(row['partnumber']);
-
+                            userLog('Принимаю компонент '+row['partnumber']+', строка '+row['id']+' на склад');
                             $("#popup-dialog-receive").dialog({
                                 title: row['requestid'].replace(/^0+/, '') + ': ' + row['partnumber'], buttons: {
                                     "Принять": function () {
-
-
+                                        userLog('Отправка формы');
                                         if ($frm.find("input[name='amount']").val() == row['amount'] - row['delivered']) {
                                             if (!confirm("Заявка удовлетворена. Компонент будет закрыт.")) {
+                                                userLog('Отказался закрывать заявку. Отмена принятия компонента.');
                                                 return;
                                             }
                                         }else if($frm.find("input[name='amount']").val() > row['amount'] - row['delivered']){
                                             if (!confirm("Количество принятых больше, чем заказано. Компонент будет" +
                                                 " закрыт. Все равно принять?")) {
+                                                userLog('Отказался закрывать заявку с количеством большим, чем осталось по заказу('+$frm.find("input[name='amount']").val()+'>'+(row['amount'] - row['delivered'])+'). Отмена принятия компонента.');
                                                 return;
                                             }
                                         }
+                                        let sendData = {
+                                            requestid: row['id'],
+                                            amount: $frm.find("input[name='amount']").val(),
+                                            storeid: $frm.find("input[name='storeid']").val(),
+                                            place: $frm.find("#place").val(),
+                                            installerid: $frm.find("input[name='installer']").val(),
+                                            installername: $frm.find("#installer").val()
+                                        };
 
+                                        userLog('Заполнил форму.');
+                                        userLog('Строка:'+sendData.requestid);
+                                        userLog('Заявка:'+row['requestid'].replace(/^0+/, ''));
+                                        userLog('Компонент:'+row['partnumber']);
+                                        userLog('Склад:'+sendData.storeid);
+                                        userLog('Место:'+sendData.place);
+                                        let isNewInstaller = ((sendData.installerid>0)?'':' (новый сборщик)');
+                                        userLog('Сборщик:'+sendData.installername+isNewInstaller);
+                                        // console.log($frm.find("input[name='installer']").val());
+                                        // console.log($frm.find("input[name='installer']").val());
                                         $.ajax({
                                             dataType: "json",
                                             type: "POST",
@@ -260,15 +280,20 @@ let RequestsTable = {
                                                 grid.showLoading();
                                             },
                                             url: "/toAssembly/receive", //for ASP.NET, java
-                                            data: {
-                                                requestid: row['id'],
-                                                amount: $frm.find("input[name='amount']").val(),
-                                                storeid: $frm.find("input[name='storeid']").val(),
-                                                place: $frm.find("#place").val()
-                                            },
+                                            data: sendData,
                                             success: function (changes) {
                                                 //debugger;
+                                                if(typeof changes.success !== 'undefined') {
+                                                    if(changes.success==true) {
+                                                        userLog('Успешно');
+                                                    }else{
+                                                        userLog(changes.error);
+                                                    }
+                                                }
                                                 grid.history({method: 'reset'});
+                                            },
+                                            error:function(err){
+                                                userLog(err.responseText,'error');
                                             },
                                             complete: function () {
                                                 grid.hideLoading();
@@ -279,6 +304,7 @@ let RequestsTable = {
                                         $(this).dialog("close");
                                     },
                                     "Отмена": function () {
+                                        userLog('Закрыл окно.');
                                         $(this).dialog("close");
                                     }
                                 }
@@ -410,6 +436,60 @@ let RequestsTable = {
             return;
         }
         saveChangesRequests();
+    },
+    refresh: function(){
+        let $grid = $("#grid_requests");
+        $grid.find('.change-priority').each(function(){
+            let $tr = $(this).parents('tr');
+            let rowIndx = $requestsGrid.pqGrid('getRowIndx',{$tr: $tr}).rowIndx;
+            let row = $requestsGrid.pqGrid('getRowData', {rowIndx: rowIndx});
+            let disableUp = false;
+            let disableDown = false;
+            if(row['priority']){
+                disableUp = true;
+            }else{
+                disableDown = true;
+            }
+            $(this).parent().css('text-align','right');
+            $(this)
+                .find('.change-priority-up')
+                .button({
+                    icon:  'ui-icon-arrowthick-1-n',
+                    "disabled":disableUp
+                })
+                .unbind('click')
+                .click(function () {
+                    $requestsGrid
+                        .pqGrid( "updateRow", {
+                            rowIndx: rowIndx,
+                            checkEditable: false,
+                            row: {'priority':1}
+                        });
+                })
+                .css('border-radius','4px 0px 0px 4px')
+                .attr('title','Повысить приоритет')
+                .tooltip();
+            $(this)
+                .find('.change-priority-down')
+                .button({
+                    icon:  'ui-icon-arrowthick-1-s',
+                    "disabled":disableDown,
+                })
+                .unbind('click')
+                .click(function () {
+                    userLog('Понизил приоритет');
+                    $requestsGrid
+                        .pqGrid( "updateRow", {
+                            rowIndx: rowIndx,
+                            checkEditable: false,
+                            row: { 'priority': 0 }
+                        });
+                })
+                .css({'border-radius':'0px 4px 4px 0px','margin-left':-1})
+                .attr('title','Понизить приоритет')
+                .tooltip();
+
+        });
     },
     trackModel: {on: true},
     showTitle: false,

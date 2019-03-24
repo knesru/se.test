@@ -203,13 +203,53 @@ function userLog(action, severity, element, result) {
     if(typeof action === 'undefined'){
         return;
     }
+    let hl_class = '';
     if(severity==='info') {
+        hl_class = 'ui-state-highlight';
         console.info(action, element, result);
     }
     if(severity==='log') {
+        hl_class = '';
         console.log(action, element, result);
     }
     if(severity==='error') {
+        hl_class = 'ui-state-error';
         console.error(action, element, result);
     }
+    let msg = action;
+    if (typeof msg !== 'string' || isNaN(msg)) {
+        msg = JSON.stringify(msg);
+    }
+    if($('#footer').find('a').length>0){
+        $('#footer').html('').css({'text-align':'left','height':'60px'});
+    }
+    $('#footer').prepend('<div class="'+hl_class+'">'+getDateTime()+' | '+msg+'</div>');
+}
+
+
+function getDateTime() {
+    var now     = new Date();
+    var year    = now.getFullYear();
+    var month   = now.getMonth()+1;
+    var day     = now.getDate();
+    var hour    = now.getHours();
+    var minute  = now.getMinutes();
+    var second  = now.getSeconds();
+    if(month.toString().length == 1) {
+        month = '0'+month;
+    }
+    if(day.toString().length == 1) {
+        day = '0'+day;
+    }
+    if(hour.toString().length == 1) {
+        hour = '0'+hour;
+    }
+    if(minute.toString().length == 1) {
+        minute = '0'+minute;
+    }
+    if(second.toString().length == 1) {
+        second = '0'+second;
+    }
+    var dateTime = year+'.'+month+'.'+day+' '+hour+':'+minute+':'+second;
+    return dateTime;
 }

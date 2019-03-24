@@ -32,7 +32,7 @@ class ComponentController extends Controller
                 'users' => array('*'),
             ),
             array('allow', // allow authenticated user to perform 'create' and 'update' actions
-                'actions' => array('create', 'update', 'storesList', 'getplace'),
+                'actions' => array('create', 'update', 'storesList', 'getplace','installersList'),
                 'users' => array('@'),
             ),
             array('allow', // allow admin user to perform 'admin' and 'delete' actions
@@ -156,6 +156,24 @@ class ComponentController extends Controller
         $models = Storelist::model()->findAll($criteria);
         foreach ($models as $model) {
             $listData[] = array('label' => $model->name, 'value' => $model->storeid);
+        }
+
+        echo json_encode($listData);
+        Yii::app()->end();
+    }
+
+    public function actionInstallersList()
+    {
+        $criteria = new CDbCriteria();
+//        $criteria->compare('partnumber',Yii::app()->request->getParam('term'),true);
+        $criteria->addCondition('name ilike :term or phone ilike :term');
+        $criteria->params = array(':term' => Yii::app()->request->getParam('term') . "%");
+        $criteria->limit = 50;
+
+        $listData = array();
+        $models = Installer::model()->findAll($criteria);
+        foreach ($models as $model) {
+            $listData[] = array('label' => $model->name, 'value' => $model->id);
         }
 
         echo json_encode($listData);

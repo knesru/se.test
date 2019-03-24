@@ -20,10 +20,12 @@
  * @property integer $priority
  * @property integer $requestid
  * @property integer $status
+ * @property integer $installerid
  *
  * The followings are the available model relations:
  * @property Component $component
  * @property User $user
+ * @property Installer $installer
  */
 class Extcomponents extends CActiveRecord
 {
@@ -52,7 +54,7 @@ class Extcomponents extends CActiveRecord
 			array('purpose,partnumberid, created_at, assembly_to, install_to, deficite, description, install_from', 'safe'),
 			// The following rule is used by search().
 			// @todo Please remove those attributes that should not be searched.
-			array('id, partnumberid, partnumber, amount, purpose, created_at, delivered, assembly_to, install_to, deficite, description, install_from, priority, requestid', 'safe', 'on'=>'search'),
+			array('id, partnumberid, partnumber, amount, purpose, created_at, delivered, assembly_to, install_to, deficite, description, install_from, priority, requestid, installer, status', 'safe', 'on'=>'search'),
 		);
 	}
 
@@ -66,6 +68,7 @@ class Extcomponents extends CActiveRecord
 		return array(
 			'component' => array(self::BELONGS_TO, 'Component', 'partnumberid'),
 			'user' => array(self::BELONGS_TO, 'User', 'userid'),
+			'installer' => array(self::BELONGS_TO, 'Installer', 'installerid'),
 		);
 	}
 
@@ -321,7 +324,7 @@ class Extcomponents extends CActiveRecord
             'user.userinfo' => array('together' => true, ),
             'component' => array('together' => true, ),
         );
-        return $this->findbyCriteria($criteria);
+        return $this->findbyCriteria($criteria,$params['page_size']);
     }
 
 }

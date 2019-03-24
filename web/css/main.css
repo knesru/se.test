@@ -330,3 +330,7 @@ span.saving
 .high-priority{
 	background: #FBC2C4;
 }
+
+#footer{
+	overflow-y: scroll;
+}

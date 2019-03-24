@@ -250,6 +250,7 @@ class ToAssemblyController extends Controller
     public function actionRequest()
     {
         $ids = $_POST['ids'];
+        //Это просто ID строки. Requestid он только чтобы отличать от id компонента
         $requestids = $_POST['requestid'];
         $model = new Extcomponents();
         $criteria = new CDbCriteria;
@@ -270,7 +271,9 @@ class ToAssemblyController extends Controller
                 }
             }
         } elseif (count($requestids) == 1) {
+            //Это просто ID строки. Requestid он только чтобы отличать от id компонента
             $requestModel = Extcomponents::model()->findByPk($requestids[0]);
+            //А вот тут он автомагически превращается в правильный....
             $requestId = $requestModel->requestid;
             $id_parts = explode('.', $requestId);
             $new_id = $id_parts[0];
@@ -423,7 +426,9 @@ class ToAssemblyController extends Controller
         $dp->setSort($sortConfig);
         /** @var Extcomponents $request */
         foreach ($dp->getData() as $request) {
-            $result['data'][] = $request->attributes;
+            $row = $request->attributes;
+            $row['user'] = $request->user->userinfo->fullname;
+            $result['data'][] = $row;
         }
         $result['totalRecords'] = $dp->totalItemCount;
         $result['curPage']=Yii::app()->request->getParam('pq_curpage');
@@ -458,7 +463,9 @@ class ToAssemblyController extends Controller
 
         /** @var Extcomponents $requestedComponent */
         foreach ($dp->getData() as $requestedComponent) {
-            $result['data'][] = $requestedComponent->attributes;
+            $row = $requestedComponent->attributes;
+            $row['user'] = $requestedComponent->user->userinfo->fullname;
+            $result['data'][] = $row;
         }
         $result['totalRecords'] = $dp->totalItemCount;
         $result['curPage']=Yii::app()->request->getParam('pq_curpage');
@@ -592,6 +599,7 @@ class ToAssemblyController extends Controller
 
     public function actionReceive()
     {
+        /** @var Extcomponents $model */
         $model = $this->loadModel($_POST['requestid']);
         /**
          * @property integer $id
@@ -614,7 +622,7 @@ class ToAssemblyController extends Controller
         if (is_null($store)) {
             $store = new Store();
             $store->partnumberid = $model->partnumberid;
-            $store->storeid = 1;
+            $store->storeid = $_POST['storeid'];
             $store->qty = 0;
         }
         $correction_model = new Storecorrection();
@@ -629,18 +637,42 @@ class ToAssemblyController extends Controller
         $store->place = $_POST['place'];
         $correction_model->postqty = $store->qty;
         $correction_model->storeid = $store->storeid;
-        $correction_model->description = ltrim($model->requestid, '0') . "; Описание: " . $model->description . "; Дефицит: " . $model->deficite;
+        $model->installerid = $_POST['installerid'];
+        if(empty($_POST['installerid'])){
+            $installer = new Installer();
+            $installer->name = $_POST['installername'];
+            $installer->phone = 'N/A';
+            $installer->created_at = date('Y-m-d');
+            if($installer->save()){
+                $model->installerid = $installer->id;
+            }
+        }
+        Yii::log('==============================================','info','system.db.xxx');
+        Yii::log(print_r($model->installer->attributes,1),'info','system.db.xxx');
+        Yii::log(print_r($model->attributes,1),'info','system.db.xxx');
+        Yii::log('==============================================','info','system.db.xxx');
+        $correction_model->description = implode(";\n",array(
+            ltrim($model->requestid, '0'),
+            $model->installer->name,
+            $model->description,
+            $model->deficite
+        ));
 
 
         $model->delivered += $_POST['amount'];
-        if ($model->delivered > $model->amount) {
+        if ($model->delivered >= $model->amount) {
             $model->status = 4;
         }
 
+
+
+        $transaction=Yii::app()->db->beginTransaction();
         if ($store->save() && $correction_model->save() && $model->save()) {
-            print 'OK';
+            print json_encode(array('success'=>true));
+            $transaction->commit();
         } else {
-            print 'ERR';
+            print json_encode(array('success'=>false,'error'=>array($model->errors,$store->errors,$correction_model->errors)));
+            $transaction->rollback();
         }
 
         /**

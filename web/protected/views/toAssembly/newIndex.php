@@ -74,6 +74,13 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
             },
             autoOpen: false
         });
+        $("#popup-dialog-new-component").dialog({
+            width: 400, modal: false,
+            open: function () {
+                //$(".ui-dialog").position({of: "#grid_requests"});
+            },
+            autoOpen: false
+        });
         $('#storeid').autocomplete({
             //appendTo: ui.$cell, //for grid in maximized state.
             source: '/component/storesList',
@@ -99,6 +106,28 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
                 //         }
                 //     }
                 // });
+            }
+
+        }).focus(function () {
+            $(this).autocomplete("search", "");
+        }).click(function () {
+            $(this).autocomplete("search", "");
+        });
+        $('#installer').autocomplete({
+            //appendTo: ui.$cell, //for grid in maximized state.
+            source: '/component/installersList',
+            selectItem: {on: true}, //custom option
+            highlightText: {on: true}, //custom option
+            minLength: 0,
+            focus: function (event, ui) {
+                $("#installer").val(ui.item.label);
+                return false;
+            },
+            select: function (event, ui) {
+                // console.log(a,b,c);
+                $('#installer').val(ui.item.label);
+                $('input[name="installer"]').val(ui.item.value);
+                return false;
             }
 
         }).focus(function () {
@@ -242,9 +271,10 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
         }).dialog("open");
     }
 
-    function requestsAction(action) {
+    function requestsAction(action,force_id) {
+        userLog(force_id);
         if (typeof controlData.selection !== 'undefined') {
-            if(controlData.selection.length==0){
+            if(controlData.selection.length===0){
                 showWarning('Не выбран компонент для создания заявки.');
                 return;
             }
@@ -255,21 +285,29 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
             $("#grid_new_components").pqGrid('getRowIndx',{rowData:{}});
             let components = '';
             let pns = [];
+            let selectedCompRowsIndexes = getSelectedCompsRowsIndx(true);
+            if(selectedCompRowsIndexes.length===0 && typeof force_id!=='undefined'){
+                selectedCompRowsIndexes = [force_id];
+            }
+            if(selectedCompRowsIndexes.length===0){
+                showWarning('Не выбран компонент для создания заявки.');
+                return;
+            }
+            let compsRow = null;
+
+            for (let i=0; i<selectedCompRowsIndexes.length; i++){
+                compsRow = $componentsGrid.pqGrid('getRowData', {rowIndx: selectedCompRowsIndexes[i]});
+                pns.push(compsRow.partnumber);
+            }
+
+
             if(action==='append'){
                 if(controlData.requestSelection.length==0){
                     showWarning('Выберие заявку для добавления');
                     return;
                 }
                 let rowIndx = getRowIndx();
-                var row = $requestsGrid.pqGrid('getRowData', {rowIndx: rowIndx});
-                let selectedCompRowsIndexes = getSelectedCompsRowsIndx();
-                let compsRow = null;
-
-                for (let i=0; i<selectedCompRowsIndexes.length; i++){
-                    compsRow = $componentsGrid.pqGrid('getRowData', {rowIndx: selectedCompRowsIndexes[i]});
-                    pns.push(compsRow.partnumber);
-                }
-
+                let row = $requestsGrid.pqGrid('getRowData', {rowIndx: rowIndx});
                 if(pns.length===1){
                     components = 'компонент';
                 }else{
@@ -281,6 +319,13 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
                     userLog('Отменил');
                     return;
                 }
+            }else{
+                if(pns.length===1){
+                    components = 'компонентом';
+                }else{
+                    components = 'компонентами';
+                }
+                userLog('Создаю заявку с '+components+' '+pns.join(','));
             }
             $.ajax({
                 url: '/toassembly/request',
@@ -293,7 +338,11 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
                 },
                 success: function (result) {
                     if(result && typeof result.success !== 'undefined'){
-                        userLog('Успешно добавлены '+components+' '+pns.join(',')+' к заявке '+result.requestid.replace(/^0+/, ''));
+                        if(action==='append'){
+                            userLog('Успешно добавлены '+components+' '+pns.join(',')+' к заявке '+result.requestid.replace(/^0+/, ''));
+                        }else{
+                            userLog('Успешно создана новая заявка '+result.requestid.replace(/^0+/, '')+' с '+components+' '+pns.join(','));
+                        }
                     }else if(typeof result.error !== 'undefined'){
                         userLog('Произошла ошибка '+result.error);
                     }
@@ -323,24 +372,28 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
         <table align="center">
             <tbody>
             <tr>
-                <td>Заявка</td>
+                <td><label for="received_request">Заявка</label></td>
                 <td><span id="received_request"></span></td>
             </tr>
             <tr>
-                <td>Компонент</td>
+                <td><label for="received_component">Компонент</label></td>
                 <td><span id="received_component"></span><input type="hidden" name="partnumberid" /></td>
             </tr>
             <tr>
-                <td>Количество</td>
+                <td><label for="received_amount">Количество</label></td>
                 <td><input type="number" name="amount" id="received_amount"/></td>
             </tr>
             <tr>
-                <td>Склад</td>
+                <td><label for="storeid">Склад</label></td>
                 <td><input type="text" id="storeid"/><input type="hidden" name="storeid"></td>
             </tr>
             <tr>
-                <td>Место</td>
+                <td><label for="place">Место</label></td>
                 <td><input type="text" id="place"/></td>
+            </tr>
+            <tr>
+                <td><label for="installer">Сборщик</label></td>
+                <td><input type="text" id="installer"/><input type="hidden" name="installer"/></td>
             </tr>
             </tbody>
         </table>
@@ -372,4 +425,5 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
         </table>
     </form>
 </div>
+
 <div id="popup-dialog-message"></div>

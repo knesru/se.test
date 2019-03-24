@@ -40,7 +40,7 @@
         )); ?><!-- breadcrumbs -->
 
     </div><!-- header -->
-    <div id="mainmenu">
+    <div id="mainmenu" style="display: none">
         <?php $this->widget('zii.widgets.CMenu', array(
             'items' => array(
                 array('label' => 'На сборке', 'url' => array('/toAssembly'),),

@@ -214,17 +214,19 @@ function getPriorityColumn() {
         title: "Приоритет",
         dataIndx: 'priority',
         dataType: "bool",
+        minWidth: 90,
+        maxWidth: 90,
+        editable: false,
         filter: { type: 'select',
             condition: 'equal',
-            //init: multiSelect,
             listeners: ['change'],
-            prepend: { '': 'все' },
+            prepend: { '': 'Любой' },
             valueIndx: "value",
             labelIndx: "text",
             mapIndices: {"text": "Приоритет", "value": "status"},
             options: [
-                {"value": false, "text": 'простые'},
-                {"value": true, "text": 'приоритетные'},
+                {"value": false, "text": 'Низкий'},
+                {"value": true, "text": 'Высокий'},
             ]
         },
         render: function (ui) {
@@ -232,11 +234,17 @@ function getPriorityColumn() {
                 dataIndx = ui.dataIndx;
 
             rowData.pq_cellcls = rowData.pq_cellcls || {};
+            if(rowData[dataIndx]===true){
+                rowData[dataIndx] = 1;
+            }
+            if(rowData[dataIndx]!==1){
+                rowData[dataIndx] = 0;
+            }
             if (rowData[dataIndx] > 0){
                 rowData.pq_cellcls[dataIndx] = 'high-priority';
-                return "<span class='ui-icon ui-icon-alert'> </span>&nbsp;высокий";
+                return "<span class='ui-icon ui-icon-alert'> </span><span class=\"change-priority\"><button class=\"change-priority-up\"></button><button class=\"change-priority-down\"></button></span>";
             }else {
-                return '';
+                return '<span class="change-priority"><button class="change-priority-up"></button><button class="change-priority-down"></button></span>';
             }
         }
     };
@@ -270,7 +278,7 @@ function getStatusColumn() {
         filter: { type: 'select',
             condition: 'equal',
             //init: multiSelect,
-            prepend: { '': '--Select--' },
+            prepend: { '': 'Любой' },
             listeners: ['change'],
             valueIndx: "value",
             labelIndx: "text",
