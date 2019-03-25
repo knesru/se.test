@@ -21,7 +21,7 @@ function filterHandlerComponents(evt, ui) {
         oper: 'replace',
         data: filterObject
     });
-    $requestsGrid.pqGrid('refresh');
+    $requestsGrid.pqGrid('refreshDataAndView');
 }
 
 
@@ -56,14 +56,32 @@ function saveChangesComponents() {
         }else {
             newData = grid.getChanges({format: "raw"}).updateList[0]['rowData'];
             oldData = grid.getChanges({format: "raw"}).updateList[0].oldRow;
+            if(typeof oldData['partnumber']!=="undefined" && newData['partnumber']!==oldData['partnumber']){
+                if(!isNaN(newData['partnumberid']) && newData['partnumberid']!==null) {
+                    showMessage('Нельзя переименовать компонент из STMS', 'warning');
+                    userLog('Нельзя переименовать компонент из STMS. Отмена действия', 'info');
+                    grid.rollback();
+                    return null;
+                }else{
+                    if(!confirm('Действительно переименовать компонент?')){
+                        userLog('Отменил переименование', 'log');
+                        grid.rollback();
+                        return null;
+                    }
+                }
+            }
         }
+
+
+
         for (let x in newData) {
             if (newData.hasOwnProperty(x)) {
                 let identifier = '';
+                let oldval;
                 identifier = newData['id'];
                 if (typeof grid.getColumn({dataIndx: x}) !== 'undefined') {
                     if(typeof oldData[x] !== 'undefined') {
-                        let oldval = oldData[x];
+                        oldval = oldData[x];
                     }
                     let newval = newData[x];
                     if (x === 'status') {
@@ -79,11 +97,13 @@ function saveChangesComponents() {
                             }
                         }
                     }
-                    if(typeof oldval !== 'undefined') {
-                        userLog('Поменял в строке ' + identifier + ' поле "' + grid.getColumn({dataIndx: x}).title + '": ' + oldval + ' -> ' + newval, 'log');
-                    }else{
-                        userLog('Добавил в строку ' + identifier + ' поле "' + grid.getColumn({dataIndx: x}).title + '": ' + newval, 'log');
+                    if (x === 'priority') {
+                        oldval = oldval?'высокий':'низкий';
+                        newval = newval?'высокий':'низкий';
                     }
+                     if(typeof oldval !== 'undefined') {
+                        userLog('Поменял в строке ' + identifier + ' у компонента '+newData['partnumber']+' поле «' + grid.getColumn({dataIndx: x}).title + '»: ' + oldval + ' -> ' + newval, 'log');
+                     }
                 }
             }
         }
@@ -98,7 +118,6 @@ function saveChangesComponents() {
             url: "/toAssembly/update", //for ASP.NET, java
             data: {list: JSON.stringify(changes)},
             success: function (changes) {
-                userLog(changes);
                 if(typeof changes.data !== 'undefined'){
                     let rowIndx = $componentsGrid.pqGrid('getRowIndx',{rowData:changes.data[0].id});
                     $componentsGrid.pqGrid("goToPage", { rowIndx: rowIndx });

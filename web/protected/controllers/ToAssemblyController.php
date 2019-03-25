@@ -102,6 +102,8 @@ class ToAssemblyController extends Controller
                 }
                 if (empty($model->priority)) {
                     $model->priority = 0;
+                }elseif($model->priority=='on'){
+                    $model->priority = 1;
                 }
                 if ($model->save()) {
                     if (Yii::app()->request->isAjaxRequest) {
@@ -330,9 +332,11 @@ class ToAssemblyController extends Controller
 		$newModel->id = null;
 		$newModel->partnumber = Yii::app()->request->getPost('partnumber');
 		$newModel->partnumberid = Yii::app()->request->getPost('partnumberid');
-		$model->status = 5;
-		if ($newModel->save() && $model->save()) {
-			print json_encode(array('success' => true, 'requestid' => $newModel->requestid));
+//		$model->status = 5;
+		if ($newModel->save()) {
+		    $model->description.='Заменен на компонент '.($newModel->partnumber).'; Новая строка '.($newModel->id);
+		    $model->save();
+			print json_encode(array('success' => true, 'requestid' => $newModel->requestid, 'id'=>$newModel->id));
 		} else {
 			print json_encode(array('success' => false, 'error' => 'Не получилось сохранить. ' .
 				print_r($newModel->errors, 1).'Attrs:'.print_r($model->attributes,1)));
@@ -472,6 +476,9 @@ class ToAssemblyController extends Controller
         }
         $result['totalRecords'] = $dp->totalItemCount;
         $result['curPage']=Yii::app()->request->getParam('pq_curpage');
+        if($result['curPage']<=1){
+            $result['curPage'] = 1;
+        }
         print json_encode($result);
     }
 
@@ -531,6 +538,9 @@ class ToAssemblyController extends Controller
         }
         $result['totalRecords'] = $dp->totalItemCount;
         $result['curPage']=Yii::app()->request->getParam('pq_curpage');
+        if($result['curPage']<=1){
+            $result['curPage'] = 1;
+        }
         print json_encode($result);
     }
 
@@ -680,46 +690,56 @@ class ToAssemblyController extends Controller
         $condition->compare('partnumberid', $model->partnumberid);
         $condition->compare('storeid', $_POST['storeid']);
         $condition->compare('place', $_POST['place']);
-        $store = Store::model()->find($condition);
-        if (is_null($store)) {
-            $store = new Store();
-            $store->partnumberid = $model->partnumberid;
-            $store->storeid = $_POST['storeid'];
-            $store->qty = 0;
-        }
-        $correction_model = new Storecorrection();
-        $correction_model->initiatoruserid = Yii::app()->user->id;
-        $correction_model->userid = 0;
-        $correction_model->updatedate = date('Y.m.d H:i:s.000000');
-        $correction_model->partnumberid = $model->partnumberid;
-        $correction_model->operation = 'add';
-        $correction_model->qty = $_POST['amount'];
-        $correction_model->prevqty = $store->qty;
-        $store->qty += $_POST['amount'];
-        $store->place = $_POST['place'];
-        $correction_model->postqty = $store->qty;
-        $correction_model->storeid = $store->storeid;
-        $model->installerid = $_POST['installerid'];
-        if(empty($_POST['installerid'])){
-            $installer = new Installer();
-            $installer->name = $_POST['installername'];
-            $installer->phone = 'N/A';
-            $installer->created_at = date('Y-m-d');
-            if($installer->save()){
-                $model->installerid = $installer->id;
+        $transaction=Yii::app()->db->beginTransaction();
+        if(!empty($model->partnumberid)) {
+            $store = Store::model()->find($condition);
+            if (is_null($store)) {
+                $store = new Store();
+                $store->partnumberid = $model->partnumberid;
+                $store->storeid = $_POST['storeid'];
+                $store->qty = 0;
             }
-        }
-        Yii::log('==============================================','info','system.db.xxx');
-        Yii::log(print_r($model->installer->attributes,1),'info','system.db.xxx');
-        Yii::log(print_r($model->attributes,1),'info','system.db.xxx');
-        Yii::log('==============================================','info','system.db.xxx');
-        $correction_model->description = implode(";\n",array(
-            ltrim($model->requestid, '0'),
-            $model->installer->name,
-            $model->description,
-            $model->deficite
-        ));
+            $correction_model = new Storecorrection();
+            $correction_model->initiatoruserid = Yii::app()->user->id;
+            $correction_model->userid = 0;
+            $correction_model->updatedate = date('Y.m.d H:i:s.000000');
+            $correction_model->partnumberid = $model->partnumberid;
+            $correction_model->operation = 'add';
+            $correction_model->qty = $_POST['amount'];
+            $correction_model->prevqty = $store->qty;
+            $store->qty += $_POST['amount'];
+            $store->place = $_POST['place'];
+            $correction_model->postqty = $store->qty;
+            $correction_model->storeid = $store->storeid;
 
+            /*if (empty($_POST['installerid'])) {
+                $installer = new Installer();
+                $installer->name = $_POST['installername'];
+                $installer->phone = 'N/A';
+                $installer->created_at = date('Y-m-d');
+                if ($installer->save()) {
+                    $model->installerid = $installer->id;
+                }
+            }*/
+            $correction_model->description = implode(";\n", array(
+                ltrim($model->requestid, '0'),
+                $model->installer->name,
+                $model->description,
+                $model->deficite
+            ));
+            $correction_model_saved = $correction_model->save();
+            $correction_model_errors = $correction_model->errors;
+            $store_saved = $store->save();
+            $store_errors = $store->errors;
+        }else{
+            $correction_model_saved = true;
+            $store_saved = true;
+        }
+        if(!empty($model->description)){
+            $model->description.="<br />";
+        }
+        $model->description.='Принято '.$_POST['amount'].'шт. '.date('d.m.Y');
+        $model->installerid = $_POST['installerid'];
 
         $model->delivered += $_POST['amount'];
         if ($model->delivered >= $model->amount) {
@@ -728,12 +748,13 @@ class ToAssemblyController extends Controller
 
 
 
-        $transaction=Yii::app()->db->beginTransaction();
-        if ($store->save() && $correction_model->save() && $model->save()) {
+
+
+        if ($store_saved && $correction_model_saved && $model->save()) {
             print json_encode(array('success'=>true));
             $transaction->commit();
         } else {
-            print json_encode(array('success'=>false,'error'=>array($model->errors,$store->errors,$correction_model->errors)));
+            print json_encode(array('success'=>false,'error'=>array($model->errors,$store_errors,$correction_model_errors)));
             $transaction->rollback();
         }
 

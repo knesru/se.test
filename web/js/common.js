@@ -154,7 +154,7 @@ function renderDateOnly(ui) {
     //return "hello";
     let cellData = ui.cellData;
     if (cellData) {
-        return $.datepicker.formatDate('yy-mm-dd', new Date(cellData));
+        return $.datepicker.formatDate('dd-mm-yy', new Date(cellData));
     }
     else {
         return "";
@@ -222,7 +222,7 @@ function userLog(action, severity, element, result) {
         console.error(action, element, result);
     }
     let msg = action;
-    if (typeof msg !== 'string' || isNaN(msg)) {
+    if (typeof msg !== 'string' && isNaN(msg)) {
         msg = JSON.stringify(msg);
     }
     if($('#footer').find('a').length>0){

@@ -81,60 +81,6 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
             },
             autoOpen: false
         });
-        $('#storeid').autocomplete({
-            //appendTo: ui.$cell, //for grid in maximized state.
-            source: '/component/storesList',
-            selectItem: {on: true}, //custom option
-            highlightText: {on: true}, //custom option
-            minLength: 0,
-            focus: function (event, ui) {
-                $("#storeid").val(ui.item.label);
-                return false;
-            },
-            select: function (event, ui) {
-                // console.log(a,b,c);
-                $('#storeid').val(ui.item.label);
-                $('input[name="storeid"]').val(ui.item.value);
-                return false;
-                // $.ajax({
-                //     url: '/component/ajaxComponent',
-                //     data: {partnumber: b.item.value},
-                //     success: function (res) {
-                //         if (typeof res === 'string') {
-                //             $('#Extcomponents_partnumberid').val(res).addClass('success');
-                //             $inp.parent().addClass('success');
-                //         }
-                //     }
-                // });
-            }
-
-        }).focus(function () {
-            $(this).autocomplete("search", "");
-        }).click(function () {
-            $(this).autocomplete("search", "");
-        });
-        $('#installer').autocomplete({
-            //appendTo: ui.$cell, //for grid in maximized state.
-            source: '/component/installersList',
-            selectItem: {on: true}, //custom option
-            highlightText: {on: true}, //custom option
-            minLength: 0,
-            focus: function (event, ui) {
-                $("#installer").val(ui.item.label);
-                return false;
-            },
-            select: function (event, ui) {
-                // console.log(a,b,c);
-                $('#installer').val(ui.item.label);
-                $('input[name="installer"]').val(ui.item.value);
-                return false;
-            }
-
-        }).focus(function () {
-            $(this).autocomplete("search", "");
-        }).click(function () {
-            $(this).autocomplete("search", "");
-        });
         function extractLast( term ) {
             return term.split( /,\s*/ ).pop();
         }
@@ -263,6 +209,7 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
         $("#popup-dialog-message").dialog({
             title: params.title,
             buttons: params.buttons,
+            modal: true
             // dialogClass: "ui-state-highlight",
             // classes: {
             //     "ui-dialog": "ui-state-highlight",
@@ -274,10 +221,6 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
     function requestsAction(action,force_id) {
         userLog(force_id);
         if (typeof controlData.selection !== 'undefined') {
-            if(controlData.selection.length===0){
-                showWarning('Не выбран компонент для создания заявки.');
-                return;
-            }
             // console.log(controlData.selection);
             let grid = $("#grid_requests").pqGrid();
             let data = {};
@@ -368,6 +311,7 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
 <div id="grid_history"></div>
 <div id="popup-dialog-receive" style="display:none;">
     <form id="receive-form">
+        <div class="form">
         <table align="center">
             <tbody>
             <tr>
@@ -383,19 +327,22 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
                 <td><input type="number" name="amount" id="received_amount"/></td>
             </tr>
             <tr>
-                <td><label for="storeid">Склад</label></td>
-                <td><input type="text" id="storeid"/><input type="hidden" name="storeid"></td>
+                <td><label for="storeid">Склад<span
+                                class="required">*</span><span class="ui-icon ui-icon-help" title="Для произвольного компонента склад будет проигнорирован"></span></label></td>
+                <td><?php print CHtml::dropDownList('storeid', '', CHtml::listData(Storelist::model()->findAll(),'storeid','name')); ?></td>
             </tr>
             <tr>
-                <td><label for="place">Место</label></td>
+                <td><label for="place">Место<span class="ui-icon ui-icon-help" title="Для произвольного компонента место будет проигнорировано"></span></label></td>
                 <td><input type="text" id="place"/></td>
             </tr>
             <tr>
-                <td><label for="installer">Сборщик</label></td>
-                <td><input type="text" id="installer"/><input type="hidden" name="installer"/></td>
+                <td><label for="installer">Сборщик<span
+                                class="required">*</span></label></td>
+                <td><?php print CHtml::dropDownList('installerid', '', CHtml::listData(Installer::model()->findAll(),'id','name')); ?></td>
             </tr>
             </tbody>
         </table>
+        </div>
     </form>
 </div>
 <div id="popup-dialog-replace" style="display:none;">

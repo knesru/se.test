@@ -21,7 +21,7 @@ function filterHandlerRequests(evt, ui) {
         oper: 'replace',
         data: filterObject
     });
-    $requestsGrid.pqGrid('refresh');
+    $requestsGrid.pqGrid('refreshDataAndView');
 }
 
 function saveChangesRequests() {
@@ -49,6 +49,20 @@ function saveChangesRequests() {
         let changes = grid.getChanges({format: "byVal"});
         let oldData = grid.getChanges({format: "raw"}).updateList[0].oldRow;
         let newData = grid.getChanges({format: "raw"}).updateList[0]['rowData'];
+        if(typeof oldData['partnumber']!=="undefined" && newData['partnumber']!==oldData['partnumber']){
+            if(!isNaN(newData['partnumberid']) && newData['partnumberid']!==null) {
+                showMessage('Нельзя переименовать компонент из STMS. Но можно назначить замену.', 'warning');
+                userLog('Нельзя переименовать компонент из STMS. Отмена действия', 'info');
+                grid.rollback();
+                return null;
+            }else{
+                if(!confirm('Действительно переименовать компонент?')){
+                    userLog('Отменил переименование', 'log');
+                    grid.rollback();
+                    return null;
+                }
+            }
+        }
         for (let x in oldData){
             if(oldData.hasOwnProperty(x)){
                 if(typeof newData[x] !== 'undefined'){
@@ -69,6 +83,10 @@ function saveChangesRequests() {
                                     newval = statuses[i].text;
                                 }
                             }
+                        }
+                        if (x === 'priority') {
+                            oldval = oldval?'высокий':'низкий';
+                            newval = newval?'высокий':'низкий';
                         }
                         userLog('Поменял в строке ' + identifier + ' поле "' + grid.getColumn({dataIndx: x}).title + '": ' + oldval + ' -> ' + newval, 'log');
                     }
@@ -236,6 +254,13 @@ let RequestsTable = {
                             $frm.find("#received_request").text(row['requestid'].replace(/^0+/, ''));
                             $frm.find("input[name='partnumberid']").val(row['partnumberid']);
                             $frm.find("#received_component").text(row['partnumber']);
+                            if(isNaN(row['partnumberid']) || row['partnumberid']===null){
+                                $frm.find("#storeid").attr('disabled','disabled');
+                                $frm.find("#place").attr('disabled','disabled');
+                            }else{
+                                $frm.find("#storeid").removeAttr('disabled');
+                                $frm.find("#place").removeAttr('disabled');
+                            }
                             userLog('Принимаю компонент '+row['partnumber']+', строка '+row['id']+' на склад');
                             $("#popup-dialog-receive").dialog({
                                 title: row['requestid'].replace(/^0+/, '') + ': ' + row['partnumber'], buttons: {
@@ -256,10 +281,10 @@ let RequestsTable = {
                                         let sendData = {
                                             requestid: row['id'],
                                             amount: $frm.find("input[name='amount']").val(),
-                                            storeid: $frm.find("input[name='storeid']").val(),
+                                            storeid: $frm.find("#storeid").val(),
                                             place: $frm.find("#place").val(),
-                                            installerid: $frm.find("input[name='installer']").val(),
-                                            installername: $frm.find("#installer").val()
+                                            installerid: $frm.find("#installerid").val(),
+                                            installername: $frm.find("#installerid").find(':selected').text()
                                         };
 
                                         userLog('Заполнил форму.');
@@ -371,7 +396,8 @@ let RequestsTable = {
                         if(rowIndx === null){
                             return;
                         }
-                        var row = $requestsGrid.pqGrid('getRowData', {rowIndx: rowIndx});
+                        let row = $requestsGrid.pqGrid('getRowData', {rowIndx: rowIndx});
+                        userLog('Назначаю замену для компонента '+row['partnumber']+' в заявке '+row['requestid']+', строка '+row['id']);
 
                         let $frm = $("form#replace-form");
                         $frm.find("#replace_request").text(row['requestid'].replace(/^0+/, ''));
@@ -380,6 +406,10 @@ let RequestsTable = {
                         $("#popup-dialog-replace").dialog({
                             title: row['requestid'].replace(/^0+/, '') + ': ' + row['partnumber'], buttons: {
                                 "Заменить": function () {
+                                    let oldpn,newpn;
+                                    oldpn = row['partnumber'];
+                                    newpn = $frm.find("input#replace_component").val();
+
                                     $.ajax({
                                         dataType: "json",
                                         type: "POST",
@@ -394,8 +424,20 @@ let RequestsTable = {
                                             partnumberid: $frm.find("input#newpartnumberid").val()
                                         },
                                         success: function (changes) {
+                                            if(typeof changes!=='undefined'){
+                                                if(typeof changes.success!=="undefined"){
+                                                    if(changes.success){
+                                                        userLog('Компонент успешно заменен: '+oldpn+' -> '+newpn+' новая строка '+changes.id);
+                                                    }else{
+                                                        userLog(changes.error,'error');
+                                                    }
+                                                }
+                                            }
                                             //debugger;
                                             grid.history({method: 'reset'});
+                                        },
+                                        error: function(err){
+                                            userLog(err,'error');
                                         },
                                         complete: function () {
                                             grid.hideLoading();

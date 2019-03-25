@@ -81,6 +81,7 @@ function getUserColumn() {
         title: "Пользователь",
         dataIndx: 'user',
         dataType: "string",
+        editable: false,
         filter: {
             type: 'textbox',
             condition: 'contain',
@@ -113,10 +114,7 @@ function getCreated_atColumn() {
         render: function (ui) {
             return renderDateOnly(ui);
         },
-        editor: {
-            type: 'textbox',
-            init: dateEditor
-        },
+        editable: false,
         filter: {
             type: 'textbox',
             condition: 'between',
