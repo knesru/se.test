@@ -319,7 +319,7 @@ let ComponentsTable = {
     showTitle: false,
     numberCell: {show: false},
     columnBorders: true,
-    refresh: function () {
+    refresh: function (event, ui) {
         let $grid = $("#grid_new_components");
         $grid.find("button.create_request_btn").button()
             .unbind("click")

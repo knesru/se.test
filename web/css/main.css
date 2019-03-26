@@ -340,3 +340,12 @@ span.saving
 	width: 100%;
 	overflow: hidden;
 }
+#open_settigs_menu{
+	padding: 5px 8px;
+	cursor: pointer;
+}
+#open_settigs_menu:hover{
+	color: #6399cd;
+	background-color: #EFF4FA;
+	text-decoration: none;
+}

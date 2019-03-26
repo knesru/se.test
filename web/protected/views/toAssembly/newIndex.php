@@ -81,6 +81,13 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
             },
             autoOpen: false
         });
+        $("#popup-dialog-settings").dialog({
+            width: 400, modal: false,
+            autoOpen: false
+        });
+        $('#open_settigs_menu').click(function(){
+            $("#popup-dialog-settings").dialog('open');
+        });
         function extractLast( term ) {
             return term.split( /,\s*/ ).pop();
         }
@@ -374,8 +381,13 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
 
 <div id="popup-dialog-message"></div>
 
-<div id="popup-dialog-form-new-component">
+<div id="popup-dialog-form-new-component" style="display: none;">
     <?php
         $this->renderPartial('_form_new_comp');
+    ?>
+</div>
+<div id="popup-dialog-settings" style="display: none;">
+    <?php
+        $this->renderPartial('_form_settings');
     ?>
 </div>
