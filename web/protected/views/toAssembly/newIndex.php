@@ -31,6 +31,25 @@ $cs = Yii::app()->getClientScript();
             {"value": 5, "text": 'Отмена'}
         ];
     }
+    function getUsersArray() {
+        return <?php
+            $criteria = new CDbCriteria();
+            $criteria->with = array(
+                'userinfo' => array('together' => true,),
+            );
+            $criteria->order = 'userinfo.fullname, t.username';
+            $listUsers = array();
+            $listUsersModels = User::model()->findAll($criteria);
+            foreach ($listUsersModels as $userModel) {
+                $username = $userModel->username;
+                if(!empty($userModel->userinfo->fullname)){
+                    $username = $userModel->userinfo->fullname;
+                }
+                $listUsers[] = array('value'=>$username,'text'=>$username);
+            }
+            print json_encode($listUsers);
+            ?>;
+    }
 </script>
 <?php
 //$min = '.min';

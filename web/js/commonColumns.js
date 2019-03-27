@@ -83,9 +83,15 @@ function getUserColumn() {
         dataType: "string",
         editable: false,
         filter: {
-            type: 'textbox',
-            condition: 'contain',
-            listeners: ['change']
+            type: 'select',
+            condition: 'equal',
+            //init: multiSelect,
+            prepend: { '': 'Любой' },
+            listeners: ['change'],
+            valueIndx: "value",
+            labelIndx: "text",
+            mapIndices: {"text": "Пользователь", "value": "user"},
+            options: getUsersArray()
         }
     };
 }
@@ -295,6 +301,21 @@ function getStatusColumn() {
             mapIndices: {"text": "Статус", "value": "status"},
             options: getStatusesArray()
         }
+    };
+}
+
+
+function getActionsColumn(type){
+    return {
+        title: "",
+        dataIndx: 'actionsColumn',
+        editable: false,
+        sortable: false,
+        maxWidth: 60,
+        minWidth: 60,
+        render: function (ui) {
+            return "<button type='button' class='delete_"+type+"_btn ui-button'>Удалить</button>";
+        },
     };
 }
 

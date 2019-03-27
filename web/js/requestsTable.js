@@ -181,6 +181,7 @@ let RequestsTableColumnModel = [
     getInstall_fromColumn(),
     getPriorityColumn(),
     getStatusColumn(),
+    getActionsColumn('request')
 ];
 let RequestsTableDataModel = {
     recIndx: "id", //primary key
@@ -532,6 +533,49 @@ let RequestsTable = {
                 .tooltip();
 
         });
+        $grid.find("button.delete_request_btn").button()
+            .unbind("click")
+            .bind("click", function (evt) {
+                let $tr = $(this).parents('tr');
+                let grid = $requestsGrid.pqGrid('getInstance').grid;
+                let rowIndx = grid.getRowIndx({$tr: $tr}).rowIndx;
+                let row = $requestsGrid.pqGrid('getRowData', {rowIndx: rowIndx});
+                userLog('Исключаю '+(row['priority']?'приоритетный ':'')+'компонент '+row['partnumber']+' из заявки '+row['requestid']+', строка '+row['id']+'...');
+                if(row['priority']) {
+                    if (!confirm('Внимание, исключается компонент с высоким приоритетом. Продолжить?')) {
+                        userLog('Испугался и все отменил для компонента ' + row['partnumber'] + ', строки ' + row['id']);
+                        return;
+                    }
+                    userLog('Подтвердил исключение приоритетного компонента ' + row['partnumber'] + ', строки ' + row['id']);
+                }
+                $.ajax({
+                    dataType: "json",
+                    type: "POST",
+                    async: true,
+                    beforeSend: function (jqXHR, settings) {
+                        grid.showLoading();
+                    },
+                    url: "/toAssembly/removecomponent", //for ASP.NET, java
+                    data: {id: [row['id']]},
+                    success: function (result) {
+                        if(result.success){
+                            userLog('Успешно исключен компонент '+result.pn);
+                            grid.refreshDataAndView();
+                            grid.history({method: 'reset'});
+                            $componentsGrid.pqGrid('refreshDataAndView');
+                        }else{
+                            userLog(result.error,'error');
+                        }
+                    },
+                    error: function(err){
+                        userLog(err.responseText,'error');
+                    },
+                    complete: function () {
+                        grid.hideLoading();
+                    }
+                });
+
+            });
     },
     rowSelect: function( event, ui ) {
         $('.shorttext').addClass('folded-text');

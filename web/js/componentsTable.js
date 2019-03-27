@@ -169,14 +169,7 @@ let ComponentsTableColumnModel = [
     getDescriptionColumn(),
     getInstall_fromColumn(),
     getPriorityColumn(),
-    {
-        title: "",
-        editable: false,
-        sortable: false,
-        render: function (ui) {
-            return "<button type='button' class='delete_component_btn ui-button'>Удалить</button>";
-        },
-    },
+    getActionsColumn('component')
 ];
 
 let ComponentsTableDataModel = {
@@ -358,6 +351,7 @@ let ComponentsTable = {
                         if(result.success){
                             userLog('Успешно удален компонент '+result.pn);
                             grid.refreshDataAndView();
+                            $requestsGrid.pqGrid('refreshDataAndView');
                             grid.history({method: 'reset'});
                         }else{
                             userLog(result.error,'error');

@@ -93,6 +93,19 @@ class Settings extends CActiveRecord
 		));
 	}
 
+	public function getUserSettings($name){
+        $criteria=new CDbCriteria;
+        $criteria->compare('user_id', Yii::app()->user->id);
+        $criteria->compare('name', $name);
+        $model = $this->find($criteria);
+        if(is_null($model)){
+            $model = new Settings();
+            $model->name = $name;
+            $model->user_id = Yii::app()->user->id;
+        }
+        return $model;
+    }
+
 	/**
 	 * Returns the static model of the specified AR class.
 	 * Please note that you should have this exact method in all your CActiveRecord descendants!

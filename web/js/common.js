@@ -163,7 +163,7 @@ function renderDateOnly(ui) {
 
 function renderShortText(ui) {
     let cellData = ui.cellData;
-    return '<div class="shorttext folded-text">'+cellData+'</div>';
+    return '<div class="shorttext folded-text" title="'+cellData+'">'+cellData+'</div>';
 }
 
 function clearFilter() {
@@ -266,6 +266,7 @@ function getFormData(form) {
     $.map(rawJson, function (n, i) {
         model[n['name']] = n['value'];
     });
+
 
     return model;
 }
