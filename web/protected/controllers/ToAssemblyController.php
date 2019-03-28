@@ -596,13 +596,8 @@ class ToAssemblyController extends Controller
                 $cell = $this->dc($cell, array(-$i, 1));
             }
 
-//        header('Content-Disposition: attachment; filename="' . 'xxx.xlsx' . '"');
-//        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-//
-//        header('Connection: close');
 
             $objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel2007');
-//        ob_start();
 
             $filename = date('Y-m-d_H-i-s') . '_' . md5(microtime()) . 'xlsx';
 
@@ -732,13 +727,26 @@ class ToAssemblyController extends Controller
             $store_saved = $store->save();
             $store_errors = $store->errors;
         }else{
-            $correction_model_saved = true;
+            $correction_model = new StorecorrectionExt();
+            $correction_model->initiatoruserid = Yii::app()->user->id;
+            $correction_model->created_at = date('Y.m.d H:i:s.000000');
+            $correction_model->partnumber = $model->partnumber;
+            $correction_model->qty = $_POST['amount'];
+
+            $correction_model->description = implode(";\n", array(
+              ltrim($model->requestid, '0'),
+              $model->installer->name,
+              $model->description,
+              $model->deficite
+            ));
+            $correction_model_saved = $correction_model->save();
+            $correction_model_errors = $correction_model->errors;
             $store_saved = true;
         }
         if(!empty($model->description)){
             $model->description.="<br />";
         }
-        $model->description.='Принято '.$_POST['amount'].'шт. '.date('d.m.Y');
+        //$model->description.='Принято '.$_POST['amount'].'шт. '.date('d.m.Y');
         $model->installerid = $_POST['installerid'];
 
         $model->delivered += $_POST['amount'];

@@ -49,45 +49,45 @@
         });
         $('#ss_submit').click(function(){
             let data = {'rcm':[],'ccm':[]};
-            let rcm = $requestsGrid.pqGrid("getColModel");
-            let ccm = $componentsGrid.pqGrid("getColModel");
+            let rcm = $requestsGrid.pqGrid( "option", "colModel" );
+            let ccm = $componentsGrid.pqGrid( "option", "colModel" );
 
-            console.log(ccm);
             for (let i = 0; i < rcm.length; i++) {
+                let hidden = false;
+                if(typeof rcm[i].hidden!=="undefined"){
+                    hidden = rcm[i].hidden;
+                }
                 data.rcm[i] = {
                     dataIndx: rcm[i].dataIndx,
-                    hidden: rcm[i].hidden,
+                    hidden: hidden,
                     width: rcm[i].width
                 }
             }
             for (let i = 0; i < ccm.length; i++) {
+                let hidden = false;
+                if(typeof ccm[i].hidden!=="undefined"){
+                    hidden = ccm[i].hidden;
+                }
                 data.ccm[i] = {
                     dataIndx: ccm[i].dataIndx,
-                    hidden: ccm[i].hidden,
+                    hidden: hidden,
                     width: ccm[i].width
                 }
             }
 
             data.rpm = $requestsGrid.pqGrid( "option" ,'pageModel');
             data.cpm = $componentsGrid.pqGrid( "option" ,'pageModel');
-
             $.ajax({
                 dataType: "json",
                 type: "POST",
                 async: true,
-                beforeSend: function (jqXHR, settings) {
-                    //grid.showLoading();
-                },
                 url: "/settings/save", //for ASP.NET, java
                 data: {name: 'to_assembly', data: data},
                 success: function (result) {
-                    userLog(result);
+                    generalAjaxAnswer(result);
                 },
                 error: function(err){
                     userLog(err.responseText,'error');
-                },
-                complete: function () {
-                    //grid.hideLoading();
                 }
             });
         });
@@ -101,56 +101,55 @@
                 },
                 url: "/settings/load", //for ASP.NET, java
                 data: {name: 'to_assembly'},
-                success: function (result){
-                    if(typeof result.success === "undefined"){
-                        userLog(result,'error');
-                    }else{
-                        if(result.success){
-                            if(typeof result.data !== "undefined"){
-                                let data = result.data;
-                                let rcm = $requestsGrid.pqGrid( "option", "colModel" );
-                                let rcm_new = [];
-                                let ccm = $componentsGrid.pqGrid( "option", "colModel" );
-                                let ccm_new = [];
-                                function findInCm(cm,dataIndx){
-                                    for(let i=0; i<cm.length; i++){
-                                        if(cm[i].dataIndx===dataIndx){
-                                            return cm[i];
-                                        }
-                                    }
-                                    console.log(dataIndx);
-                                    return false;
-                                }
-                                for (let i = 0; i < data.rcm.length; i++) {
-                                    let cm = {};
-                                    if(cm=findInCm(rcm,data.rcm[i].dataIndx)){
-                                        cm.hidden = data.rcm[i].hidden;
-                                        cm.width = data.rcm[i].width;
-                                        rcm_new.push(cm);
-                                        $("input[name='r_"+data.rcm[i].dataIndx+"']").prop('checked',!cm.hidden);
-                                    }
+                success: function (result) {
+                    if (generalAjaxAnswer(result)) {
+                        if (typeof result.data !== "undefined" && result.data != null) {
+                            let data = result.data;
+                            let rcm = $requestsGrid.pqGrid("option", "colModel");
+                            let rcm_new = [];
+                            let ccm = $componentsGrid.pqGrid("option", "colModel");
+                            let ccm_new = [];
 
-                                }
-                                for (let i = 0; i < data.ccm.length; i++) {
-                                    let cm = {};
-                                    if(cm=findInCm(ccm,data.ccm[i].dataIndx)){
-                                        cm.hidden = data.ccm[i].hidden;
-                                        cm.width = data.ccm[i].width;
-                                        ccm_new.push(cm);
-                                        $("input[name='c_"+data.ccm[i].dataIndx+"']").prop('checked',!cm.hidden);
+                            function findInCm(cm, dataIndx) {
+                                for (let i = 0; i < cm.length; i++) {
+                                    if (cm[i].dataIndx === dataIndx) {
+                                        return cm[i];
                                     }
-
                                 }
-                                $requestsGrid
-                                    .pqGrid( "option" ,'colModel',  rcm_new)
-                                    .pqGrid( "option" ,'pageModel',  data.rpm)
-                                    .pqGrid( "refresh" );
-                                $componentsGrid
-                                    .pqGrid( "option" ,'colModel',  ccm_new)
-                                    .pqGrid( "option" ,'pageModel',  data.cpm)
-                                    .pqGrid( "refresh" );
+                                userLog('Не распознан индекс колонки ' + dataIndx, 'error');
+                                return false;
                             }
+
+                            for (let i = 0; i < data.rcm.length; i++) {
+                                let cm = {};
+                                data.rcm[i].hidden = data.rcm[i].hidden === 'true' || data.rcm[i].hidden === true;
+                                if (cm = findInCm(rcm, data.rcm[i].dataIndx)) {
+                                    cm.hidden = data.rcm[i].hidden === 'true';
+                                    cm.width = data.rcm[i].width;
+                                    rcm_new.push(cm);
+                                    $("input[name='r_" + data.rcm[i].dataIndx + "']").prop('checked', !cm.hidden);
+                                }
+
+                            }
+                            for (let i = 0; i < data.ccm.length; i++) {
+                                let cm = {};
+                                data.ccm[i].hidden = data.ccm[i].hidden === 'true' || data.ccm[i].hidden === true;
+                                if (cm = findInCm(ccm, data.ccm[i].dataIndx)) {
+                                    cm.hidden = data.ccm[i].hidden;
+                                    cm.width = data.ccm[i].width;
+                                    ccm_new.push(cm);
+                                    $("input[name='c_" + data.ccm[i].dataIndx + "']").prop('checked', !cm.hidden);
+                                }
+
+                            }
+                            $requestsGrid
+                                .pqGrid("option", 'colModel', rcm_new)
+                                .pqGrid("option", 'pageModel', data.rpm).pqGrid("refresh");
+                            $componentsGrid
+                                .pqGrid("option", 'colModel', ccm_new)
+                                .pqGrid("option", 'pageModel', data.cpm).pqGrid("refresh");
                         }
+
                     }
                 },
                 error: function(err){

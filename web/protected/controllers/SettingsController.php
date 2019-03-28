@@ -39,7 +39,7 @@ class SettingsController extends Controller
             print json_encode(array('success'=>false));
             return;
         }
-        print json_encode(array('success'=>true,'data'=>json_decode($out,true)));
+        print json_encode(array('success'=>true,'message'=>'Настройки загружены','data'=>json_decode($out,true)));
         return;
 	}
 
@@ -48,7 +48,7 @@ class SettingsController extends Controller
         $name = Yii::app()->request->getPost('name',array());
         $model = Settings::model()->getUserSettings('extcomponents_'.$name);
         if($model->delete()){
-            print json_encode(array('success'=>true));
+            print json_encode(array('success'=>true,'message'=>'Настройки сброшены'));
             return;
         }
         print json_encode(array('success'=>false));
@@ -61,11 +61,11 @@ class SettingsController extends Controller
         $data = Yii::app()->request->getPost('data',array());
         $model = Settings::model()->getUserSettings('extcomponents_'.$name);
         $model->value = base64_encode(json_encode($data));
-        if($model->save()){
-            print json_encode(array('success'=>true));
+        if($model->value && $model->save()){
+            print json_encode(array('success'=>true,'message'=>'Настройки сохранены'));
             return;
         }
-        print json_encode(array('success'=>false));
+        print json_encode(array('success'=>false,'error'=>$model->errors,'data'=>$model->attributes));
         return;
 	}
 

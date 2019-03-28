@@ -349,3 +349,8 @@ span.saving
 	background-color: #EFF4FA;
 	text-decoration: none;
 }
+
+.toolTipDetails {
+	max-width: 800px !important;
+	word-break: break-all;
+}

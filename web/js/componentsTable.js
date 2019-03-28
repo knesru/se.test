@@ -313,8 +313,13 @@ let ComponentsTable = {
     numberCell: {show: false},
     columnBorders: true,
     refresh: function (event, ui) {
+        setTimeout(function(){
+
+
+        let d = new Date();
         let $grid = $("#grid_new_components");
-        $grid.find("button.create_request_btn").button()
+
+        $grid.find(".create_request_btn").button()
             .unbind("click")
             .bind("click", function (evt) {
                 let $tr = $(this).closest('tr');
@@ -322,8 +327,7 @@ let ComponentsTable = {
                 let row = $componentsGrid.pqGrid('getRowData', {rowIndx: rowIndx});
                 requestsAction('create',row['id']);
             });
-
-        $grid.find("button.delete_component_btn").button()
+        $grid.find(".delete_component_btn").button()
             .unbind("click")
             .bind("click", function (evt) {
                 let $tr = $(this).parents('tr');
@@ -366,57 +370,60 @@ let ComponentsTable = {
                 });
 
             });
-        $grid.find('.change-priority').each(function(){
-            let $tr = $(this).parents('tr');
-            let rowIndx = $componentsGrid.pqGrid('getRowIndx',{$tr: $tr}).rowIndx;
-            let row = $componentsGrid.pqGrid('getRowData', {rowIndx: rowIndx});
-            let disableUp = false;
-            let disableDown = false;
-            if(row['priority']){
-                disableUp = true;
+        $grid.find('.change-priority').parent().css('text-align','right');
+        $grid.find('.change-priority').find('.change-priority-up')
+            .button({
+                icon:  'ui-icon-arrowthick-1-n'//,
+                //"disabled":$(this).data('dis')==='dis'
+            })
+            .unbind('click')
+            .click(function () {
+                let $tr = $(this).closest('tr');
+                let rowIndx = $componentsGrid.pqGrid('getRowIndx',{$tr: $tr}).rowIndx;
+                $componentsGrid
+                    .pqGrid( "updateRow", {
+                        rowIndx: rowIndx,
+                        checkEditable: false,
+                        row: {'priority':1}
+                    });
+            })
+            .css('border-radius','4px 0px 0px 4px')
+            .attr('title','Повысить приоритет')
+            .tooltip();
+        $grid.find('.change-priority')
+            .find('.change-priority-down')
+            .button({
+                icon:  'ui-icon-arrowthick-1-s'//,
+                //"disabled":$(this).data('dis')==='dis'
+            })
+            .unbind('click')
+            .click(function () {
+                userLog('Понизил приоритет');
+                let $tr = $(this).closest('tr');
+                let rowIndx = $componentsGrid.pqGrid('getRowIndx',{$tr: $tr}).rowIndx;
+                $componentsGrid
+                    .pqGrid( "updateRow", {
+                        rowIndx: rowIndx,
+                        checkEditable: false,
+                        row: { 'priority': 0 }
+                    });
+            })
+            .css({'border-radius':'0px 4px 4px 0px','margin-left':-1})
+            .attr('title','Понизить приоритет')
+            .tooltip();
+        let d6 = new Date();
+        let delta = (d6-d)/1000;
+        if(delta>0.5) {
+            let pm = $componentsGrid.pqGrid( "option" ,'pageModel');
+            let additionalMessage;
+            if(pm.rPP<500){
+                additionalMessage = 'Это много для '+pm.rPP+' строк. Если будет повторяться, свяжитесь с разработчиком';
             }else{
-                disableDown = true;
+                additionalMessage = 'Попробуйте уменьшить количество отображаемых строк на странице'
             }
-            $(this).parent().css('text-align','right');
-            $(this)
-                .find('.change-priority-up')
-                .button({
-                    icon:  'ui-icon-arrowthick-1-n',
-                    "disabled":disableUp
-                })
-                .unbind('click')
-                .click(function () {
-                    $componentsGrid
-                        .pqGrid( "updateRow", {
-                            rowIndx: rowIndx,
-                            checkEditable: false,
-                            row: {'priority':1}
-                        });
-                })
-                .css('border-radius','4px 0px 0px 4px')
-                .attr('title','Повысить приоритет')
-                .tooltip();
-            $(this)
-                .find('.change-priority-down')
-                .button({
-                    icon:  'ui-icon-arrowthick-1-s',
-                    "disabled":disableDown,
-                })
-                .unbind('click')
-                .click(function () {
-                    userLog('Понизил приоритет');
-                    $componentsGrid
-                        .pqGrid( "updateRow", {
-                            rowIndx: rowIndx,
-                            checkEditable: false,
-                            row: { 'priority': 0 }
-                        });
-                })
-                .css({'border-radius':'0px 4px 4px 0px','margin-left':-1})
-                .attr('title','Понизить приоритет')
-                .tooltip();
-
-        });
+            userLog('Тблица отрисована за ' + delta + 'с. '+additionalMessage,'info');
+        }
+        },10);
     },
     rowSelect: function( event, ui ) {
         $('.shorttext').not('.folded-text').addClass('folded-text',150);

@@ -270,3 +270,23 @@ function getFormData(form) {
 
     return model;
 }
+
+function generalAjaxAnswer(result){
+    const TYPE_ERROR = 'error';
+    const TYPE_INFO = 'error';
+    const TYPE_LOG = 'error';
+    if(typeof result==="undefined"){
+        userLog('Ответ не распознан',TYPE_ERROR);
+        return false;
+    }
+    if(typeof result.success !== "undefined") {
+        if(result.success){
+            if(typeof result.message!=="undefined"){
+                userLog(result.message);
+            }
+            return true;
+        }
+    }
+    userLog('Неизвестно, был ли ответ успешен',TYPE_ERROR);
+    return false;
+}

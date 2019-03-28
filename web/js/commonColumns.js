@@ -249,18 +249,40 @@ function getPriorityColumn() {
             let rowData = ui.rowData,
                 dataIndx = ui.dataIndx;
 
-            rowData.pq_cellcls = rowData.pq_cellcls || {};
             if(rowData[dataIndx]===true){
                 rowData[dataIndx] = 1;
             }
             if(rowData[dataIndx]!==1){
                 rowData[dataIndx] = 0;
             }
+
+            let downdata = 'data-x="'+ui.rowIndx+'" ';
+            let updata = 'data-x="'+ui.rowIndx+'" ';
+
+            if (rowData[dataIndx] > 0){
+                updata += 'data-dis="dis"';
+            }else {
+                downdata += 'data-dis="dis"';
+            }
+
+            let buttonUp = "<button class=\"change-priority-up \" "+updata+"></button>";
+            let buttonDown = "<button class=\"change-priority-down \" "+downdata+"></button>";
+
+            let buttons = "<span class=\"change-priority\">"+buttonUp+buttonDown+"</span>";
+
+            if(rowData['status'] == 4 || rowData['status'] == 5){
+                buttons = '';
+            }
+            if(ui.rowIndx>=500){
+                buttons = '';
+            }
+            rowData.pq_cellcls = rowData.pq_cellcls || {};
+
             if (rowData[dataIndx] > 0){
                 rowData.pq_cellcls[dataIndx] = 'high-priority';
-                return "<span class='ui-icon ui-icon-alert'> </span><span class=\"change-priority\"><button class=\"change-priority-up\"></button><button class=\"change-priority-down\"></button></span>";
+                return "<span class='ui-icon ui-icon-alert'> </span>" + buttons;
             }else {
-                return '<span class="change-priority"><button class="change-priority-up"></button><button class="change-priority-down"></button></span>';
+                return buttons;
             }
         }
     };
@@ -314,6 +336,11 @@ function getActionsColumn(type){
         maxWidth: 60,
         minWidth: 60,
         render: function (ui) {
+            let rowData = ui.rowData,
+                dataIndx = ui.dataIndx;
+            if(rowData['status'] == 4 || rowData['status'] == 5){
+                return '';
+            }
             return "<button type='button' class='delete_"+type+"_btn ui-button'>Удалить</button>";
         },
     };
@@ -349,7 +376,7 @@ function getPageModel() {
         strDisplay: "с {0} до {1} из {2}",
         rPPOptions: function () {
             let rpp = [5, 10, 20];
-            for (let i=0; i<11; i++){
+            for (let i=0; i<8; i++){
                 rpp.push(rpp[i]*10);
             }
             return rpp;

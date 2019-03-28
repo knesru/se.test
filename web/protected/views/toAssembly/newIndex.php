@@ -127,7 +127,6 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
                 return false;
             },
             select: function (event, ui) {
-                // console.log(a,b,c);
                 $('#place').val(ui.item.label);
                 // $('input[name="storeid"]').val(ui.item.value);
                 return false;
@@ -182,7 +181,6 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
                 highlightText: { on: true }, //custom option
                 minLength: 2,
                 select: function (a,b,c) {
-                    // console.log(a,b,c);
                     $.ajax({
                         url: '/component/ajaxComponent',
                         data: {partnumber: b.item.value},
@@ -199,7 +197,12 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
                 $(this).autocomplete("search", "");
             });
         });
-        $( document ).tooltip();
+        $( document ).tooltip({
+            tooltipClass: "toolTipDetails"
+        });
+        $componentsGrid.one("pqgridload", function (evt, ui) {
+            $('#ss_rollback').click();
+        });
     });
     function showMessage(message, type) {
         if(typeof type === 'undefined'){
@@ -247,7 +250,6 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
     function requestsAction(action,force_id) {
         userLog(force_id);
         if (typeof controlData.selection !== 'undefined') {
-            // console.log(controlData.selection);
             let grid = $("#grid_requests").pqGrid();
             let data = {};
             data.ids = controlData.selection;

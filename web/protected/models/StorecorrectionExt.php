@@ -1,25 +1,24 @@
 <?php
 
 /**
- * This is the model class for table "{{settings}}".
+ * This is the model class for table "{{storecorrection_ext}}".
  *
- * The followings are the available columns in table '{{settings}}':
+ * The followings are the available columns in table '{{storecorrection_ext}}':
  * @property integer $id
- * @property integer $user_id
- * @property string $name
- * @property string $value
- *
- * The followings are the available model relations:
- * @property User $user
+ * @property integer $initiatoruserid
+ * @property string $created_at
+ * @property integer $partnumber
+ * @property integer $qty
+ * @property string $description
  */
-class Settings extends CActiveRecord
+class StorecorrectionExt extends CActiveRecord
 {
 	/**
 	 * @return string the associated database table name
 	 */
 	public function tableName()
 	{
-		return '{{settings}}';
+		return '{{storecorrection_ext}}';
 	}
 
 	/**
@@ -30,13 +29,11 @@ class Settings extends CActiveRecord
 		// NOTE: you should only define rules for those attributes that
 		// will receive user inputs.
 		return array(
-			array('name', 'required'),
-			array('user_id', 'numerical', 'integerOnly'=>true),
-			array('name', 'length', 'max'=>255),
-			array('value', 'safe'),
+			array('initiatoruserid, created_at, partnumber, qty, description', 'required'),
+			array('initiatoruserid, qty', 'numerical', 'integerOnly'=>true),
 			// The following rule is used by search().
 			// @todo Please remove those attributes that should not be searched.
-			array('id, user_id, name, value', 'safe', 'on'=>'search'),
+			array('id, initiatoruserid, created_at, partnumber, qty, description', 'safe', 'on'=>'search'),
 		);
 	}
 
@@ -48,7 +45,6 @@ class Settings extends CActiveRecord
 		// NOTE: you may need to adjust the relation name and the related
 		// class name for the relations automatically generated below.
 		return array(
-			'user' => array(self::BELONGS_TO, 'User', 'user_id'),
 		);
 	}
 
@@ -59,9 +55,11 @@ class Settings extends CActiveRecord
 	{
 		return array(
 			'id' => 'ID',
-			'user_id' => 'User',
-			'name' => 'Name',
-			'value' => 'Value',
+			'initiatoruserid' => 'Пользователь',
+			'created_at' => 'Добавлено',
+			'partnumber' => 'Партномер',
+			'qty' => 'Количество',
+			'description' => 'Описание',
 		);
 	}
 
@@ -84,33 +82,22 @@ class Settings extends CActiveRecord
 		$criteria=new CDbCriteria;
 
 		$criteria->compare('id',$this->id);
-		$criteria->compare('user_id',$this->user_id);
-		$criteria->compare('name',$this->name,true);
-		$criteria->compare('value',$this->value,true);
+		$criteria->compare('initiatoruserid',$this->initiatoruserid);
+		$criteria->compare('created_at',$this->created_at,true);
+		$criteria->compare('partnumber',$this->partnumber);
+		$criteria->compare('qty',$this->qty);
+		$criteria->compare('description',$this->description,true);
 
 		return new CActiveDataProvider($this, array(
 			'criteria'=>$criteria,
 		));
 	}
 
-	public function getUserSettings($name){
-        $criteria=new CDbCriteria;
-        $criteria->compare('user_id', Yii::app()->user->id);
-        $criteria->compare('name', $name);
-        $model = Settings::model()->find($criteria);
-        if(is_null($model)){
-            $model = new Settings();
-            $model->name = $name;
-            $model->user_id = Yii::app()->user->id;
-        }
-        return $model;
-    }
-
 	/**
 	 * Returns the static model of the specified AR class.
 	 * Please note that you should have this exact method in all your CActiveRecord descendants!
 	 * @param string $className active record class name.
-	 * @return Settings the static model class
+	 * @return StorecorrectionExt the static model class
 	 */
 	public static function model($className=__CLASS__)
 	{
