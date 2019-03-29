@@ -1,5 +1,8 @@
 <?php
 
+/**
+ * Class ToAssemblyController
+ */
 class ToAssemblyController extends Controller
 {
     /**
@@ -30,11 +33,11 @@ class ToAssemblyController extends Controller
     {
         return array(
             array('allow',  // allow all users to perform 'index' and 'view' actions
-                'actions' => array('index', 'newIndex', 'view', 'export', 'requestslist', 'componentslist'),
+                'actions' => array('index', 'newIndex', 'view', 'export', 'requestslist', 'componentslist', 'storecorrectionlist'),
                 'users' => array('*'),
             ),
             array('allow', // allow authenticated user to perform 'create' and 'update' actions
-                'actions' => array('create', 'update', 'receive', 'request', 'replace', 'removecomponent'),
+                'actions' => array('create', 'update', 'receive', 'request', 'replace', 'removecomponent', 'storecorrectionlist'),
                 'users' => array('@'),
             ),
             array('allow', // allow admin user to perform 'admin' and 'delete' actions
@@ -901,8 +904,51 @@ location.reload();
 
         return $_directions;
     }
+    function actionStoreCorrectionList(){
+        $raw_id = Yii::app()->request->getPost('id',0);
+        $id = intval($raw_id);
+        if($id==0){
+            $this->j('message',true);
+        }
+        $model = Extcomponents::model()->findByPk($id);
+        if(is_null($model)){
+            $this->j(sprintf('Строка %s не найдена.',$raw_id),false);
+        }
+        if(empty($model->partnumberid)){
+            //Левый компонент не из STMS
+            $storeCorrectionModel = StorecorrectionExt::model()->findAllByAttributes(array(
+                'partnumber'=>$model->partnumber
+            ));
+        }else{
+            $storeCorrectionModel = Storecorrection::model()->with('component')->findAllByAttributes(array(
+                'partnumberid'=>$model->partnumberid
+            ));
+        }
+        if(is_null($storeCorrectionModel)){
+            $this->j(array('data'=>array(),'totalRecords'=>0),1);
+        }
+        /** @var  $storecorrection */
+        foreach ($storeCorrectionModel as $storecorrection){
+
+        }
+
+
+
+        foreach ($dp->getData() as $requestedComponent) {
+            $row = $requestedComponent->attributes;
+            $row['user'] = $requestedComponent->user->userinfo->fullname;
+            if(empty($row['user'])){
+                $row['user'] = $requestedComponent->user->username;
+            }
+            $result['data'][] = $row;
+        }
+        $result['totalRecords'] = $dp->totalItemCount;
+        $result['curPage']=Yii::app()->request->getParam('pq_curpage');
+        if($result['curPage']<=1){
+            $result['curPage'] = 1;
+        }
+    }
 
 }
-
 
 

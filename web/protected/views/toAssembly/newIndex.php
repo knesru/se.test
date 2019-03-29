@@ -19,6 +19,7 @@ $cs = Yii::app()->getClientScript();
     let controlData = {};
     let $requestsGrid;
     let $componentsGrid;
+    let $storeCorrectionGrid;
     isAdmin = <?php print ((Yii::app()->user->name=='admin')?'true':'false'); ?>;
     isGuest = <?php print ((Yii::app()->user->isGuest)?'true':'false'); ?>;
     function getStatusesArray() {
@@ -62,6 +63,7 @@ $cs->registerScriptFile($baseUrl . '/js/common.js');
 $cs->registerScriptFile($baseUrl . '/js/commonColumns.js',CClientScript::POS_END);
 $cs->registerScriptFile($baseUrl . '/js/requestsTable.js',CClientScript::POS_END);
 $cs->registerScriptFile($baseUrl . '/js/componentsTable.js',CClientScript::POS_END);
+$cs->registerScriptFile($baseUrl . '/js/storeCorrectionTable.js',CClientScript::POS_END);
 $cs->registerCssFile($baseUrl . '/js/pq/pqselect.bootstrap.min.css');
 $cs->registerCssFile($baseUrl . '/js/pq/pqgrid'.$min.'.css');
 $cs->registerCssFile($baseUrl . '/js/pq/pqselect.min.css');
@@ -74,8 +76,9 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
         controlData.prevSelection = null;
         controlData.requestSelection = [];
         $requestsGrid = $("#grid_requests").pqGrid(RequestsTable);
-
         $componentsGrid = $("#grid_new_components").pqGrid(ComponentsTable);
+        $storeCorrectionGrid = $("#grid_store_correction").pqGrid(StoreCorrectionTable);
+
         $("#grid_requests").on("pqgridcollapse pqgridexpand", function (event, ui) {
             $("#grid_new_components").pqGrid('refreshDataAndView');
         });
@@ -411,4 +414,8 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
     <?php
         $this->renderPartial('_form_settings');
     ?>
+</div>
+
+<div title="История коррекции на складе" id="popup" style="overflow:hidden;">
+    <div id="grid_store_correction"></div>
 </div>

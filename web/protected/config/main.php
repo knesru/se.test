@@ -72,7 +72,7 @@ return array(
 				),
                 array(
                     'class'=>'CWebLogRoute',
-                    'enabled' =>TRUE,
+                    'enabled' =>FALSE,
                     'categories' => 'system.db.*',
                 ),
                 array(

@@ -20,4 +20,24 @@ class Controller extends CController
 	 * for more details on how to specify this property.
 	 */
 	public $breadcrumbs=array();
+
+    /**
+     * @param $data
+     * @param bool $success
+     */
+    public function j($data, $success=true){
+	    $this->jsonAnswer($data,$success);
+    }
+
+	public function jsonAnswer($data,$success=true){
+	    if(is_string($data)){
+	        if($success){
+	            $data = array('message'=>$data);
+            }
+        }
+        $answer = $data;
+	    $answer['success']=$success;
+	    print json_encode($answer);
+	    Yii::app()->end();
+    }
 }
