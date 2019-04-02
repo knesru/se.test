@@ -354,3 +354,7 @@ span.saving
 	max-width: 800px !important;
 	word-break: break-all;
 }
+
+td.buttons-here{
+	vertical-align: top !important;
+}

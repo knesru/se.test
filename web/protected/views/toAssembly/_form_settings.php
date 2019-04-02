@@ -5,7 +5,8 @@
                 <th style="text-align: center">Заявки</th><th style="text-align: center">Компоненты</th>
             </tr>
             <tr id="ss_buttons_block">
-                <td colspan="2"  style="text-align: center"><button type="button" id="ss_rollback">Загрузить</button><button type="button" id="ss_submit">Сохранить</button></td>
+                <td><button type="button" id="ss_rollback">Сбросить</button></td>
+                <td style="text-align: center"><button type="button" id="ss_rollback">Загрузить</button><button type="button" id="ss_submit">Сохранить</button></td>
             </tr>
         </table>
     </div>
@@ -124,7 +125,7 @@
                                 let cm = {};
                                 data.rcm[i].hidden = data.rcm[i].hidden === 'true' || data.rcm[i].hidden === true;
                                 if (cm = findInCm(rcm, data.rcm[i].dataIndx)) {
-                                    cm.hidden = data.rcm[i].hidden === 'true';
+                                    cm.hidden = data.rcm[i].hidden;
                                     cm.width = data.rcm[i].width;
                                     rcm_new.push(cm);
                                     $("input[name='r_" + data.rcm[i].dataIndx + "']").prop('checked', !cm.hidden);

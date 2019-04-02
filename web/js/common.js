@@ -163,6 +163,9 @@ function renderDateOnly(ui) {
 
 function renderShortText(ui) {
     let cellData = ui.cellData;
+    if(cellData===null){
+        cellData = '';
+    }
     return '<div class="shorttext folded-text" title="'+cellData+'">'+cellData+'</div>';
 }
 
@@ -228,18 +231,24 @@ function userLog(action, severity, element, result) {
     if($('#footer').find('a').length>0){
         $('#footer').html('').css({'text-align':'left','height':'60px'});
     }
+    if(msg.length>0) {
+        // saveActionHistory({
+        //     'description': msg,
+        //     'severity': severity
+        // });
+    }
     $('#footer').prepend('<div class="'+hl_class+'">'+getDateTime()+' | '+msg+'</div>');
 }
 
 
 function getDateTime() {
-    var now     = new Date();
-    var year    = now.getFullYear();
-    var month   = now.getMonth()+1;
-    var day     = now.getDate();
-    var hour    = now.getHours();
-    var minute  = now.getMinutes();
-    var second  = now.getSeconds();
+    let now     = new Date();
+    let year    = now.getFullYear();
+    let month   = now.getMonth()+1;
+    let day     = now.getDate();
+    let hour    = now.getHours();
+    let minute  = now.getMinutes();
+    let second  = now.getSeconds();
     if(month.toString().length == 1) {
         month = '0'+month;
     }
@@ -255,7 +264,7 @@ function getDateTime() {
     if(second.toString().length == 1) {
         second = '0'+second;
     }
-    var dateTime = year+'.'+month+'.'+day+' '+hour+':'+minute+':'+second;
+    let dateTime = year+'.'+month+'.'+day+' '+hour+':'+minute+':'+second;
     return dateTime;
 }
 
@@ -271,22 +280,124 @@ function getFormData(form) {
     return model;
 }
 
-function generalAjaxAnswer(result){
+function generalAjaxAnswer(result,msg){
     const TYPE_ERROR = 'error';
-    const TYPE_INFO = 'error';
-    const TYPE_LOG = 'error';
+    const TYPE_INFO = 'info';
+    const TYPE_LOG = 'log';
+    if(typeof msg==="undefined"){
+        msg = false;
+    }
     if(typeof result==="undefined"){
         userLog('Ответ не распознан',TYPE_ERROR);
         return false;
     }
     if(typeof result.success !== "undefined") {
-        if(result.success){
-            if(typeof result.message!=="undefined"){
+        // if(result.success){
+        if(typeof result.message!=="undefined"){
+            if(result.success){
+                if(msg===true || msg==='success'){
+                    showMessage(result.message);
+                }
                 userLog(result.message);
+            }else {
+                if(msg===true || msg==='error'){
+                    showMessage(result.message);
+                }
+                userLog(result.message,TYPE_INFO);
             }
-            return true;
         }
+        return true;
+        // }
     }
-    userLog('Неизвестно, был ли ответ успешен',TYPE_ERROR);
+    if(msg===true || msg==='error'){
+        showMessage('Неизвестно, был ли ответ успешен');
+    }
+    userLog('Неизвестно, был ли ответ успешен',TYPE_INFO);
+    return false;
+}
+
+function saveActionHistory(params) {
+    $.ajax({
+        dataType: "json",
+        type: "POST",
+        async: true,
+        url: "/actionhistory/create", //for ASP.NET, java
+        data: {Actionhistory: params},
+        success: function (result) {
+            generalAjaxAnswer(result);
+        },
+        error: function(err){
+            //userLog(err.responseText,'error');
+        }
+    });
+}
+
+function createRow() {
+    let $tr = $(this).closest('tr');
+    let $grid = $tr.closest('.pq-grid');
+    let rowIndx = $grid.pqGrid('getRowIndx',{$tr: $tr}).rowIndx;
+    let row = $grid.pqGrid('getRowData', {rowIndx: rowIndx});
+    requestsAction('create',row['id']);
+}
+
+function deleteRow() {
+    let $tr = $(this).parents('tr');
+    let grid = $tr.closest('.pq-grid').pqGrid('getInstance').grid;
+    let rowIndx = grid.getRowIndx({$tr: $tr}).rowIndx;
+    grid.addClass({rowIndx: rowIndx, cls: 'pq-row-delete' });
+    let row = grid.getRowData({rowIndx: rowIndx});
+    userLog('Удаляю '+(row['priority']?'приоритетный ':'')+'компонент '+row['partnumber']+', строка '+row['id']+'...');
+    if(row['priority']) {
+        if (!confirm('Внимание, удаляется компонент с высоким приоритетом. Продолжить?')) {
+            userLog('Испугался и все отменил для компонента ' + row['partnumber'] + ', строки ' + row['id']);
+            return;
+        }
+        userLog('Подтвердил удаление приоритетного компонента ' + row['partnumber'] + ', строки ' + row['id']);
+    }
+    $.ajax({
+        dataType: "json",
+        type: "POST",
+        async: true,
+        beforeSend: function (jqXHR, settings) {
+            grid.showLoading();
+        },
+        url: "/toAssembly/removecomponent", //for ASP.NET, java
+        data: {id: [row['id']]},
+        success: function (result) {
+            if(result.success){
+                grid.deleteRow({ rowIndx: rowIndx });
+                userLog('Успешно удален компонент '+result.pn);
+                grid.commit();
+                grid.history({method: 'reset'});
+            }else{
+                grid.removeClass({ rowData: rowData, cls: 'pq-row-delete' });
+                grid.rollback();
+                userLog(result.error,'error');
+            }
+        },
+        error: function(err){
+            grid.rollback();
+            userLog(err.responseText,'error');
+        },
+        complete: function () {
+            grid.hideLoading();
+        }
+    });
+}
+
+function changePriority(evt) {
+    let $tr = $(this).parents('tr');
+    let $grid = $tr.closest('.pq-grid');
+    let rowIndx = $grid.pqGrid('getRowIndx',{$tr: $tr}).rowIndx;
+    let priority = $(this).hasClass('change-priority-up')?1:0;
+    console.log($(this));
+    $grid
+        .pqGrid( "updateRow", {
+            rowIndx: rowIndx,
+            checkEditable: false,
+            row: { 'priority': priority }
+        });
+    evt.stopPropagation();
+    evt.stopImmediatePropagation();
     return false;
 }

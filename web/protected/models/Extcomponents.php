@@ -30,6 +30,71 @@
 class Extcomponents extends CActiveRecord
 {
 
+    //C_ for CHANGE_
+    const C_ALLOW     = 'allow';
+    const C_NO        = 'no';
+    const C_AUTO      = 'auto';
+    const C_DENY      = 'deny';
+    const C_SAME      = 'same';
+    const C_INVALID   = 'invalid';
+
+    //S_ for STATUS_
+    const S_NEW = 0;
+    const S_COMPLECTATION = 1;
+    const S_COMPLETE = 2;
+    const S_INSTALLING = 3;
+    const S_CLOSED = 4;
+    const S_CANCEL = 5;
+    const S_DISASSEMBLY = 6;
+
+    public static function getStatuses()
+    {
+        $options = array(
+            self::S_NEW => 'Не активен',
+            self::S_COMPLECTATION => 'Комплектация',
+            self::S_COMPLETE => 'Скомпонован',
+            self::S_INSTALLING => 'На монтаже',
+            self::S_CLOSED => 'Закрыт',
+            self::S_CANCEL => 'Отмена',
+            self::S_DISASSEMBLY => 'Разобрать',
+        );
+        return $options;
+    }
+
+
+    /**
+     * @param $to
+     * @param null $from
+     * @return bool
+     */
+    public function canChangeStatus($to, $from=null)
+    {
+        if(is_null($from)){
+            $from = $this->status;
+        }
+
+        if($from==$to){
+            return self::C_SAME;
+        }
+
+        $matrix = array(
+            0=>array(                1=> self::C_ALLOW,2=> self::C_ALLOW ,3=> self::C_ALLOW,4=> self::C_NO  ,5=> self::C_NO   ,6=> self::C_ALLOW),
+            1=>array(0=> self::C_ALLOW,                2=> self::C_ALLOW ,3=> self::C_ALLOW,4=> self::C_AUTO,5=> self::C_NO   ,6=> self::C_ALLOW),
+            2=>array(0=> self::C_ALLOW,1=> self::C_ALLOW,                 3=> self::C_ALLOW,4=> self::C_AUTO,5=> self::C_NO   ,6=> self::C_ALLOW),
+            3=>array(0=> self::C_ALLOW,1=> self::C_ALLOW,2=> self::C_ALLOW ,                4=> self::C_AUTO,5=> self::C_NO   ,6=> self::C_ALLOW),
+            4=>array(0=> self::C_DENY ,1=> self::C_DENY ,2=> self::C_DENY  ,3=> self::C_DENY ,               5=> self::C_DENY ,6=> self::C_DENY ),
+            5=>array(0=> self::C_DENY ,1=> self::C_DENY ,2=> self::C_DENY  ,3=> self::C_DENY ,4=> self::C_DENY,                6=> self::C_DENY ),
+            6=>array(0=> self::C_ALLOW,1=> self::C_ALLOW,2=> self::C_ALLOW ,3=> self::C_ALLOW,4=> self::C_NO  ,5=> self::C_ALLOW,               ),
+        );
+        if(!isset($matrix[$from])){
+            return self::C_INVALID;
+        }
+        if(!isset($matrix[$from][$to])){
+            return self::C_INVALID;
+        }
+        return $matrix[$from][$to];
+    }
+
 	/**
 	 * @return string the associated database table name
 	 */
@@ -202,7 +267,7 @@ class Extcomponents extends CActiveRecord
             $filter = $params['filter'];
             $mode = $filter['mode'];
             $tables = array(
-                'partnumber'=>'component',
+                'partnumber'=>'t',
                 'user'=>'userinfo',
             );
             $search_columns = array(
@@ -272,7 +337,7 @@ class Extcomponents extends CActiveRecord
             $filter = $params['filter'];
             $mode = $filter['mode'];
             $tables = array(
-                'partnumber'=>'component',
+                'partnumber'=>'t',
                 'user'=>'userinfo',
             );
             $search_columns = array(

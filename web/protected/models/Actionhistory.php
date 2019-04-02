@@ -1,26 +1,27 @@
 <?php
 
 /**
- * This is the model class for table "{{storecorrection_ext}}".
+ * This is the model class for table "{{actionhistory}}".
  *
- * The followings are the available columns in table '{{storecorrection_ext}}':
+ * The followings are the available columns in table '{{actionhistory}}':
  * @property integer $id
  * @property integer $initiatoruserid
  * @property string $created_at
- * @property integer $partnumber
- * @property integer $qty
+ * @property string $partnumber
+ * @property string $ext_id
+ * @property string $requestid
+ * @property string $action
  * @property string $description
- *
- * @property string $updatedate
+ * @property string $severity
  */
-class StorecorrectionExt extends CActiveRecord
+class Actionhistory extends CActiveRecord
 {
 	/**
 	 * @return string the associated database table name
 	 */
 	public function tableName()
 	{
-		return '{{storecorrection_ext}}';
+		return '{{actionhistory}}';
 	}
 
 	/**
@@ -31,25 +32,25 @@ class StorecorrectionExt extends CActiveRecord
 		// NOTE: you should only define rules for those attributes that
 		// will receive user inputs.
 		return array(
-			array('initiatoruserid, created_at, partnumber, qty, description', 'required'),
-			array('initiatoruserid, qty', 'numerical', 'integerOnly'=>true),
+			array('initiatoruserid, created_at, description, severity', 'required'),
+			array('initiatoruserid', 'numerical', 'integerOnly'=>true),
+			array('partnumber, ext_id, requestid, action, severity', 'length', 'max'=>255),
 			// The following rule is used by search().
 			// @todo Please remove those attributes that should not be searched.
-			array('id, initiatoruserid, created_at, partnumber, qty, description', 'safe', 'on'=>'search'),
+			array('id, initiatoruserid, created_at, partnumber, ext_id, requestid, action, description, severity', 'safe', 'on'=>'search'),
 		);
 	}
 
-    /**
-     * @return array relational rules.
-     */
-    public function relations()
-    {
-        // NOTE: you may need to adjust the relation name and the related
-        // class name for the relations automatically generated below.
-        return array(
-            'user' => array(self::BELONGS_TO, 'User', 'initiatoruserid'),
-        );
-    }
+	/**
+	 * @return array relational rules.
+	 */
+	public function relations()
+	{
+		// NOTE: you may need to adjust the relation name and the related
+		// class name for the relations automatically generated below.
+		return array(
+		);
+	}
 
 	/**
 	 * @return array customized attribute labels (name=>label)
@@ -61,8 +62,11 @@ class StorecorrectionExt extends CActiveRecord
 			'initiatoruserid' => 'Пользователь',
 			'created_at' => 'Добавлено',
 			'partnumber' => 'Партномер',
-			'qty' => 'Количество',
+			'ext_id' => 'Строка',
+			'requestid' => 'Заявка',
+			'action' => 'Действие',
 			'description' => 'Описание',
+			'severity' => 'Строгость',
 		);
 	}
 
@@ -87,9 +91,12 @@ class StorecorrectionExt extends CActiveRecord
 		$criteria->compare('id',$this->id);
 		$criteria->compare('initiatoruserid',$this->initiatoruserid);
 		$criteria->compare('created_at',$this->created_at,true);
-		$criteria->compare('partnumber',$this->partnumber);
-		$criteria->compare('qty',$this->qty);
+		$criteria->compare('partnumber',$this->partnumber,true);
+		$criteria->compare('ext_id',$this->ext_id,true);
+		$criteria->compare('requestid',$this->requestid,true);
+		$criteria->compare('action',$this->action,true);
 		$criteria->compare('description',$this->description,true);
+		$criteria->compare('severity',$this->severity,true);
 
 		return new CActiveDataProvider($this, array(
 			'criteria'=>$criteria,
@@ -100,15 +107,10 @@ class StorecorrectionExt extends CActiveRecord
 	 * Returns the static model of the specified AR class.
 	 * Please note that you should have this exact method in all your CActiveRecord descendants!
 	 * @param string $className active record class name.
-	 * @return StorecorrectionExt the static model class
+	 * @return Actionhistory the static model class
 	 */
 	public static function model($className=__CLASS__)
 	{
 		return parent::model($className);
-	}
-
-    public function getUpdatedate()
-    {
-        return $this->created_at;
 	}
 }

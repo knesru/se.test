@@ -1,23 +1,18 @@
 let StoreCorrectionTableColumnModel = [
-    {
-        title: "Сдано",
-        dataIndx: 'delivered',
-        dataType: "integer",
-        align: "right",
-        filter: {
-            type: 'textbox',
-            condition: 'between',
-            listeners: ['change']
-        }
-    },
+    getIdColumn(true),
+    getPartnumberColumn(),
+    getUserColumn(),
+    getAmountColumn(),
+    getDescriptionColumn(),
+    getCreated_atColumn()
 ];
 let StoreCorrectionTableDataModel = {
     recIndx: "id", //primary key
     location: "remote",
-    sorting: "remote",
+    sorting: "local",
     dataType: "JSON",
     method: "POST",
-    sortIndx: "priority",
+    sortIndx: "id",
     sortDir: "down",
     url: "/toAssembly/storeCorrectionlist",
     getData: function (response) {
@@ -29,12 +24,16 @@ let StoreCorrectionTableDataModel = {
         if (settings.data.length > 0) {
             settings.data += '&';
         }
-        settings.data += 'showall=' + !!$('#showAll').is(":checked");
+        let selectedComp = $("#grid_store_correction").data('selectedComp');
+        if(typeof selectedComp !== "undefined" && !isNaN(selectedComp)){
+            settings.data+='id='+selectedComp;
+        }
     }
 };
 let StoreCorrectionTable = {
     scrollModel: {autoFit: true, horizontal: false},
-    pageModel: getPageModel(),
+    height: "100%-2",
+    //pageModel: getPageModel(),
     stringify: false, //for PHP
     dataModel: StoreCorrectionTableDataModel,
     colModel: StoreCorrectionTableColumnModel,
@@ -44,13 +43,11 @@ let StoreCorrectionTable = {
         fireSelectChange: true
     },
     filterModel: {on: true, mode: "AND", header: false},
-    toolbar: {
-        items: [
-
-        ]
+    rowSelect: function( event, ui ) {
+        $('.shorttext').addClass('folded-text');
+        ui.$tr.find('.shorttext').removeClass('folded-text');
     },
     showTitle: false,
     numberCell: {show: false},
     columnBorders: true
 };
-

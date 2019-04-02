@@ -15,6 +15,11 @@
  * @property integer $postqty
  * @property string $description
  * @property integer $storeid
+ *
+ * @property string $partnumber
+ *
+ * @property User $user
+ * @property Component $component
  */
 class Storecorrection extends CActiveRecord
 {
@@ -43,16 +48,18 @@ class Storecorrection extends CActiveRecord
 		);
 	}
 
-	/**
-	 * @return array relational rules.
-	 */
-	public function relations()
-	{
-		// NOTE: you may need to adjust the relation name and the related
-		// class name for the relations automatically generated below.
-		return array(
-		);
-	}
+    /**
+     * @return array relational rules.
+     */
+    public function relations()
+    {
+        // NOTE: you may need to adjust the relation name and the related
+        // class name for the relations automatically generated below.
+        return array(
+            'component' => array(self::BELONGS_TO, 'Component', 'partnumberid'),
+            'user' => array(self::BELONGS_TO, 'User', 'initiatoruserid'),
+        );
+    }
 
 	/**
 	 * @return array customized attribute labels (name=>label)
@@ -119,4 +126,10 @@ class Storecorrection extends CActiveRecord
 	{
 		return parent::model($className);
 	}
+
+    public function getPartnumber()
+    {
+        return $this->component->partnumber;
+	}
+
 }

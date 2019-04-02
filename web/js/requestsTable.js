@@ -105,16 +105,27 @@ function saveChangesRequests() {
             url: "/toAssembly/update", //for ASP.NET, java
             data: {list: JSON.stringify(changes)},
             success: function (changes) {
+                generalAjaxAnswer(changes,true);
+                if(typeof changes.success!=="undefined"){
+                    if(changes.success===false){
+                        grid.rollback();
+                    }
+                }
                 //debugger;
-                grid.commit({type: 'add', rows: changes.addList});
-                grid.commit({type: 'update', rows: changes.updateList});
-                grid.commit({type: 'delete', rows: changes.deleteList});
+                grid.commit();
 
                 grid.history({method: 'reset'});
                 grid.refresh();
             },
             complete: function () {
                 grid.hideLoading();
+            },
+            error: function(err){
+                userLog('Сохранение заявок не прошло','error');
+                userLog(err.responseText,'error');
+                grid.history({method: 'reset'});
+                grid.rollback();
+                grid.refresh();
             }
         });
     }
@@ -180,8 +191,7 @@ let RequestsTableColumnModel = [
     getDescriptionColumn(),
     getInstall_fromColumn(),
     getPriorityColumn(),
-    getStatusColumn(),
-    getActionsColumn('request')
+    getStatusColumn()
 ];
 let RequestsTableDataModel = {
     recIndx: "id", //primary key
@@ -455,6 +465,38 @@ let RequestsTable = {
                         }).dialog("open");
                     }
                 }]
+            },
+            {type: 'separator'},
+            {
+                type: 'button',
+                label: ' ',
+                icon: 'ui-icon-clock',
+                listeners: [
+                    {
+                        'click': function(){
+                            //popup_grid_store_correction
+                            let rowIndx = getRequestsSelectedRowIndx();
+                            if(rowIndx==null){
+                                return;
+                            }
+                            let row = $requestsGrid.pqGrid('getRowData', {rowIndx: rowIndx});
+                            $("#grid_store_correction").data('selectedComp',row['id']);
+                            $("#popup_grid_store_correction")
+                                .dialog({
+                                    height: 400,
+                                    width: 700,
+                                    //width: 'auto',
+                                    modal: true,
+                                    open: function (evt, ui) {
+                                        $("#grid_store_correction").pqGrid(StoreCorrectionTable).pqGrid('refreshDataAndView');
+                                    },
+                                    close: function () {
+                                        $("#grid_store_correction").pqGrid('destroy');
+                                    }
+                                });
+                        },
+                    }
+                ]
             }
         ]
     },
@@ -479,103 +521,6 @@ let RequestsTable = {
             return;
         }
         saveChangesRequests();
-    },
-    refresh: function(){
-        let $grid = $("#grid_requests");
-        $grid.find('.change-priority').each(function(){
-            let $tr = $(this).parents('tr');
-            let rowIndx = $requestsGrid.pqGrid('getRowIndx',{$tr: $tr}).rowIndx;
-            let row = $requestsGrid.pqGrid('getRowData', {rowIndx: rowIndx});
-            let disableUp = false;
-            let disableDown = false;
-            if(row['priority']){
-                disableUp = true;
-            }else{
-                disableDown = true;
-            }
-            $(this).parent().css('text-align','right');
-            $(this)
-                .find('.change-priority-up')
-                .button({
-                    icon:  'ui-icon-arrowthick-1-n',
-                    "disabled":disableUp
-                })
-                .unbind('click')
-                .click(function () {
-                    $requestsGrid
-                        .pqGrid( "updateRow", {
-                            rowIndx: rowIndx,
-                            checkEditable: false,
-                            row: {'priority':1}
-                        });
-                })
-                .css('border-radius','4px 0px 0px 4px')
-                .attr('title','Повысить приоритет')
-                .tooltip();
-            $(this)
-                .find('.change-priority-down')
-                .button({
-                    icon:  'ui-icon-arrowthick-1-s',
-                    "disabled":disableDown,
-                })
-                .unbind('click')
-                .click(function () {
-                    userLog('Понизил приоритет');
-                    $requestsGrid
-                        .pqGrid( "updateRow", {
-                            rowIndx: rowIndx,
-                            checkEditable: false,
-                            row: { 'priority': 0 }
-                        });
-                })
-                .css({'border-radius':'0px 4px 4px 0px','margin-left':-1})
-                .attr('title','Понизить приоритет')
-                .tooltip();
-
-        });
-        $grid.find("button.delete_request_btn").button()
-            .unbind("click")
-            .bind("click", function (evt) {
-                let $tr = $(this).parents('tr');
-                let grid = $requestsGrid.pqGrid('getInstance').grid;
-                let rowIndx = grid.getRowIndx({$tr: $tr}).rowIndx;
-                let row = $requestsGrid.pqGrid('getRowData', {rowIndx: rowIndx});
-                userLog('Исключаю '+(row['priority']?'приоритетный ':'')+'компонент '+row['partnumber']+' из заявки '+row['requestid']+', строка '+row['id']+'...');
-                if(row['priority']) {
-                    if (!confirm('Внимание, исключается компонент с высоким приоритетом. Продолжить?')) {
-                        userLog('Испугался и все отменил для компонента ' + row['partnumber'] + ', строки ' + row['id']);
-                        return;
-                    }
-                    userLog('Подтвердил исключение приоритетного компонента ' + row['partnumber'] + ', строки ' + row['id']);
-                }
-                $.ajax({
-                    dataType: "json",
-                    type: "POST",
-                    async: true,
-                    beforeSend: function (jqXHR, settings) {
-                        grid.showLoading();
-                    },
-                    url: "/toAssembly/removecomponent", //for ASP.NET, java
-                    data: {id: [row['id']]},
-                    success: function (result) {
-                        if(result.success){
-                            userLog('Успешно исключен компонент '+result.pn);
-                            grid.refreshDataAndView();
-                            grid.history({method: 'reset'});
-                            $componentsGrid.pqGrid('refreshDataAndView');
-                        }else{
-                            userLog(result.error,'error');
-                        }
-                    },
-                    error: function(err){
-                        userLog(err.responseText,'error');
-                    },
-                    complete: function () {
-                        grid.hideLoading();
-                    }
-                });
-
-            });
     },
     rowSelect: function( event, ui ) {
         $('.shorttext').addClass('folded-text');

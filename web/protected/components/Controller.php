@@ -31,9 +31,7 @@ class Controller extends CController
 
 	public function jsonAnswer($data,$success=true){
 	    if(is_string($data)){
-	        if($success){
-	            $data = array('message'=>$data);
-            }
+	        $data = array('message'=>$data);
         }
         $answer = $data;
 	    $answer['success']=$success;

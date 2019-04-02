@@ -119,6 +119,8 @@ function saveChangesComponents() {
             data: {list: JSON.stringify(changes)},
             success: function (changes) {
                 if(typeof changes.data !== 'undefined'){
+                    changes.success = true;
+                    generalAjaxAnswer(changes);
                     let rowIndx = $componentsGrid.pqGrid('getRowIndx',{rowData:changes.data[0].id});
                     $componentsGrid.pqGrid("goToPage", { rowIndx: rowIndx });
                     $componentsGrid.pqGrid("setSelection", null);
@@ -150,6 +152,7 @@ let ComponentsTableColumnModel = [
         title: "Заявка",
         dataIndx: 'requestid',
         dataType: "string",
+        cls:'buttons-here',
         editable: false,
         sortable: false,
         render: function (ui) {
@@ -262,6 +265,19 @@ let ComponentsTable = {
             },
             {type: 'separator'},
             {
+                type: 'button',
+                label: 'Добавить компонент',
+                listeners: [
+                    {
+                        'click': function (evt, ui) {
+                            //append empty row at the end.
+                            $('#popup-dialog-form-new-component').dialog('open');
+                        },
+                    }
+                ]
+            },
+            {type: 'separator'},
+            {
                 type:
                     '<div class="controlgroup">\n' +
                     '    <button id="requestbutton" class="ui-corner-left">Создать заявку</button>\n' +
@@ -274,12 +290,38 @@ let ComponentsTable = {
             {type: 'separator'},
             {
                 type: 'button',
-                label: 'Добавить компонент',
+                label: ' ',
+                icon: 'ui-icon-clock',
+                title: 'История',
                 listeners: [
                     {
-                        'click': function (evt, ui) {
-                            //append empty row at the end.
-                            $('#popup-dialog-form-new-component').dialog('open');
+                        'click': function(){
+                            //popup_grid_store_correction
+                            let rowIndx = getSelectedCompsRowsIndx();
+                            if(rowIndx==null){
+                                return;
+                            }else if(typeof rowIndx.length === "undefined" || rowIndx.length===0){
+                                return;
+                            }
+                            let row = $componentsGrid.pqGrid('getRowData', {rowIndx: rowIndx[0]});
+                            $("#grid_store_correction").data('selectedComp',row['id']);
+                            $("#popup_grid_store_correction")
+                                .dialog({
+                                    height: 400,
+                                    width: 700,
+                                    //width: 'auto',
+                                    modal: true,
+                                    open: function (evt, ui) {
+                                        $("#grid_store_correction").pqGrid(StoreCorrectionTable).pqGrid('refreshDataAndView');
+                                    },
+                                    close: function () {
+                                        $("#grid_store_correction").pqGrid('destroy');
+                                    },
+                                    show: {
+                                        effect: "blind",
+                                        duration: 500
+                                    }
+                                });
                         },
                     }
                 ]
@@ -303,7 +345,7 @@ let ComponentsTable = {
     },
     change: function(event, ui){
         //debugger
-        if (ui.source == 'commit' || ui.source == 'rollback') {
+        if (ui.source == 'commit' || ui.source == 'rollback' || ui.source=='delete') {
             return;
         }
         saveChangesComponents();
@@ -312,119 +354,6 @@ let ComponentsTable = {
     showTitle: false,
     numberCell: {show: false},
     columnBorders: true,
-    refresh: function (event, ui) {
-        setTimeout(function(){
-
-
-        let d = new Date();
-        let $grid = $("#grid_new_components");
-
-        $grid.find(".create_request_btn").button()
-            .unbind("click")
-            .bind("click", function (evt) {
-                let $tr = $(this).closest('tr');
-                let rowIndx = $componentsGrid.pqGrid('getRowIndx',{$tr: $tr}).rowIndx;
-                let row = $componentsGrid.pqGrid('getRowData', {rowIndx: rowIndx});
-                requestsAction('create',row['id']);
-            });
-        $grid.find(".delete_component_btn").button()
-            .unbind("click")
-            .bind("click", function (evt) {
-                let $tr = $(this).parents('tr');
-                let grid = $componentsGrid.pqGrid('getInstance').grid;
-                let rowIndx = grid.getRowIndx({$tr: $tr}).rowIndx;
-                let row = $componentsGrid.pqGrid('getRowData', {rowIndx: rowIndx});
-                userLog('Удаляю '+(row['priority']?'приоритетный ':'')+'компонент '+row['partnumber']+', строка '+row['id']+'...');
-                if(row['priority']) {
-                    if (!confirm('Внимание, удаляется компонент с высоким приоритетом. Продолжить?')) {
-                        userLog('Испугался и все отменил для компонента ' + row['partnumber'] + ', строки ' + row['id']);
-                        return;
-                    }
-                    userLog('Подтвердил удаление приоритетного компонента ' + row['partnumber'] + ', строки ' + row['id']);
-                }
-                $.ajax({
-                    dataType: "json",
-                    type: "POST",
-                    async: true,
-                    beforeSend: function (jqXHR, settings) {
-                        grid.showLoading();
-                    },
-                    url: "/toAssembly/removecomponent", //for ASP.NET, java
-                    data: {id: [row['id']]},
-                    success: function (result) {
-                        if(result.success){
-                            userLog('Успешно удален компонент '+result.pn);
-                            grid.refreshDataAndView();
-                            $requestsGrid.pqGrid('refreshDataAndView');
-                            grid.history({method: 'reset'});
-                        }else{
-                            userLog(result.error,'error');
-                        }
-                    },
-                    error: function(err){
-                        userLog(err.responseText,'error');
-                    },
-                    complete: function () {
-                        grid.hideLoading();
-                    }
-                });
-
-            });
-        $grid.find('.change-priority').parent().css('text-align','right');
-        $grid.find('.change-priority').find('.change-priority-up')
-            .button({
-                icon:  'ui-icon-arrowthick-1-n'//,
-                //"disabled":$(this).data('dis')==='dis'
-            })
-            .unbind('click')
-            .click(function () {
-                let $tr = $(this).closest('tr');
-                let rowIndx = $componentsGrid.pqGrid('getRowIndx',{$tr: $tr}).rowIndx;
-                $componentsGrid
-                    .pqGrid( "updateRow", {
-                        rowIndx: rowIndx,
-                        checkEditable: false,
-                        row: {'priority':1}
-                    });
-            })
-            .css('border-radius','4px 0px 0px 4px')
-            .attr('title','Повысить приоритет')
-            .tooltip();
-        $grid.find('.change-priority')
-            .find('.change-priority-down')
-            .button({
-                icon:  'ui-icon-arrowthick-1-s'//,
-                //"disabled":$(this).data('dis')==='dis'
-            })
-            .unbind('click')
-            .click(function () {
-                userLog('Понизил приоритет');
-                let $tr = $(this).closest('tr');
-                let rowIndx = $componentsGrid.pqGrid('getRowIndx',{$tr: $tr}).rowIndx;
-                $componentsGrid
-                    .pqGrid( "updateRow", {
-                        rowIndx: rowIndx,
-                        checkEditable: false,
-                        row: { 'priority': 0 }
-                    });
-            })
-            .css({'border-radius':'0px 4px 4px 0px','margin-left':-1})
-            .attr('title','Понизить приоритет')
-            .tooltip();
-        let d6 = new Date();
-        let delta = (d6-d)/1000;
-        if(delta>0.5) {
-            let pm = $componentsGrid.pqGrid( "option" ,'pageModel');
-            let additionalMessage;
-            if(pm.rPP<500){
-                additionalMessage = 'Это много для '+pm.rPP+' строк. Если будет повторяться, свяжитесь с разработчиком';
-            }else{
-                additionalMessage = 'Попробуйте уменьшить количество отображаемых строк на странице'
-            }
-            userLog('Тблица отрисована за ' + delta + 'с. '+additionalMessage,'info');
-        }
-        },10);
-    },
     rowSelect: function( event, ui ) {
         $('.shorttext').not('.folded-text').addClass('folded-text',150);
         if(typeof ui.$tr !== 'undefined'){

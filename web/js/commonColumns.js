@@ -1,10 +1,13 @@
-function getIdColumn() {
+function getIdColumn(hidden) {
+    if(typeof hidden === "undefined"){
+        hidden = false;
+    }
     return {
         title: "ID",
         dataIndx: 'id',
         dataType: "integer",
         editable: false,
-        hidden: false,
+        hidden: hidden,
         filter: {
             type: 'textbox',
             condition: 'equal',
@@ -232,6 +235,8 @@ function getPriorityColumn() {
         dataType: "bool",
         minWidth: 90,
         maxWidth: 90,
+        cls:'buttons-here',
+        align: 'right',
         editable: false,
         filter: { type: 'select',
             condition: 'equal',
@@ -256,24 +261,18 @@ function getPriorityColumn() {
                 rowData[dataIndx] = 0;
             }
 
-            let downdata = 'data-x="'+ui.rowIndx+'" ';
-            let updata = 'data-x="'+ui.rowIndx+'" ';
+            let buttonUp = '<button class="change-priority-up  ui-button ui-corner-all ui-widget" title="Повысить приоритет"><span class="ui-button-icon ui-icon ui-icon-arrowthick-1-n"></span><span class="ui-button-icon-space"> </span></button>';
+            let buttonDown = '<button class="change-priority-down  ui-button ui-corner-all ui-widget" title="Снизить приоритет"><span class="ui-button-icon ui-icon ui-icon-arrowthick-1-s"></span><span class="ui-button-icon-space"> </span></button>';
 
             if (rowData[dataIndx] > 0){
-                updata += 'data-dis="dis"';
+                buttonUp = '';
             }else {
-                downdata += 'data-dis="dis"';
+                buttonDown = '';
             }
-
-            let buttonUp = "<button class=\"change-priority-up \" "+updata+"></button>";
-            let buttonDown = "<button class=\"change-priority-down \" "+downdata+"></button>";
 
             let buttons = "<span class=\"change-priority\">"+buttonUp+buttonDown+"</span>";
 
             if(rowData['status'] == 4 || rowData['status'] == 5){
-                buttons = '';
-            }
-            if(ui.rowIndx>=500){
                 buttons = '';
             }
             rowData.pq_cellcls = rowData.pq_cellcls || {};
@@ -293,11 +292,15 @@ function getStatusColumn() {
         title: "Статус",
         dataIndx: 'status',
         dataType: "integer",
+        cls:'buttons-here',
         editor: {
             type: 'select',
             init: function (ui) {
                 ui.$cell.find("select").find('option').each(function(){
-                    if($(this).val()==4){
+                    if( $(this).val()==4){
+                        $(this).attr('disabled','disabled');
+                    }
+                    if($(this).val()==5 && ui.rowData.status!==6){
                         $(this).attr('disabled','disabled');
                     }
                 });
@@ -333,6 +336,7 @@ function getActionsColumn(type){
         dataIndx: 'actionsColumn',
         editable: false,
         sortable: false,
+        cls:'buttons-here',
         maxWidth: 60,
         minWidth: 60,
         render: function (ui) {

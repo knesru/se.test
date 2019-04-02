@@ -29,7 +29,8 @@ $cs = Yii::app()->getClientScript();
             {"value": 2, "text": 'Скомпонован'},
             {"value": 3, "text": 'На монтаже'},
             {"value": 4, "text": 'Закрыт'},
-            {"value": 5, "text": 'Отмена'}
+            {"value": 5, "text": 'Отмена'},
+            {"value": 6, "text": 'Разобрать'}
         ];
     }
     function getUsersArray() {
@@ -206,6 +207,19 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
         $componentsGrid.one("pqgridload", function (evt, ui) {
             $('#ss_rollback').click();
         });
+
+        // $("#grid_requests")
+        //     .on('click','.delete_component_btn',deleteRow)
+        //     .on('click','.create_request_btn',createRow);
+        $("#grid_requests")
+            .on('click','.change-priority-down',changePriority)
+            .on('click','.change-priority-up',changePriority);
+        $("#grid_new_components")
+            .on('click','.delete_component_btn',deleteRow)
+            .on('click','.change-priority-down',changePriority)
+            .on('click','.change-priority-up',changePriority)
+            .on('click','.create_request_btn',createRow);
+
     });
     function showMessage(message, type) {
         if(typeof type === 'undefined'){
@@ -416,6 +430,6 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
     ?>
 </div>
 
-<div title="История коррекции на складе" id="popup" style="overflow:hidden;">
+<div title="История коррекции на складе" id="popup_grid_store_correction" style="overflow:hidden; display: none">
     <div id="grid_store_correction"></div>
 </div>

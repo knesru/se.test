@@ -128,13 +128,8 @@ class ToAssemblyController extends Controller
                     }
                 }
             }
-            print json_encode($result);
-            Yii::app()->end();
+            $this->j($result['data'],$result['success']);
         }
-
-        $this->render('create', array(
-            'model' => $model,
-        ));
     }
 
     /**
@@ -188,94 +183,30 @@ class ToAssemblyController extends Controller
 
             if (isset($new_status)) {
                 $old_status = $model->status;
-                $options = array(
-                    0 => 'Не активен',
-                    1 => 'Комплектация',
-                    2 => 'Скомпонован',
-                    3 => 'На монтаже',
-                    4 => 'Закрыт',
-                    5 => 'Отмена'
-                );
-                if (($old_status == 4 or $old_status == 5) && $new_status != $old_status) {
-                    print('{"status":"error","message":"Нельзя менять статус "' . $options[$old_status] . '}');
-                    Yii::app()->end();
-                }
-                $model->status = $new_status;
-                if ($new_status == 4) {
-                    /**
-                     * @property integer $id
-                     * @property integer $initiatoruserid
-                     * @property string $updatedate
-                     * @property integer $partnumberid
-                     * @property string $operation
-                     * @property integer $qty
-                     * @property integer $userid
-                     * @property integer $prevqty
-                     * @property integer $postqty
-                     * @property string $description
-                     * @property integer $storeid
-                     */
-                    $condition = new CDbCriteria();
-                    $condition->compare('partnumberid', $data['updateList'][0]['ID компонента']);
-                    $condition->compare('storeid', 1);
-                    $store = Store::model()->find($condition);
-                    if (is_null($store)) {
-                        $store = new Store();
-                        $store->partnumberid = $data['updateList'][0]['ID компонента'];
-                        $store->storeid = 1;
-                        $store->qty = 0;
-                    }
-                    $correction_model = new Storecorrection();
-                    $correction_model->initiatoruserid = Yii::app()->user->id;
-                    $correction_model->userid = 0;
-                    $correction_model->updatedate = date('Y.m.d H:i:s.000000');
-                    $correction_model->partnumberid = $data['updateList'][0]['ID компонента'];
-                    $correction_model->operation = 'add';
-                    $correction_model->qty = $data['updateList'][0]['Кол-во'];
-                    $correction_model->prevqty = $store->qty;
-                    $store->qty += $data['updateList'][0]['Кол-во'];
-                    $correction_model->postqty = $store->qty;
-                    $correction_model->storeid = $store->storeid;
-                    $correction_model->description = $data['updateList'][0]['Заявка'] . "; " . $data['updateList'][0]['Примечание'];
+                $options = Extcomponents::getStatuses();
 
-                    /**
-                     * Заявка":"000002.СБ.18",
-                     * "ID":"4",
-                     * "Партномер":"GTXO-92V/GS+24.00MHz",
-                     * "ID+компонента":"9213",
-                     * "Кол-во":"455",
-                     * "Пользователь":"&nbsp;",
-                     * "Назначение":"fsdafds",
-                     * "Добавлено":"2018-11-30+16:07:18",
-                     * "Сдано":"&nbsp;",
-                     * "Скомплектовать+до":"2018-11-01+00:00:00",
-                     * "Монтаж+до":"2018-11-10+00:00:00",
-                     * "Дефицит":"fdsafsd",
-                     * "Примечание":"fdsafds",
-                     * "Монтаж+с":"2018-11-24+00:00:00",
-                     * "Приоритет":"0",
-                     * "Статус":3,
-                     * "pq_rowselect":false
-                     */
-                    $status_save_ok = ($store->save() && $correction_model->save());
+                $can_change = $model->canChangeStatus($new_status);
+
+                if($can_change==Extcomponents::C_INVALID){
+                    $this->j("Неизвестный номер статуса ".$new_status, false);
                 }
-                $status_save_ok = true;
-            } else {
-                $status_save_ok = true;
+                if($can_change==Extcomponents::C_DENY){
+                    $this->j("Нельзя менять статус " . $options[$old_status], false);
+                }
+                if($can_change==Extcomponents::C_NO){
+                    $this->j("Неопределено поведение после смены статуса на " . $options[$new_status], false);
+                }
+
+                $model->status = $new_status;
             }
-            if ($model->save() && $status_save_ok) {
+            if ($model->save()) {
                 print $_POST['list'];
                 Yii::app()->end();
             } else {
-                print 'WAT?!';
-                print_r($model->errors);
+                $this->j(array('message'=>'Ошибка сохранения','errors'=>$model->errors),false);
             }
-            //$this->redirect(array('list','id'=>$model->id));
         }
-
-        $this->render('update', array(
-            'model' => $model,
-        ));
+        $this->j('Нет данных',false);
     }
 
     public function actionRequest()
@@ -916,37 +847,37 @@ location.reload();
         }
         if(empty($model->partnumberid)){
             //Левый компонент не из STMS
-            $storeCorrectionModel = StorecorrectionExt::model()->findAllByAttributes(array(
+            $storeCorrectionModel = StorecorrectionExt::model()->with('user','user.userinfo')->findAllByAttributes(array(
                 'partnumber'=>$model->partnumber
             ));
+            $message = 'Левый '.$model->partnumber;
         }else{
-            $storeCorrectionModel = Storecorrection::model()->with('component')->findAllByAttributes(array(
+            $storeCorrectionModel = Storecorrection::model()->with('user','user.userinfo','component')->findAllByAttributes(array(
                 'partnumberid'=>$model->partnumberid
             ));
+            $message = 'STMS';
         }
         if(is_null($storeCorrectionModel)){
-            $this->j(array('data'=>array(),'totalRecords'=>0),1);
+            $this->j(array('data'=>array(),'message'=>$message,'totalRecords'=>0),1);
         }
+        $result = array('message'=>$message);
+        $result['totalRecords'] = count($storeCorrectionModel);
         /** @var  $storecorrection */
         foreach ($storeCorrectionModel as $storecorrection){
-
-        }
-
-
-
-        foreach ($dp->getData() as $requestedComponent) {
-            $row = $requestedComponent->attributes;
-            $row['user'] = $requestedComponent->user->userinfo->fullname;
+            $row = array();
+            $row['id'] = $storecorrection->id;
+            $row['user'] = $storecorrection->user->userinfo->fullname;
             if(empty($row['user'])){
-                $row['user'] = $requestedComponent->user->username;
+                $row['user'] = $storecorrection->user->username;
             }
+            $row['created_at'] = $storecorrection->updatedate;
+            $row['partnumber'] = $storecorrection->partnumber;
+            $row['amount'] = $storecorrection->qty;
+            $row['description'] = $storecorrection->description;
             $result['data'][] = $row;
         }
-        $result['totalRecords'] = $dp->totalItemCount;
-        $result['curPage']=Yii::app()->request->getParam('pq_curpage');
-        if($result['curPage']<=1){
-            $result['curPage'] = 1;
-        }
+
+        $this->j($result,1);
     }
 
 }
