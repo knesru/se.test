@@ -33,7 +33,7 @@ class ToAssemblyController extends Controller
     {
         return array(
             array('allow',  // allow all users to perform 'index' and 'view' actions
-                'actions' => array('index', 'newIndex', 'view', 'export', 'requestslist', 'componentslist', 'storecorrectionlist'),
+                'actions' => array('index', 'newIndex', 'view', 'export', 'requestslist', 'componentslist', 'storecorrectionlist','statuseslist'),
                 'users' => array('*'),
             ),
             array('allow', // allow authenticated user to perform 'create' and 'update' actions
@@ -878,6 +878,14 @@ location.reload();
         }
 
         $this->j($result,1);
+    }
+
+    function actionStatusesList(){
+        $this->j(Extcomponents::getStatuses());
+    }
+
+    function actionStatusesMatrix(){
+        $this->j(Extcomponents::getStatusesMatrix());
     }
 
 }

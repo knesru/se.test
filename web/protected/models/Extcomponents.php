@@ -61,6 +61,20 @@ class Extcomponents extends CActiveRecord
         return $options;
     }
 
+    public static function getStatusesMatrix()
+    {
+        $matrix = array(
+          0=>array(                  1=> self::C_ALLOW,2=> self::C_ALLOW ,  3=> self::C_ALLOW,4=> self::C_DENY,5=> self::C_DENY ,  6=> self::C_ALLOW),
+          1=>array(0=> self::C_ALLOW,                  2=> self::C_ALLOW ,  3=> self::C_ALLOW,4=> self::C_AUTO,5=> self::C_DENY ,  6=> self::C_ALLOW),
+          2=>array(0=> self::C_ALLOW,1=> self::C_ALLOW,                     3=> self::C_ALLOW,4=> self::C_AUTO,5=> self::C_DENY ,  6=> self::C_ALLOW),
+          3=>array(0=> self::C_ALLOW,1=> self::C_ALLOW,2=> self::C_ALLOW ,                    4=> self::C_AUTO,5=> self::C_DENY ,  6=> self::C_ALLOW),
+          4=>array(0=> self::C_DENY ,1=> self::C_DENY ,2=> self::C_DENY  ,  3=> self::C_DENY ,                 5=> self::C_DENY ,  6=> self::C_DENY ),
+          5=>array(0=> self::C_DENY ,1=> self::C_DENY ,2=> self::C_DENY  ,  3=> self::C_DENY ,4=> self::C_DENY,                    6=> self::C_DENY ),
+          6=>array(0=> self::C_ALLOW,1=> self::C_ALLOW,2=> self::C_ALLOW ,  3=> self::C_ALLOW,4=> self::C_DENY,5=> self::C_ALLOW,                   ),
+        );
+        return $matrix;
+    }
+
 
     /**
      * @param $to
@@ -77,15 +91,7 @@ class Extcomponents extends CActiveRecord
             return self::C_SAME;
         }
 
-        $matrix = array(
-            0=>array(                1=> self::C_ALLOW,2=> self::C_ALLOW ,3=> self::C_ALLOW,4=> self::C_NO  ,5=> self::C_NO   ,6=> self::C_ALLOW),
-            1=>array(0=> self::C_ALLOW,                2=> self::C_ALLOW ,3=> self::C_ALLOW,4=> self::C_AUTO,5=> self::C_NO   ,6=> self::C_ALLOW),
-            2=>array(0=> self::C_ALLOW,1=> self::C_ALLOW,                 3=> self::C_ALLOW,4=> self::C_AUTO,5=> self::C_NO   ,6=> self::C_ALLOW),
-            3=>array(0=> self::C_ALLOW,1=> self::C_ALLOW,2=> self::C_ALLOW ,                4=> self::C_AUTO,5=> self::C_NO   ,6=> self::C_ALLOW),
-            4=>array(0=> self::C_DENY ,1=> self::C_DENY ,2=> self::C_DENY  ,3=> self::C_DENY ,               5=> self::C_DENY ,6=> self::C_DENY ),
-            5=>array(0=> self::C_DENY ,1=> self::C_DENY ,2=> self::C_DENY  ,3=> self::C_DENY ,4=> self::C_DENY,                6=> self::C_DENY ),
-            6=>array(0=> self::C_ALLOW,1=> self::C_ALLOW,2=> self::C_ALLOW ,3=> self::C_ALLOW,4=> self::C_NO  ,5=> self::C_ALLOW,               ),
-        );
+        $matrix = self::getStatusesMatrix();
         if(!isset($matrix[$from])){
             return self::C_INVALID;
         }

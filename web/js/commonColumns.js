@@ -297,10 +297,7 @@ function getStatusColumn() {
             type: 'select',
             init: function (ui) {
                 ui.$cell.find("select").find('option').each(function(){
-                    if( $(this).val()==4){
-                        $(this).attr('disabled','disabled');
-                    }
-                    if($(this).val()==5 && ui.rowData.status!==6){
+                    if(!canChangeStatus($(this).val(),ui.rowData.status)){
                         $(this).attr('disabled','disabled');
                     }
                 });

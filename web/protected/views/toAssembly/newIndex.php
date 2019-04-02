@@ -23,15 +23,32 @@ $cs = Yii::app()->getClientScript();
     isAdmin = <?php print ((Yii::app()->user->name=='admin')?'true':'false'); ?>;
     isGuest = <?php print ((Yii::app()->user->isGuest)?'true':'false'); ?>;
     function getStatusesArray() {
-        return [
-            {"value": 0, "text": 'Не активен'},
-            {"value": 1, "text": 'Комплектация'},
-            {"value": 2, "text": 'Скомпонован'},
-            {"value": 3, "text": 'На монтаже'},
-            {"value": 4, "text": 'Закрыт'},
-            {"value": 5, "text": 'Отмена'},
-            {"value": 6, "text": 'Разобрать'}
+        return [<?php
+                $out = array();
+            foreach (Extcomponents::getStatuses() as $status=>$label) {
+                $out[] = sprintf('{"value": %d, "text": "%s"}'."\n",$status, $label);
+            }
+            print implode(',',$out);
+            ?>
         ];
+    }
+    function getStatusesMatrix() {
+        return <?php print json_encode(Extcomponents::getStatusesMatrix());?>;
+    }
+    function canChangeStatus(to, from)
+    {
+        if(from===to){
+            return true;
+        }
+
+        let matrix = getStatusesMatrix();
+        if(typeof matrix[from] === "undefined"){
+            return false;
+        }
+        if(typeof matrix[from][to] === "undefined"){
+            return false;
+        }
+        return matrix[from][to]==='allow';
     }
     function getUsersArray() {
         return <?php
