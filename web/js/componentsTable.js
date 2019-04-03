@@ -191,6 +191,8 @@ let ComponentsTableDataModel = {
 let ComponentsTable = {
     scrollModel: {autoFit: true, horizontal: false},
     pageModel: getPageModel(),
+    collapsible: false,
+    resizable: true,
     stringify: false, //for PHP
     dataModel: ComponentsTableDataModel,
     colModel: ComponentsTableColumnModel,
@@ -308,18 +310,14 @@ let ComponentsTable = {
                             $("#popup_grid_store_correction")
                                 .dialog({
                                     height: 400,
-                                    width: 700,
+                                    width: 1000,
                                     //width: 'auto',
                                     modal: true,
                                     open: function (evt, ui) {
                                         $("#grid_store_correction").pqGrid(StoreCorrectionTable).pqGrid('refreshDataAndView');
                                     },
                                     close: function () {
-                                        $("#grid_store_correction").pqGrid('destroy');
-                                    },
-                                    show: {
-                                        effect: "blind",
-                                        duration: 500
+                                       // $("#grid_store_correction").pqGrid('destroy');
                                     }
                                 });
                         },

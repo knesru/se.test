@@ -65,10 +65,16 @@ function getPartnumberIdColumn() {
     };
 }
 
-function getAmountColumn() {
+function getAmountColumn(dataIndx,title) {
+    if(typeof dataIndx==="undefined"){
+        dataIndx = 'amount';
+    }
+    if(typeof title==="undefined"){
+        title = 'Кол-во';
+    }
     return {
-        title: "Кол-во",
-        dataIndx: 'amount',
+        title: title,
+        dataIndx: dataIndx,
         dataType: "integer",
         align: "right",
         filter: {
@@ -348,6 +354,43 @@ function getActionsColumn(type){
 }
 
 
+function getStoreActionColumn(){
+    return {
+        title: "Склад",
+        dataIndx: 'store',
+        editable: false,
+        sortable: true,
+    };
+}
+function getStoreColumn(type){
+    return {
+        title: "",
+        dataIndx: 'operation',
+        editable: false,
+        sortable: true,
+        maxWidth: 25,
+        minWidth: 25,
+        render: function (ui) {
+            let icon = '';
+            let operation = '';
+            if(ui.rowData['operation']==='add'){
+                icon = 'ui-icon-circle-plus';
+                operation = 'Положить';
+            }
+            if(ui.rowData['operation']==='subtract'){
+                icon = 'ui-icon-circle-minus';
+                operation = 'Выдать'
+            }
+            if(ui.rowData['operation']==='correction'){
+                icon = 'ui-icon-gear';
+                operation = 'Корректировка'
+            }
+            return "<span class='ui-icon "+icon+"' title='"+operation+"'> </span>";
+        },
+    };
+}
+
+
 //=============================Common Table Settings
 function getClearFilterButton() {
     return {
@@ -368,10 +411,13 @@ function getFilterWord() {
     };
 }
 
-function getPageModel() {
+function getPageModel(type) {
+    if(typeof type==="undefined"){
+        type = 'remote';
+    }
     return {
         curPage: 1,
-        type: "remote",
+        type: type,
         rPP: 10,
         strRpp: "{0}",
         strDisplay: "с {0} до {1} из {2}",

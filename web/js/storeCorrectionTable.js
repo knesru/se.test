@@ -1,10 +1,14 @@
 let StoreCorrectionTableColumnModel = [
     getIdColumn(true),
-    getPartnumberColumn(),
     getUserColumn(),
+    getCreated_atColumn(),
+    getPartnumberColumn(),
+    getStoreActionColumn(),
+    getStoreColumn(),
     getAmountColumn(),
-    getDescriptionColumn(),
-    getCreated_atColumn()
+    getAmountColumn('prevqty','До'),
+    getAmountColumn('postqty','После'),
+    getDescriptionColumn()
 ];
 let StoreCorrectionTableDataModel = {
     recIndx: "id", //primary key
@@ -33,7 +37,8 @@ let StoreCorrectionTableDataModel = {
 let StoreCorrectionTable = {
     scrollModel: {autoFit: true, horizontal: false},
     height: "100%-2",
-    //pageModel: getPageModel(),
+    pageModel: getPageModel('local'),
+    collapsible: false,
     stringify: false, //for PHP
     dataModel: StoreCorrectionTableDataModel,
     colModel: StoreCorrectionTableColumnModel,

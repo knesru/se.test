@@ -217,6 +217,8 @@ let RequestsTableDataModel = {
 let RequestsTable = {
     scrollModel: {autoFit: true, horizontal: false},
     pageModel: getPageModel(),
+    collapsible: false,
+    resizable: true,
     stringify: false, //for PHP
     dataModel: RequestsTableDataModel,
     colModel: RequestsTableColumnModel,
@@ -272,7 +274,11 @@ let RequestsTable = {
                                 $frm.find("#storeid").removeAttr('disabled');
                                 $frm.find("#place").removeAttr('disabled');
                             }
-                            userLog('Принимаю компонент '+row['partnumber']+', строка '+row['id']+' на склад');
+                            userLog('Принимаю компонент '+row['partnumber']+', строка '+row['id']+', заявка '+row.requestid+' на склад');
+                            if(row.status==0 || row.status==5 || row.status==4){
+                                userLog('Нельзя принять из этого статуса. Отменено','info');
+                                return;
+                            }
                             $("#popup-dialog-receive").dialog({
                                 title: row['requestid'].replace(/^0+/, '') + ': ' + row['partnumber'], buttons: {
                                     "Принять": function () {
@@ -417,8 +423,9 @@ let RequestsTable = {
                         $("#popup-dialog-replace").dialog({
                             title: row['requestid'].replace(/^0+/, '') + ': ' + row['partnumber'], buttons: {
                                 "Заменить": function () {
-                                    let oldpn,newpn;
+                                    let oldpn,newpn,requestid;
                                     oldpn = row['partnumber'];
+                                    requestid = row['requestid'];
                                     newpn = $frm.find("input#replace_component").val();
 
                                     $.ajax({
@@ -438,7 +445,7 @@ let RequestsTable = {
                                             if(typeof changes!=='undefined'){
                                                 if(typeof changes.success!=="undefined"){
                                                     if(changes.success){
-                                                        userLog('Компонент успешно заменен: '+oldpn+' -> '+newpn+' новая строка '+changes.id);
+                                                        userLog('Компонент в заявке '+requestid+' успешно заменен: '+oldpn+' -> '+newpn+' новая строка '+changes.id);
                                                     }else{
                                                         userLog(changes.error,'error');
                                                     }
@@ -484,14 +491,14 @@ let RequestsTable = {
                             $("#popup_grid_store_correction")
                                 .dialog({
                                     height: 400,
-                                    width: 700,
+                                    width: 1000,
                                     //width: 'auto',
                                     modal: true,
                                     open: function (evt, ui) {
                                         $("#grid_store_correction").pqGrid(StoreCorrectionTable).pqGrid('refreshDataAndView');
                                     },
                                     close: function () {
-                                        $("#grid_store_correction").pqGrid('destroy');
+                                        //$("#grid_store_correction").pqGrid('destroy');
                                     }
                                 });
                         },

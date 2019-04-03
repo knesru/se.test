@@ -32,7 +32,7 @@ class ActionhistoryController extends Controller
 				'users'=>array('*'),
 			),
 			array('allow', // allow authenticated user to perform 'create' and 'update' actions
-				'actions'=>array('create','update'),
+				'actions'=>array('create','update','list'),
 				'users'=>array('@'),
 			),
 			array('allow', // allow admin user to perform 'admin' and 'delete' actions
@@ -74,7 +74,7 @@ class ActionhistoryController extends Controller
             }else{
 			    $model->initiatoruserid = 0;//GUEST
             }
-            $model->created_at = date('Y-m-d h:i:s');
+            $model->created_at = date('Y-m-d H:i:s');
 			if($model->save()){
 			    $this->j('');
             }
@@ -132,6 +132,28 @@ class ActionhistoryController extends Controller
 		$this->render('index',array(
 			'dataProvider'=>$dataProvider,
 		));
+	}
+
+	/**
+	 * Lists all models.
+	 */
+	public function actionList()
+	{
+	    $criteria = new CDbCriteria();
+	    $criteria->order = 'created_at asc';
+        $result = array('data'=>array());
+	    if(!empty(Yii::app()->user->id)) {
+            $criteria->compare('initiatoruserid', Yii::app()->user->id);
+            $model = Actionhistory::model()->findAll($criteria);
+            foreach ($model as $item) {
+                $result['data'][] = array(
+                    'description' => $item->description,
+                    'severity' => $item->severity,
+                    'created_at' => $item->created_at
+                );
+            }
+        }
+        $this->j($result);
 	}
 
 	/**

@@ -17,9 +17,11 @@
  * @property integer $storeid
  *
  * @property string $partnumber
+ * @property string $store
  *
  * @property User $user
  * @property Component $component
+ * @property Storelist $storemodel
  */
 class Storecorrection extends CActiveRecord
 {
@@ -58,6 +60,7 @@ class Storecorrection extends CActiveRecord
         return array(
             'component' => array(self::BELONGS_TO, 'Component', 'partnumberid'),
             'user' => array(self::BELONGS_TO, 'User', 'initiatoruserid'),
+            'storemodel' => array(self::BELONGS_TO, 'Storelist', 'storeid'),
         );
     }
 
@@ -131,5 +134,10 @@ class Storecorrection extends CActiveRecord
     {
         return $this->component->partnumber;
 	}
+
+    public function getStore()
+    {
+        return $this->storemodel->name;
+    }
 
 }

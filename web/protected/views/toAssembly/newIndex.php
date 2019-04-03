@@ -37,9 +37,12 @@ $cs = Yii::app()->getClientScript();
     }
     function canChangeStatus(to, from)
     {
-        if(from===to){
+        if((''+from)===(''+to)){
             return true;
         }
+
+        to = ''+to;
+        from = ''+from;
 
         let matrix = getStatusesMatrix();
         if(typeof matrix[from] === "undefined"){
@@ -82,6 +85,7 @@ $cs->registerScriptFile($baseUrl . '/js/commonColumns.js',CClientScript::POS_END
 $cs->registerScriptFile($baseUrl . '/js/requestsTable.js',CClientScript::POS_END);
 $cs->registerScriptFile($baseUrl . '/js/componentsTable.js',CClientScript::POS_END);
 $cs->registerScriptFile($baseUrl . '/js/storeCorrectionTable.js',CClientScript::POS_END);
+$cs->registerScriptFile($baseUrl . '/js/pq/localize/pq-localize-ru.js',CClientScript::POS_END);
 $cs->registerCssFile($baseUrl . '/js/pq/pqselect.bootstrap.min.css');
 $cs->registerCssFile($baseUrl . '/js/pq/pqgrid'.$min.'.css');
 $cs->registerCssFile($baseUrl . '/js/pq/pqselect.min.css');
@@ -94,8 +98,11 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
         controlData.prevSelection = null;
         controlData.requestSelection = [];
         $requestsGrid = $("#grid_requests").pqGrid(RequestsTable);
+        $requestsGrid.find(".pq-pager").pqPager("option", $.paramquery.pqPager.regional['ru']);
         $componentsGrid = $("#grid_new_components").pqGrid(ComponentsTable);
-        $storeCorrectionGrid = $("#grid_store_correction").pqGrid(StoreCorrectionTable);
+        $componentsGrid.find(".pq-pager").pqPager("option", $.paramquery.pqPager.regional['ru']);
+        $storeCorrectionGrid = $("#grid_store_correction");
+        $storeCorrectionGrid.find(".pq-pager").pqPager("option", $.paramquery.pqPager.regional['ru']);
 
         $("#grid_requests").on("pqgridcollapse pqgridexpand", function (event, ui) {
             $("#grid_new_components").pqGrid('refreshDataAndView');
@@ -122,7 +129,8 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
             autoOpen: false
         });
         $("#popup-dialog-settings").dialog({
-            width: 400, modal: false,
+            width: 800,
+            modal: false,
             autoOpen: false
         });
         $('#open_settigs_menu').click(function(){
@@ -223,6 +231,14 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
         });
         $componentsGrid.one("pqgridload", function (evt, ui) {
             $('#ss_rollback').click();
+            loadUserHistory();
+            $componentsGrid.pqGrid("option", $.paramquery.pqGrid.regional['ru']);
+        });
+        $requestsGrid.one("pqgridload", function (evt, ui) {
+            $requestsGrid.pqGrid("option", $.paramquery.pqGrid.regional['ru']);
+        });
+        $storeCorrectionGrid.one("pqgridload", function (evt, ui) {
+            $storeCorrectionGrid.pqGrid("option", $.paramquery.pqGrid.regional['ru']);
         });
 
         // $("#grid_requests")

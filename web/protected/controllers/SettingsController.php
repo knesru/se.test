@@ -47,7 +47,7 @@ class SettingsController extends Controller
 	{
         $name = Yii::app()->request->getPost('name',array());
         $model = Settings::model()->getUserSettings('extcomponents_'.$name);
-        if($model->delete()){
+        if($model->isNewRecord || $model->delete()){
             print json_encode(array('success'=>true,'message'=>'Настройки сброшены'));
             return;
         }

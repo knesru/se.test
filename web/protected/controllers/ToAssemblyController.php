@@ -266,8 +266,15 @@ class ToAssemblyController extends Controller
 		$newModel->id = null;
 		$newModel->partnumber = Yii::app()->request->getPost('partnumber');
 		$newModel->partnumberid = Yii::app()->request->getPost('partnumberid');
-//		$model->status = 5;
+		$newModel->status = 0;
+		$newModel->amount = max(1,$model->amount - $model->delivered);
+		$newModel->delivered = 0;
+		$model->amount = $model->delivered;
+		$model->status = 5;
 		if ($newModel->save()) {
+		    if(!empty($model->description)){
+                $model->description.=";\n";
+            }
 		    $model->description.='Заменен на компонент '.($newModel->partnumber).'; Новая строка '.($newModel->id);
 		    $model->save();
 			print json_encode(array('success' => true, 'requestid' => $newModel->requestid, 'id'=>$newModel->id));
@@ -852,7 +859,7 @@ location.reload();
             ));
             $message = 'Левый '.$model->partnumber;
         }else{
-            $storeCorrectionModel = Storecorrection::model()->with('user','user.userinfo','component')->findAllByAttributes(array(
+            $storeCorrectionModel = Storecorrection::model()->with('user','user.userinfo','component','storemodel')->findAllByAttributes(array(
                 'partnumberid'=>$model->partnumberid
             ));
             $message = 'STMS';
@@ -862,7 +869,7 @@ location.reload();
         }
         $result = array('message'=>$message);
         $result['totalRecords'] = count($storeCorrectionModel);
-        /** @var  $storecorrection */
+        /** @var Storecorrection $storecorrection */
         foreach ($storeCorrectionModel as $storecorrection){
             $row = array();
             $row['id'] = $storecorrection->id;
@@ -874,6 +881,10 @@ location.reload();
             $row['partnumber'] = $storecorrection->partnumber;
             $row['amount'] = $storecorrection->qty;
             $row['description'] = $storecorrection->description;
+            $row['operation'] = $storecorrection->operation;
+            $row['prevqty'] = $storecorrection->prevqty;
+            $row['postqty'] = $storecorrection->postqty;
+            $row['store'] = $storecorrection->store;
             $result['data'][] = $row;
         }
 

@@ -12,6 +12,13 @@
  * @property string $description
  *
  * @property string $updatedate
+ * @property string $operation
+ * @property string $prevqty
+ * @property string $postqty
+ * @property string $store
+ *
+ * @property User $user
+ * @property Component $component
  */
 class StorecorrectionExt extends CActiveRecord
 {
@@ -111,4 +118,21 @@ class StorecorrectionExt extends CActiveRecord
     {
         return $this->created_at;
 	}
+
+    public function getOperation()
+    {
+        return 'add';
+	}
+	public function getPostqty()
+    {
+        return $this->qty;
+	}
+	public function getPrevqty()
+    {
+        return 0;
+	}
+    public function getStore()
+    {
+        return '';
+    }
 }

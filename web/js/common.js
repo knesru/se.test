@@ -198,6 +198,16 @@ function clearFilter() {
     });
 }
 
+
+function userAction(params){
+    let defaultParams = {
+        action: 'general',
+        partnumber: '',
+        requestid: '',
+        id: '',
+        message: ''
+    }
+}
 function userLog(action, severity, element, result) {
     if(typeof result === 'undefined'){
         result = '';
@@ -228,16 +238,34 @@ function userLog(action, severity, element, result) {
     if (typeof msg !== 'string' && isNaN(msg)) {
         msg = JSON.stringify(msg);
     }
-    if($('#footer').find('a').length>0){
-        $('#footer').html('').css({'text-align':'left','height':'60px'});
-    }
     if(msg.length>0) {
-        // saveActionHistory({
-        //     'description': msg,
-        //     'severity': severity
-        // });
+        saveActionHistory({
+            'description': msg,
+            'severity': severity
+        });
     }
-    $('#footer').prepend('<div class="'+hl_class+'">'+getDateTime()+' | '+msg+'</div>');
+    footerLog(getDateTime()+' | '+msg,100,severity);
+}
+
+function footerLog(message,maxLogLength,severity){
+    let hl_class = '';
+    if(severity==='info') {
+        hl_class = 'ui-state-highlight';
+    }
+    if(severity==='log') {
+        hl_class = '';
+    }
+    if(severity==='error') {
+        hl_class = 'ui-state-error';
+    }
+    let $footer = $('#footer');
+    if($footer.find('a').length>0){
+        $footer.html('').css({'text-align':'left'}).resizable({
+            handles: "n, s"
+        }).css({'height':60});
+    }
+    $footer.prepend('<div class="userlog_message '+hl_class+'">'+message+'</div>');
+    $footer.find('.userlog_message:gt('+maxLogLength+')').remove();
 }
 
 
@@ -309,10 +337,7 @@ function generalAjaxAnswer(result,msg){
         return true;
         // }
     }
-    if(msg===true || msg==='error'){
-        showMessage('Неизвестно, был ли ответ успешен');
-    }
-    userLog('Неизвестно, был ли ответ успешен',TYPE_INFO);
+    console.log('Неизвестно, был ли ответ успешен');
     return false;
 }
 
@@ -324,10 +349,10 @@ function saveActionHistory(params) {
         url: "/actionhistory/create", //for ASP.NET, java
         data: {Actionhistory: params},
         success: function (result) {
-            generalAjaxAnswer(result);
+            console.log(result);
         },
         error: function(err){
-            //userLog(err.responseText,'error');
+            console.error(err.responseText);
         }
     });
 }
@@ -400,4 +425,30 @@ function changePriority(evt) {
     evt.stopPropagation();
     evt.stopImmediatePropagation();
     return false;
+}
+
+function loadUserHistory(){
+    $.ajax({
+        dataType: "json",
+        type: "POST",
+        async: true,
+        url: "/actionhistory/list", //for ASP.NET, java
+        success: function (result) {
+            if(typeof result!=="undefined" &&
+                typeof result.success!=="undefined" &&
+                result.success &&
+                typeof result.data!=="undefined" &&
+                result.data.length>0
+            ){
+                for(let i=0;i<result.data.length; i++){
+                    footerLog(result.data[i].created_at.replace(/-/g,'.')+' | '+result.data[i].description,100,result.data[i].severity);
+                }
+            }else{
+                footerLog(getDateTime()+' | Не удалось загрузить историю действий',100,'error');
+            }
+        },
+        error: function(err){
+            footerLog(getDateTime()+' | Не удалось загрузить историю действий. Возможная причина:'+err.responseText,100,'error');
+        }
+    });
 }
