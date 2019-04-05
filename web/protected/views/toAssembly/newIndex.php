@@ -101,7 +101,7 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
         $requestsGrid.find(".pq-pager").pqPager("option", $.paramquery.pqPager.regional['ru']);
         $componentsGrid = $("#grid_new_components").pqGrid(ComponentsTable);
         $componentsGrid.find(".pq-pager").pqPager("option", $.paramquery.pqPager.regional['ru']);
-        $storeCorrectionGrid = $("#grid_store_correction");
+        $storeCorrectionGrid = $("#grid_store_correction").pqGrid(StoreCorrectionTable);
         $storeCorrectionGrid.find(".pq-pager").pqPager("option", $.paramquery.pqPager.regional['ru']);
 
         $("#grid_requests").on("pqgridcollapse pqgridexpand", function (event, ui) {
@@ -232,13 +232,9 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
         $componentsGrid.one("pqgridload", function (evt, ui) {
             $('#ss_rollback').click();
             loadUserHistory();
-            $componentsGrid.pqGrid("option", $.paramquery.pqGrid.regional['ru']);
-        });
-        $requestsGrid.one("pqgridload", function (evt, ui) {
-            $requestsGrid.pqGrid("option", $.paramquery.pqGrid.regional['ru']);
-        });
-        $storeCorrectionGrid.one("pqgridload", function (evt, ui) {
-            $storeCorrectionGrid.pqGrid("option", $.paramquery.pqGrid.regional['ru']);
+            // $componentsGrid.pqGrid("option", $.paramquery.pqGrid.regional['ru']).pqGrid("refresh");
+            // $requestsGrid.pqGrid("option", $.paramquery.pqGrid.regional['ru']).pqGrid("refresh");
+            // $storeCorrectionGrid.pqGrid("option", $.paramquery.pqGrid.regional['ru']).pqGrid("refresh");
         });
 
         // $("#grid_requests")

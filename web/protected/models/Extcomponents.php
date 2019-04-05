@@ -50,7 +50,7 @@ class Extcomponents extends CActiveRecord
     public static function getStatuses()
     {
         $options = array(
-            self::S_NEW => 'Не активен',
+            self::S_NEW => 'Неактивен',
             self::S_COMPLECTATION => 'Комплектация',
             self::S_COMPLETE => 'Скомпонован',
             self::S_INSTALLING => 'На монтаже',

@@ -429,7 +429,7 @@ $cs->registerCssFile($baseUrl . '/js/themes/office/pqgrid.css');
             //     //custom editor.
             //     editor: {
             //         options: [
-            //             'Не активен',
+            //             'Неактивен',
             //             'Комплектация',
             //             'Скомпонован',
             //             'На монтаже',
@@ -476,7 +476,7 @@ $cs->registerCssFile($baseUrl . '/js/themes/office/pqgrid.css');
                     labelIndx: "text",
                     mapIndices: {"text": "Статус", "value": "status"},
                     options: [
-                        {"value":0,"text":'Не активен'},
+                        {"value":0,"text":'Неактивен'},
                         {"value":1,"text":'Комплектация'},
                         {"value":2,"text":'Скомпонован'},
                         {"value":3,"text":'На монтаже'},

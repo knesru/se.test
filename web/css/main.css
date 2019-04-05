@@ -358,3 +358,87 @@ span.saving
 td.buttons-here{
 	vertical-align: top !important;
 }
+
+#toc{
+	font-size: 16px;
+	padding: 20px;
+	background-color: #e4ecf7;
+	border: 1px solid #b5b8c8;
+	border-radius: 5px;
+}
+
+#toc ul{
+	padding-left: 10px;
+	list-style-type: none;
+}
+
+.help-wrapper{
+	width: 850px;
+	margin-left: auto;
+	margin-right: auto;
+}
+.toc_text{
+	color: inherit;
+	text-decoration: none;
+	border-bottom: 1px dashed;
+	cursor: pointer;
+}
+li .toc_text{
+	display: block;
+}
+.goto .toc_text{
+	display: inline-block;
+}
+.toc_text:hover{
+	font-weight: bold;
+	border-bottom: 1px dashed;
+	cursor: pointer;
+}
+
+.toc-subitems .toc-subitems{
+	font-size: 0.9em;
+	opacity: 0.9;
+}
+
+.ah{
+	color: inherit;
+	text-decoration: none;
+}
+.lighttable{
+	display: inline-block;
+}
+.lighttable tr:nth-child(odd){
+	background-color: #eee;
+}
+.lighttable td{
+	border-bottom: 1px solid #e0e0e0;
+	border-right: 1px solid #eee;
+}
+.lighttable td:last-child{
+	border-right: 0;
+}
+
+.lighttable .transition-same{
+	background-color: #d6d8d9;
+	color: #1b1e21;
+}
+.lighttable .transition-allow{
+	background-color: #d4edda;
+	color: #155724;
+}
+.lighttable .transition-deny{
+	background-color: #f8d7da;
+	color: #721c24;
+}
+.lighttable .transition-auto{
+	background-color: #fff3cd;
+	color: #856404;
+}
+.lighttable .hidden-td-label{
+	opacity: 0.6;
+	cursor: help;
+	display: block;
+}
+.lighttable .hidden-td-label:hover{
+	opacity: 1;
+}
