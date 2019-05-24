@@ -5,8 +5,8 @@
                 <th style="text-align: center">Заявки</th><th style="text-align: center">Компоненты</th><th style="text-align: center">Коррекция</th>
             </tr>
             <tr id="ss_buttons_block">
-                <td><button type="button" id="ss_reset">Сбросить</button></td>
-                <td colspan="2" style="text-align: center"><button type="button" id="ss_rollback">Загрузить</button><button type="button" id="ss_submit">Сохранить</button></td>
+                <td><button type="button" id="ss_reset">Сбросить расположение</button></td>
+                <td colspan="2" style="text-align: center"><button type="button" id="ss_rollback">Вернуть пользовательские значения</button><button type="button" id="ss_submit">Сохранить расположение</button></td>
             </tr>
         </table>
     </div>
@@ -147,7 +147,7 @@
                 url: "/settings/load", //for ASP.NET, java
                 data: {name: 'to_assembly'},
                 success: function (result) {
-                    if (generalAjaxAnswer(result)) {
+                    if (generalAjaxAnswer(result,false,true)) {
                         if (typeof result.data !== "undefined" && result.data != null) {
                             let data = result.data;
                             let rcm = $requestsGrid.pqGrid("option", "colModel");

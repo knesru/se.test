@@ -27,7 +27,7 @@ function filterHandlerRequests(evt, ui) {
 function saveChangesRequests() {
     let grid = $requestsGrid.pqGrid('getInstance').grid;
 
-    userLog('Правка строки в заявках','log');
+    //userLog('Правка строки в заявках','log');
     //debugger;
     //attempt to save editing cell.
     if (grid.saveEditCell() === false) {
@@ -275,8 +275,8 @@ let RequestsTable = {
                                 $frm.find("#place").removeAttr('disabled');
                             }
                             userLog('Принимаю компонент '+row['partnumber']+', строка '+row['id']+', заявка '+row.requestid+' на склад');
-                            if(row.status==0 || row.status==5 || row.status==4){
-                                userLog('Нельзя принять из этого статуса. Отменено','info');
+                            if(row.status==0 || row.status==5 || row.status==4 || row.status==6){
+                                userLog('Нельзя принять из этого статуса','info');
                                 return;
                             }
                             $("#popup-dialog-receive").dialog({
@@ -476,7 +476,7 @@ let RequestsTable = {
             {type: 'separator'},
             {
                 type: 'button',
-                label: ' ',
+                label: 'История коррекций',
                 icon: 'ui-icon-clock',
                 listeners: [
                     {

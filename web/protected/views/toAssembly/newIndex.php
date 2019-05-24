@@ -3,8 +3,10 @@
 /* @var $dataProviderRequests CActiveDataProvider */
 /* @var $dataProviderAssemblies CActiveDataProvider */
 
+$this->setPageTitle('Задания в производство');
+
 $this->breadcrumbs = array(
-    'Extcomponents',
+    'Задания в производство',
 );
 
 $this->menu = array(

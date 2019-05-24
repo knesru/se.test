@@ -4,7 +4,7 @@
 /* @var $dataProviderAssemblies CActiveDataProvider */
 
 $this->breadcrumbs = array(
-    'Extcomponents',
+    'Задания в производство',
 );
 
 $this->menu = array(
@@ -51,7 +51,7 @@ $cs->registerCssFile($baseUrl . '/js/themes/office/pqgrid.css');
         /*stmsComponentsTable.colModel = [
             {title: "Заявка", dataType: "string", dataIndx: 14},
             {title: "ID", dataType: "integer", dataIndx: 0},
-            {title: "Партномер", dataType: "string", dataIndx: 1},
+            {title: "Наименование", dataType: "string", dataIndx: 1},
             {title: "ID компонента", dataType: "string", align: "right", dataIndx: 2},
             {title: "Кол-во", dataType: "integer", align: "right", dataIndx: 3},
             {title: "Пользователь", dataType: "string", dataIndx: 4},
@@ -364,7 +364,7 @@ $cs->registerCssFile($baseUrl . '/js/themes/office/pqgrid.css');
             },
             {title: "ID", dataType: "integer", dataIndx: 0, editable: false},
             {
-                title: "Партномер", dataType: "string", dataIndx: 1,
+                title: "Наименование", dataType: "string", dataIndx: 1,
                 editor: {
                     type: 'textbox',
                     init: function (ui) {

@@ -61,6 +61,33 @@ class Extcomponents extends CActiveRecord
         return $options;
     }
 
+    public static function getStatusesColors()
+    {
+        $options = array(
+            self::S_NEW => 'status-new',
+            self::S_COMPLECTATION => 'status-complectation',
+            self::S_COMPLETE => 'status-complete',
+            self::S_INSTALLING => 'status-installing',
+            self::S_CLOSED => 'status-closed',
+            self::S_CANCEL => 'status-cancel',
+            self::S_DISASSEMBLY => 'status-disassembly',
+        );
+        return $options;
+    }
+
+    public static function getStatusName($status){
+        $options = self::getStatuses();
+        if(isset($options[$status])){
+            return $options[$status];
+        }
+        return '';
+    }
+
+    public function tStatus()
+    {
+        return self::getStatusName($this->status);
+    }
+
     public static function getStatusesMatrix()
     {
         $matrix = array(
@@ -151,7 +178,7 @@ class Extcomponents extends CActiveRecord
 		return array(
 			'id' => 'ID',
 			'partnumberid' => 'Порядковый номер',
-			'partnumber' => 'Партномер',
+			'partnumber' => 'Наименование',
 			'amount' => 'Кол-во',
 			'userid' => 'Пользователь',
 			'purpose' => 'Назначение',

@@ -28,7 +28,7 @@ function filterHandlerComponents(evt, ui) {
 
 function saveChangesComponents() {
     let grid = $componentsGrid.pqGrid('getInstance').grid;
-    userLog('Правка строки в компонентах');
+    //userLog('Правка строки в компонентах');
     //debugger;
     //attempt to save editing cell.
     if (grid.saveEditCell() === false) {
@@ -77,12 +77,9 @@ function saveChangesComponents() {
         for (let x in newData) {
             if (newData.hasOwnProperty(x)) {
                 let identifier = '';
-                let oldval;
                 identifier = newData['id'];
                 if (typeof grid.getColumn({dataIndx: x}) !== 'undefined') {
-                    if(typeof oldData[x] !== 'undefined') {
-                        oldval = oldData[x];
-                    }
+                    let oldval = oldData[x];
                     let newval = newData[x];
                     if (x === 'status') {
                         let statuses = getStatusesArray();
@@ -98,7 +95,9 @@ function saveChangesComponents() {
                         }
                     }
                     if (x === 'priority') {
-                        oldval = oldval?'высокий':'низкий';
+                        if(typeof oldval !== 'undefined') {
+                            oldval = oldval ? 'высокий' : 'низкий';
+                        }
                         newval = newval?'высокий':'низкий';
                     }
                      if(typeof oldval !== 'undefined') {
@@ -118,9 +117,13 @@ function saveChangesComponents() {
             url: "/toAssembly/update", //for ASP.NET, java
             data: {list: JSON.stringify(changes)},
             success: function (changes) {
+                generalAjaxAnswer(changes,true);
+                if(typeof changes.success!=="undefined"){
+                    if(changes.success===false){
+                        grid.rollback();
+                    }
+                }
                 if(typeof changes.data !== 'undefined'){
-                    changes.success = true;
-                    generalAjaxAnswer(changes);
                     let rowIndx = $componentsGrid.pqGrid('getRowIndx',{rowData:changes.data[0].id});
                     $componentsGrid.pqGrid("goToPage", { rowIndx: rowIndx });
                     $componentsGrid.pqGrid("setSelection", null);
@@ -149,14 +152,21 @@ function saveChangesComponents() {
 let ComponentsTableColumnModel = [
     getIdColumn(),
     {
-        title: "Заявка",
+        title: "Действия",
         dataIndx: 'requestid',
         dataType: "string",
         cls:'buttons-here',
+        minWidth: 80,
+        maxWidth: 80,
         editable: false,
         sortable: false,
         render: function (ui) {
-            return "<button type='button' class='create_request_btn ui-button'>Создать</button>";
+            let rowData = ui.rowData,
+                dataIndx = ui.dataIndx;
+            if(rowData['status'] == 4 || rowData['status'] == 5){
+                return '';
+            }
+            return "<span style='white-space: nowrap'><button type='button' class='create_request_btn ui-button' title='Создать заявку'>Создать</button> <button type='button' class='delete_component_btn ui-button' title='удалить'><span style='color: #8a1f11; font-weight: bold;'>&nbsp;&times;&nbsp;</span></button></span>";
         }
 
     },
@@ -171,8 +181,8 @@ let ComponentsTableColumnModel = [
     getDeficiteColumn(),
     getDescriptionColumn(),
     getInstall_fromColumn(),
-    getPriorityColumn(),
-    getActionsColumn('component')
+    getPriorityColumn()//,
+    //getActionsColumn('component')
 ];
 
 let ComponentsTableDataModel = {
@@ -224,6 +234,30 @@ let ComponentsTable = {
                 listeners: [{'keyup': filterHandlerComponents}]
             },
             {type: 'separator'},
+            {
+                type: 'button',
+                label: 'Добавить компонент',
+                listeners: [
+                    {
+                        'click': function (evt, ui) {
+                            //append empty row at the end.
+                            $('#popup-dialog-form-new-component').dialog('open');
+                        },
+                    }
+                ]
+            },
+            {type: 'separator'},
+            {
+                type:
+                    '<div class="controlgroup">\n' +
+                    '    <button id="requestbutton" class="ui-corner-left">Создать заявку</button>\n' +
+                    '    <select>\n' +
+                    '      <option value="create">Создать заявку</option>\n' +
+                    '      <option value="append">Добавить&nbsp;в&nbsp;заявку</option>\n' +
+                    '    </select>\n' +
+                    '  </div>',
+            },
+            {type: 'separator'},
             /*{ type: 'button', icon: 'ui-icon-plus', label: 'New Product', listener:
                     { "click": function (evt, ui) {
                             //append empty row at the end.
@@ -268,33 +302,9 @@ let ComponentsTable = {
             {type: 'separator'},
             {
                 type: 'button',
-                label: 'Добавить компонент',
-                listeners: [
-                    {
-                        'click': function (evt, ui) {
-                            //append empty row at the end.
-                            $('#popup-dialog-form-new-component').dialog('open');
-                        },
-                    }
-                ]
-            },
-            {type: 'separator'},
-            {
-                type:
-                    '<div class="controlgroup">\n' +
-                    '    <button id="requestbutton" class="ui-corner-left">Создать заявку</button>\n' +
-                    '    <select>\n' +
-                    '      <option value="create">Создать заявку</option>\n' +
-                    '      <option value="append">Добавить&nbsp;в&nbsp;заявку</option>\n' +
-                    '    </select>\n' +
-                    '  </div>',
-            },
-            {type: 'separator'},
-            {
-                type: 'button',
-                label: ' ',
+                label: 'История коррекций',
                 icon: 'ui-icon-clock',
-                title: 'История',
+                title: 'История коррекций',
                 listeners: [
                     {
                         'click': function(){

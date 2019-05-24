@@ -407,9 +407,12 @@ class ToAssemblyController extends Controller
           'defaultOrder' => 'priority DESC, requestid asc'
         ));
         /** @var Extcomponents $request */
+        $colors = Extcomponents::getStatusesColors();
+
         foreach ($dp->getData() as $request) {
             $row = $request->attributes;
             $row['user'] = $request->user->userinfo->fullname;
+            $row['pq_rowcls'] = $colors[$row['status']];
             if(empty($row['user'])){
                 $row['user'] = $request->user->username;
             }
@@ -530,6 +533,8 @@ class ToAssemblyController extends Controller
                 foreach ($row_data as $cell_value) {
                     $cell_value = str_replace('null','',$cell_value);
                     $cell_value = str_replace('undefined','',$cell_value);
+                    $cell_value = preg_replace('/^(\d{4})-(\d{2})-(\d{2})\s\d{2}:\d{2}:\d{2}(\.\d+)?/','$3-$2-$1',$cell_value);
+                    $cell_value = preg_match('/^\d+\.СБ\.\d{2}$/',$cell_value)?trim($cell_value,'0'):$cell_value;
                     $activeSheet->setCellValue($cell, $cell_value);
                     $cell = $this->dc($cell, array(1, 0));
                     $i++;
@@ -609,6 +614,7 @@ class ToAssemblyController extends Controller
     {
         /** @var Extcomponents $model */
         $model = $this->loadModel($_POST['requestid']);
+
         /**
          * @property integer $id
          * @property integer $initiatoruserid
@@ -626,6 +632,9 @@ class ToAssemblyController extends Controller
         $condition->compare('partnumberid', $model->partnumberid);
         $condition->compare('storeid', $_POST['storeid']);
         $condition->compare('place', $_POST['place']);
+        if(Extcomponents::C_DENY===$model->canChangeStatus(Extcomponents::S_CLOSED)){
+            $this->j(sprintf('Нельзя принять из статуса «%s»',$model->tStatus()),false);
+        }
         $transaction=Yii::app()->db->beginTransaction();
         if(!empty($model->partnumberid)) {
             $store = Store::model()->find($condition);
@@ -710,7 +719,7 @@ class ToAssemblyController extends Controller
         /**
          * Заявка":"000002.СБ.18",
          * "ID":"4",
-         * "Партномер":"GTXO-92V/GS+24.00MHz",
+         * "Наименование":"GTXO-92V/GS+24.00MHz",
          * "ID+компонента":"9213",
          * "Кол-во":"455",
          * "Пользователь":"&nbsp;",

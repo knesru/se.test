@@ -3,8 +3,8 @@
 /* @var $model Extcomponents */
 
 $this->breadcrumbs=array(
-	'Extcomponents'=>array('index'),
-	'Create',
+	'Задания в производство'=>array('index'),
+	'Создать',
 );
 
 $this->menu=array(

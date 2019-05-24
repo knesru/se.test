@@ -13,6 +13,8 @@
  * @property string $action
  * @property string $description
  * @property string $severity
+ *
+ * @property User $user
  */
 class Actionhistory extends CActiveRecord
 {
@@ -49,6 +51,7 @@ class Actionhistory extends CActiveRecord
 		// NOTE: you may need to adjust the relation name and the related
 		// class name for the relations automatically generated below.
 		return array(
+            'user' => array(self::BELONGS_TO, 'User', 'initiatoruserid'),
 		);
 	}
 
@@ -61,7 +64,7 @@ class Actionhistory extends CActiveRecord
 			'id' => 'ID',
 			'initiatoruserid' => 'Пользователь',
 			'created_at' => 'Добавлено',
-			'partnumber' => 'Партномер',
+			'partnumber' => 'Наименование',
 			'ext_id' => 'Строка',
 			'requestid' => 'Заявка',
 			'action' => 'Действие',

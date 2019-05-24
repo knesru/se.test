@@ -442,3 +442,28 @@ li .toc_text{
 .lighttable .hidden-td-label:hover{
 	opacity: 1;
 }
+
+/*status-colors*/
+.status-closed td{
+	background-color: #d9ecff !important;
+}
+.status-new td{
+	background-color: #d9d9d9 !important;
+}
+.status-complectation td{
+	background-color: #ffecec !important;
+}
+.status-complete td{
+	background-color: #ecffd9 !important;
+}
+.status-installing td{
+	background-color: #d9ffd9 !important;
+}
+.status-cancel td{
+	background-color: #ffd9d9 !important;
+}
+.status-disassembly td{
+	background-color: #ecd9ff !important;
+}
+
+/*END status-colors*/

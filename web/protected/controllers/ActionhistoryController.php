@@ -6,7 +6,7 @@ class ActionhistoryController extends Controller
 	 * @var string the default layout for the views. Defaults to '//layouts/column2', meaning
 	 * using two-column layout. See 'protected/views/layouts/column2.php'.
 	 */
-	public $layout='//layouts/column2';
+	public $layout='//layouts/main';
 
 	/**
 	 * @return array action filters
@@ -32,7 +32,7 @@ class ActionhistoryController extends Controller
 				'users'=>array('*'),
 			),
 			array('allow', // allow authenticated user to perform 'create' and 'update' actions
-				'actions'=>array('create','update','list'),
+				'actions'=>array('create','update','list','log'),
 				'users'=>array('@'),
 			),
 			array('allow', // allow admin user to perform 'admin' and 'delete' actions
@@ -134,27 +134,46 @@ class ActionhistoryController extends Controller
 		));
 	}
 
-	/**
-	 * Lists all models.
-	 */
-	public function actionList()
-	{
-	    $criteria = new CDbCriteria();
-	    $criteria->order = 'created_at asc';
-        $result = array('data'=>array());
-	    if(!empty(Yii::app()->user->id)) {
+    /**
+     * Lists all models.
+     */
+    public function actionList($allusers = false)
+    {
+        $criteria = new CDbCriteria();
+        $criteria->order = 't.created_at asc';
+        $result = array('data' => array());
+        $criteria->limit = 100;
+        if (!$allusers && !empty(Yii::app()->user->id)) {
+            $criteria->limit = 1000;
             $criteria->compare('initiatoruserid', Yii::app()->user->id);
-            $model = Actionhistory::model()->findAll($criteria);
-            foreach ($model as $item) {
-                $result['data'][] = array(
-                    'description' => $item->description,
-                    'severity' => $item->severity,
-                    'created_at' => $item->created_at
-                );
-            }
+        }else{
+            $criteria->order = 't.created_at desc';
         }
-        $this->j($result);
-	}
+        $criteria->with = array(
+            'user.userinfo' => array('together' => true,)
+        );
+        $model = Actionhistory::model()->findAll($criteria);
+        foreach ($model as $item) {
+            $username = $item->user->userinfo->fullname;
+            if(empty($username)){
+                $username = $item->user->username;
+            }
+            if(empty($username)){
+                $username = 'Гость';
+            }
+            $result['data'][] = array(
+                'user' => $username,
+                'userid' => $item->initiatoruserid,
+                'description' => $item->description,
+                'severity' => $item->severity,
+                'created_at' => $item->created_at
+            );
+        }
+        if(Yii::app()->request->isAjaxRequest) {
+            $this->j($result);
+        }
+        return $result;
+    }
 
 	/**
 	 * Manages all models.
@@ -170,6 +189,15 @@ class ActionhistoryController extends Controller
 			'model'=>$model,
 		));
 	}
+
+    /**
+     * Displays a particular model.
+     * @param integer $id the ID of the model to be displayed
+     */
+    public function actionLog()
+    {
+        $this->render('log',array('logData'=>$this->actionList(true)));
+    }
 
 	/**
 	 * Returns the data model based on the primary key given in the GET variable.

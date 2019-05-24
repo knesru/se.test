@@ -170,7 +170,7 @@ function renderShortText(ui) {
 }
 
 function clearFilter() {
-    userLog('Очистил фильтр','log');
+    //userLog('Очистил фильтр','log');
     $(this).parents('.pq-grid').find('.pq-grid-header').find('input, select, textarea').each(function () {
         // Don't bother checking the field type, just check if property exists
         // and set it
@@ -308,7 +308,7 @@ function getFormData(form) {
     return model;
 }
 
-function generalAjaxAnswer(result,msg){
+function generalAjaxAnswer(result,msg,silent){
     const TYPE_ERROR = 'error';
     const TYPE_INFO = 'info';
     const TYPE_LOG = 'log';
@@ -319,6 +319,10 @@ function generalAjaxAnswer(result,msg){
         userLog('Ответ не распознан',TYPE_ERROR);
         return false;
     }
+    if(typeof silent==="undefined"){
+        silent = false;
+    }
+
     if(typeof result.success !== "undefined") {
         // if(result.success){
         if(typeof result.message!=="undefined"){
@@ -326,12 +330,16 @@ function generalAjaxAnswer(result,msg){
                 if(msg===true || msg==='success'){
                     showMessage(result.message);
                 }
-                userLog(result.message);
+                if(!silent) {
+                    userLog(result.message);
+                }
             }else {
                 if(msg===true || msg==='error'){
                     showMessage(result.message);
                 }
-                userLog(result.message,TYPE_INFO);
+                if(!silent) {
+                    userLog(result.message, TYPE_INFO);
+                }
             }
         }
         return true;
@@ -371,13 +379,19 @@ function deleteRow() {
     let rowIndx = grid.getRowIndx({$tr: $tr}).rowIndx;
     grid.addClass({rowIndx: rowIndx, cls: 'pq-row-delete' });
     let row = grid.getRowData({rowIndx: rowIndx});
-    userLog('Удаляю '+(row['priority']?'приоритетный ':'')+'компонент '+row['partnumber']+', строка '+row['id']+'...');
+    //userLog('Удаляю '+(row['priority']?'приоритетный ':'')+'компонент '+row['partnumber']+', строка '+row['id']+'...');
     if(row['priority']) {
-        if (!confirm('Внимание, удаляется компонент с высоким приоритетом. Продолжить?')) {
-            userLog('Испугался и все отменил для компонента ' + row['partnumber'] + ', строки ' + row['id']);
+        if (!confirm('Внимание, удаляется строка ' + row['id'] + ' компонента ' + row['partnumber'] + ' с высоким приоритетом. Продолжить?')) {
+            userLog('Отменил удаление компонента ' + row['partnumber'] + ', строки ' + row['id']);
             return;
         }
-        userLog('Подтвердил удаление приоритетного компонента ' + row['partnumber'] + ', строки ' + row['id']);
+        //userLog('Подтвердил удаление приоритетного компонента ' + row['partnumber'] + ', строки ' + row['id']);
+    }else {
+        if (!confirm('Удалить строку ' + row['id'] + '?')) {
+            userLog('Отменил удаление компонента ' + row['partnumber'] + ', строки ' + row['id']);
+            return;
+        }
+        //userLog('Подтвердил удаление компонента ' + row['partnumber'] + ', строки ' + row['id']);
     }
     $.ajax({
         dataType: "json",

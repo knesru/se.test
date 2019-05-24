@@ -18,7 +18,7 @@ function getIdColumn(hidden) {
 
 function getPartnumberColumn() {
     return {
-        title: "Партномер",
+        title: "Наименование",
         dataIndx: 'partnumber',
         dataType: "string",
         render: function(ui){
@@ -395,8 +395,9 @@ function getStoreColumn(type){
 function getClearFilterButton() {
     return {
         type: 'button',
-        label: ' ',
+        label: 'Очистить фильтр',
         icon: 'ui-icon-trash',
+        title: 'Очистить фильтр',
         listeners: [
             {
                 'click': clearFilter,

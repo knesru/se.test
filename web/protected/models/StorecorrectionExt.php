@@ -67,7 +67,7 @@ class StorecorrectionExt extends CActiveRecord
 			'id' => 'ID',
 			'initiatoruserid' => 'Пользователь',
 			'created_at' => 'Добавлено',
-			'partnumber' => 'Партномер',
+			'partnumber' => 'Наименование',
 			'qty' => 'Количество',
 			'description' => 'Описание',
 		);

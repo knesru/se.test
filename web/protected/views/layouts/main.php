@@ -28,8 +28,9 @@
     <div id="header" class="ui-widget-header">
         <div id="userMenu"><?php $this->widget('zii.widgets.CMenu', array(
                 'items' => array(
-				array('label'=>'Настройки', 'itemOptions'=>array('id'=>'open_settigs_menu'), 'visible'=>$this->id=='toassembly'),
-				array('label'=>'Главная', 'url'=>array('/toassembly'), 'visible'=>$this->id!='toassembly'),
+                    array('label' => 'Журнал всех пользователей', 'url' => array('/actionhistory/log')),
+                    array('label' => 'Настройки', 'itemOptions' => array('id' => 'open_settigs_menu'), 'visible' => $this->id == 'toassembly'),
+                    array('label' => 'Главная', 'url' => array('/toassembly'), 'visible' => $this->id != 'toassembly'),
 //				array('label'=>'Contact', 'url'=>array('/site/contact')),
                     array('label' => 'Войти', 'url' => array('/site/login'), 'visible' => Yii::app()->user->isGuest),
                     array('label' => 'Выйти (' . Yii::app()->user->name . ')', 'url' => array('/site/logout'), 'visible' => !Yii::app()->user->isGuest),

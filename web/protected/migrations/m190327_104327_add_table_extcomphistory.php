@@ -16,7 +16,7 @@ class m190327_104327_add_table_extcomphistory extends CDbMigration
         $this->execute("comment on column {{storecorrection_ext}}.id is 'ID';");
         $this->execute("comment on column {{storecorrection_ext}}.initiatoruserid is 'Пользователь';");
         $this->execute("comment on column {{storecorrection_ext}}.created_at is 'Добавлено';");
-        $this->execute("comment on column {{storecorrection_ext}}.partnumber is 'Партномер';");
+        $this->execute("comment on column {{storecorrection_ext}}.partnumber is 'Наименование';");
         $this->execute("comment on column {{storecorrection_ext}}.qty is 'Количество';");
         $this->execute("comment on column {{storecorrection_ext}}.description is 'Описание';");
 
