@@ -8109,7 +8109,7 @@
             autoOpen: true,
             buttons: [],
             closeOnEscape: true,
-            closeText: "Close",
+            closeText: "Закрыть",
             dialogClass: "",
             draggable: true,
             hide: null,

@@ -241,7 +241,7 @@ let ComponentsTable = {
                     {
                         'click': function (evt, ui) {
                             //append empty row at the end.
-                            $('#popup-dialog-form-new-component').dialog('open');
+                            $('#popup-dialog-form-new-component').dialog({title: 'Добавить компонент'}).dialog('open');
                         },
                     }
                 ]

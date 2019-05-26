@@ -128,7 +128,7 @@ class ToAssemblyController extends Controller
                     }
                 }
             }
-            $this->j($result['data'],$result['success']);
+            $this->j(array('data'=>$result['data']),$result['success']);
         }
     }
 
@@ -178,7 +178,7 @@ class ToAssemblyController extends Controller
         // Uncomment the following line if AJAX validation is needed
         // $this->performAjaxValidation($model);
         if (isset($data)) {
-            $data['updateList'][0]['priority'] = ($data['updateList'][0]['priority']=='true'?1:0);
+            $data['updateList'][0]['priority'] = (($data['updateList'][0]['priority']=='true' || $data['updateList'][0]['priority']==1)?1:0);
             $model->attributes = $data['updateList'][0];
 
             if (isset($new_status)) {
@@ -269,18 +269,26 @@ class ToAssemblyController extends Controller
 		$newModel->status = 0;
 		$newModel->amount = max(1,$model->amount - $model->delivered);
 		$newModel->delivered = 0;
-		$model->amount = $model->delivered;
+		$model->amount = empty($model->delivered)?0:$model->delivered;
 		$model->status = 5;
+        $transaction=Yii::app()->db->beginTransaction();
 		if ($newModel->save()) {
 		    if(!empty($model->description)){
                 $model->description.=";\n";
             }
 		    $model->description.='Заменен на компонент '.($newModel->partnumber).'; Новая строка '.($newModel->id);
-		    $model->save();
-			print json_encode(array('success' => true, 'requestid' => $newModel->requestid, 'id'=>$newModel->id));
+		    if($model->save()){
+                $transaction->commit();
+                print json_encode(array('success' => true, 'requestid' => $newModel->requestid, 'id'=>$newModel->id));
+            }else{
+		        $transaction->rollback();
+                print json_encode(array('success' => false, 'error' => 'Не получилось сохранить. ' .
+                    'NM'.print_r($newModel->errors, 1).'M'.print_r($model->errors, 1).'Attrs:'.print_r($newModel->attributes,1).print_r($model->attributes,1)));
+            }
 		} else {
 			print json_encode(array('success' => false, 'error' => 'Не получилось сохранить. ' .
-				print_r($newModel->errors, 1).'Attrs:'.print_r($model->attributes,1)));
+                'NM'.print_r($newModel->errors, 1).'M'.print_r($model->errors, 1).'Attrs:'.print_r($newModel->attributes,1).print_r($model->attributes,1)));
+            $transaction->rollback();
 			Yii::app()->end();
 		}
 		Yii::app()->end();
@@ -657,20 +665,10 @@ class ToAssemblyController extends Controller
             $correction_model->postqty = $store->qty;
             $correction_model->storeid = $store->storeid;
 
-            /*if (empty($_POST['installerid'])) {
-                $installer = new Installer();
-                $installer->name = $_POST['installername'];
-                $installer->phone = 'N/A';
-                $installer->created_at = date('Y-m-d');
-                if ($installer->save()) {
-                    $model->installerid = $installer->id;
-                }
-            }*/
+            //14. В коментарий в историю коррекции должны добавляться два поля: 1. Заявка, 2. Сборщик. Лишнего не надо.
             $correction_model->description = implode(";\n", array(
                 ltrim($model->requestid, '0'),
-                $model->installer->name,
-                $model->description,
-                $model->deficite
+                $model->installer->name
             ));
             $correction_model_saved = $correction_model->save();
             $correction_model_errors = $correction_model->errors;

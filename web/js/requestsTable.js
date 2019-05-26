@@ -115,7 +115,8 @@ function saveChangesRequests() {
                 grid.commit();
 
                 grid.history({method: 'reset'});
-                grid.refresh();
+                //4. Когда меняешь статус цвет не обновляется автоматом.
+                grid.refreshDataAndView();
             },
             complete: function () {
                 grid.hideLoading();
@@ -179,6 +180,7 @@ let RequestsTableColumnModel = [
         dataIndx: 'delivered',
         dataType: "integer",
         align: "right",
+        editable: false,
         filter: {
             type: 'textbox',
             condition: 'between',
@@ -267,13 +269,18 @@ let RequestsTable = {
                             $frm.find("#received_request").text(row['requestid'].replace(/^0+/, ''));
                             $frm.find("input[name='partnumberid']").val(row['partnumberid']);
                             $frm.find("#received_component").text(row['partnumber']);
-                            if(isNaN(row['partnumberid']) || row['partnumberid']===null){
-                                $frm.find("#storeid").attr('disabled','disabled');
-                                $frm.find("#place").attr('disabled','disabled');
-                            }else{
-                                $frm.find("#storeid").removeAttr('disabled');
-                                $frm.find("#place").removeAttr('disabled');
-                            }
+                            $frm.find('#place').val('');
+                            $.getJSON( '/component/getPlace', {
+                                term: '',
+                                storeid: $frm.find('input[name="storeid"]').val(),
+                                partnumberid: $frm.find('input[name="partnumberid"]').val()
+                            }, function(result){
+                                if(typeof result === 'object'){
+                                    if(typeof result[0]!=='undefined') {
+                                        $frm.find('#place').val(result[0].label);
+                                    }
+                                }
+                            } );
                             userLog('Принимаю компонент '+row['partnumber']+', строка '+row['id']+', заявка '+row.requestid+' на склад');
                             if(row.status==0 || row.status==5 || row.status==4 || row.status==6){
                                 userLog('Нельзя принять из этого статуса','info');

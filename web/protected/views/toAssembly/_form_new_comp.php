@@ -27,24 +27,24 @@ function createLabel($attribute){
             <td><textarea id="fnc_purpose" name="purpose"></textarea></td>
         </tr>
         <tr>
-            <td><label for="fnc_assembly_to"><?php print createLabel('assembly_to');?></label></td>
-            <td><input type="date" id="fnc_assembly_to" name="assembly_to"></td>
-        </tr>
-        <tr>
             <td><label for="fnc_install_to"><?php print createLabel('install_to');?></label></td>
             <td><input type="date" id="fnc_install_to" name="install_to"></td>
         </tr>
         <tr>
-            <td><label for="fnc_deficite"><?php print createLabel('deficite');?></label></td>
-            <td><textarea id="fnc_deficite" name="deficite"></textarea></td>
+            <td><label for="fnc_install_from"><?php print createLabel('install_from');?></label></td>
+            <td><input type="date" id="fnc_install_from" name="install_from"></td>
+        </tr>
+        <tr>
+            <td><label for="fnc_assembly_to"><?php print createLabel('assembly_to');?></label></td>
+            <td><input type="date" id="fnc_assembly_to" name="assembly_to"></td>
         </tr>
         <tr>
             <td><label for="fnc_description"><?php print createLabel('description');?></label></td>
             <td><textarea id="fnc_description" name="description"></textarea></td>
         </tr>
         <tr>
-            <td><label for="fnc_install_from"><?php print createLabel('install_from');?></label></td>
-            <td><input type="date" id="fnc_install_from" name="install_from"></td>
+            <td><label for="fnc_deficite"><?php print createLabel('deficite');?></label></td>
+            <td><textarea id="fnc_deficite" name="deficite"></textarea></td>
         </tr>
         <tr>
             <td><label for="fnc_priority"><?php print createLabel('priority');?></label></td>
@@ -61,10 +61,11 @@ function createLabel($attribute){
 </form><!-- form -->
 <script type="application/javascript">
     $(function(){
-        $('#fnc_form').find('input, textarea, select').bind('change, keyup, focus',function(){
+        $('#fnc_form').find('input,textarea,select').bind('change, keyup, focus',function(){
             if($(this).hasClass('error')){
-                $(this).removeClass('error').attr('title','');
+                $(this).removeClass('error');
             }
+            $(this).attr('title','');
         });
         let $inp = $('#fnc_partnumber');
         $inp.autocomplete({
@@ -113,7 +114,7 @@ function createLabel($attribute){
                 url: "/toAssembly/update", //for ASP.NET, java
                 data: {list: JSON.stringify(changes)},
                 success: function (result) {
-                    userLog(result);
+                    console.log(result);
                     if(typeof result.success === 'undefined'){
                         userLog('Произошла ошибка','error');
                         userLog(result);
@@ -121,11 +122,12 @@ function createLabel($attribute){
                     }
                     if(result.success){
                         grid.refreshDataAndView();
-                        userLog('Успешно');
+                        userLog('Успешно добавлен компонент');
                         $('#fnc_form')[0].reset();
                         $('#fnc_partnumber').removeClass('warning').removeClass('success').attr('title','');
                         $('#popup-dialog-form-new-component').dialog('close');
                     }else{
+                        $('#fnc_form').find('input,textarea').attr('title','');
                         if(typeof result.data !== 'undefined' && result.data.length>0){
                             for(let i=0; i<result.data.length; i++){
                                 let datum = result.data[i];

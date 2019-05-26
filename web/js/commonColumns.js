@@ -236,11 +236,12 @@ function getInstall_fromColumn() {
 
 function getPriorityColumn() {
     return {
-        title: "Приоритет",
+        //8. Сузить колонку "Приоритет"
+        title: "Пр.",
         dataIndx: 'priority',
         dataType: "bool",
-        minWidth: 90,
-        maxWidth: 90,
+        minWidth: 50,
+        maxWidth: 50,
         cls:'buttons-here',
         align: 'right',
         editable: false,

@@ -32,7 +32,7 @@
                     array('label' => 'Настройки', 'itemOptions' => array('id' => 'open_settigs_menu'), 'visible' => $this->id == 'toassembly'),
                     array('label' => 'Главная', 'url' => array('/toassembly'), 'visible' => $this->id != 'toassembly'),
 //				array('label'=>'Contact', 'url'=>array('/site/contact')),
-                    array('label' => 'Войти', 'url' => array('/site/login'), 'visible' => Yii::app()->user->isGuest),
+                    array('label' => 'Войти', 'itemOptions' => array('id' => 'open_popup_login'), 'url' => array('/site/login'), 'visible' => Yii::app()->user->isGuest),
                     array('label' => 'Выйти (' . Yii::app()->user->name . ')', 'url' => array('/site/logout'), 'visible' => !Yii::app()->user->isGuest),
                     array('label' => '[?]', 'url' => array('/help')),
                 ),

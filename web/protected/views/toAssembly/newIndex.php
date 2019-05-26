@@ -138,6 +138,29 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
         $('#open_settigs_menu').click(function(){
             $("#popup-dialog-settings").dialog('open');
         });
+        $('#open_popup_login').click(function(e){
+            $("#popup-dialog-login").dialog({
+                title:'Вход в систему',
+                buttons: {
+                    'Войти': function () {
+                        $.ajax({
+                            url: '/site/login',
+                            type: "POST",
+                            dataType: "json",
+                            data: {LoginForm:{username: $('[name="popop-login"]').val(), password:$('[name="popop-password"]').val()}},
+                            success: function (res) {
+                                if(generalAjaxAnswer(res,true)){
+                                    window.location.reload();
+                                }
+                            }
+                        });
+
+                    }
+                }}).dialog('open');
+            e.stopImmediatePropagation();
+            e.stopPropagation();
+            return false;
+        });
         function extractLast( term ) {
             return term.split( /,\s*/ ).pop();
         }
@@ -463,4 +486,23 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
 
 <div title="История коррекции на складе" id="popup_grid_store_correction" style="overflow:hidden; display: none">
     <div id="grid_store_correction"></div>
+</div>
+
+<div id="popup-dialog-login" style="display: none;">
+    <div class="form">
+        <form id="login-form">
+            <table align="center">
+                <tbody>
+                    <tr>
+                        <td><label for="popup-login">Логин</label></td>
+                        <td><input type="text" name="popop-login" id="popup-login"/></td>
+                    </tr>
+                    <tr>
+                        <td><label for="popup-password">Пароль</label></td>
+                        <td><input type="password" name="popop-password" id="popup-password"/></td>
+                    </tr>
+                </tbody>
+            </table>
+        </form>
+    </div><!-- form -->
 </div>

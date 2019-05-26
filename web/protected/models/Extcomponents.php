@@ -144,17 +144,50 @@ class Extcomponents extends CActiveRecord
 		// NOTE: you should only define rules for those attributes that
 		// will receive user inputs.
 		return array(
-			array('partnumber, amount, userid, purpose', 'required'),
-			array('amount, userid, delivered, priority', 'numerical', 'integerOnly'=>true),
-			array('partnumber', 'length', 'max'=>255),
+			array('partnumber, amount, userid, purpose', 'required', 'message'=>'Поле «{attribute}» не может быть пустым.'),
+			array('amount, userid, delivered, priority', 'numerical', 'integerOnly'=>true, 'message'=>'Поле «{attribute}» должно быть числом.'),
+			array('partnumber', 'length', 'max'=>255, 'message'=>'Поле «{attribute}» не должно превышать 255 символов.'),
             //array('requestid','numerical', 'allowEmpty'=>true),
             array('requestid','default','setOnEmpty' => true, 'value' => null),
+			array('assembly_to, install_to,install_from','myDateValidators'),
 			array('purpose,partnumberid, created_at, assembly_to, install_to, deficite, description, install_from', 'safe'),
 			// The following rule is used by search().
 			// @todo Please remove those attributes that should not be searched.
 			array('id, partnumberid, partnumber, amount, purpose, created_at, delivered, assembly_to, install_to, deficite, description, install_from, priority, requestid, installer, status', 'safe', 'on'=>'search'),
 		);
 	}
+
+    public function myDateValidators($attribute,$params)
+    {
+//        if ($params['strength'] === self::WEAK)
+//            $pattern = '/^(?=.*[a-zA-Z0-9]).{5,}$/';
+//        elseif ($params['strength'] === self::STRONG)
+//            $pattern = '/^(?=.*\d(?=.*\d))(?=.*[a-zA-Z](?=.*[a-zA-Z])).{5,}$/';
+
+        if(empty($this->$attribute)){
+            return;
+        }
+
+        if(!$this->isNewRecord){
+            return;
+        }
+
+        $this->
+
+        $date = date_parse_from_format('Y-m-d',$this->$attribute);
+        if($date['year']<intval(date('Y'))){
+            $this->addError($attribute, 'Дата не может быть раньше текущей');
+            return false;
+        }
+        if($date['year']==intval(date('Y')) && $date['month']<intval(date('m'))){
+            $this->addError($attribute, 'Дата не может быть раньше текущей');
+            return false;
+        }
+        if($date['month']==intval(date('m')) && $date['year']==intval(date('Y')) && $date['day']<intval(date('d'))){
+            $this->addError($attribute, 'Дата не может быть раньше текущей');
+            return false;
+        }
+    }
 
 	/**
 	 * @return array relational rules.

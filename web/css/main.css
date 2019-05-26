@@ -456,8 +456,9 @@ li .toc_text{
 .status-complete td{
 	background-color: #ecffd9 !important;
 }
+/*12. Цвет статуса На монтаже сделать потемнее. Сливается с Скомпанован.*/
 .status-installing td{
-	background-color: #d9ffd9 !important;
+	background-color: #d9ecd9 !important;
 }
 .status-cancel td{
 	background-color: #ffd9d9 !important;
