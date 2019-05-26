@@ -27,7 +27,7 @@
  * @property User $user
  * @property Installer $installer
  */
-class Extcomponents extends CActiveRecord
+class Extcomponents extends ARModel
 {
 
     //C_ for CHANGE_
@@ -169,10 +169,10 @@ class Extcomponents extends CActiveRecord
         }
 
         if(!$this->isNewRecord){
-            return;
+            if($this->getOldVal($attribute)==$this->$attribute){
+                return;
+            }
         }
-
-        $this->
 
         $date = date_parse_from_format('Y-m-d',$this->$attribute);
         if($date['year']<intval(date('Y'))){
