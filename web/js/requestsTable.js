@@ -201,8 +201,8 @@ let RequestsTableDataModel = {
     sorting: "remote",
     dataType: "JSON",
     method: "POST",
-    sortIndx: "priority",
-    sortDir: "down",
+    sortIndx: getCookie('sortRequest','sortIndx'),
+    sortDir: getCookie('sortRequest','sortDir'),
     url: "/toAssembly/requestslist",
     getData: function (response) {
         return {curPage: response.curPage, totalRecords: response.totalRecords,data: response.data};
@@ -500,6 +500,7 @@ let RequestsTable = {
                                     height: 400,
                                     width: 1000,
                                     //width: 'auto',
+                                    title: $("#popup_grid_store_correction").attr('title')+' '+row['partnumber'],
                                     modal: true,
                                     open: function (evt, ui) {
                                         $("#grid_store_correction").pqGrid(StoreCorrectionTable).pqGrid('refreshDataAndView');
@@ -539,6 +540,9 @@ let RequestsTable = {
     rowSelect: function( event, ui ) {
         $('.shorttext').addClass('folded-text');
         ui.$tr.find('.shorttext').removeClass('folded-text');
+    },
+    sort: function(event, ui){
+        setCookie('sortRequest',JSON.stringify({'sortDir':ui.dataModel.sortDir,'sortIndx':ui.dataModel.sortIndx}),100);
     },
     trackModel: {on: true},
     showTitle: false,

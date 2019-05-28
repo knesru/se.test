@@ -178,7 +178,16 @@ class ToAssemblyController extends Controller
         // Uncomment the following line if AJAX validation is needed
         // $this->performAjaxValidation($model);
         if (isset($data)) {
-            $data['updateList'][0]['priority'] = (($data['updateList'][0]['priority']=='true' || $data['updateList'][0]['priority']==1)?1:0);
+            if(
+                $data['updateList'][0]['priority']==='true' ||
+                $data['updateList'][0]['priority']===true ||
+                $data['updateList'][0]['priority']==='1' ||
+                $data['updateList'][0]['priority']===1
+            ){
+                $data['updateList'][0]['priority'] = 1;
+            }else{
+                $data['updateList'][0]['priority'] = 0;
+            }
             $model->attributes = $data['updateList'][0];
 
             if (isset($new_status)) {
@@ -412,7 +421,7 @@ class ToAssemblyController extends Controller
               'desc' => 't.partnumberid desc',
             )
           ),
-          'defaultOrder' => 'priority DESC, requestid asc'
+          'defaultOrder' => 'priority DESC, requestid asc, t.id asc'
         ));
         /** @var Extcomponents $request */
         $colors = Extcomponents::getStatusesColors();

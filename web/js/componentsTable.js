@@ -191,8 +191,8 @@ let ComponentsTableDataModel = {
     sorting: "remote",
     dataType: "JSON",
     method: "POST",
-    sortIndx: "priority",
-    sortDir: "down",
+    sortIndx: getCookie('sortRequest','sortIndx'),
+    sortDir: getCookie('sortRequest','sortDir'),
     url: "/toAssembly/componentslist",
     getData: function (response) {
         return {curPage: response.curPage, totalRecords: response.totalRecords,data: response.data};
@@ -321,6 +321,7 @@ let ComponentsTable = {
                                 .dialog({
                                     height: 400,
                                     width: 1000,
+                                    title: $("#popup_grid_store_correction").attr('title')+' '+row['partnumber'],
                                     //width: 'auto',
                                     modal: true,
                                     open: function (evt, ui) {
@@ -357,6 +358,9 @@ let ComponentsTable = {
             return;
         }
         saveChangesComponents();
+    },
+    sort: function(event, ui){
+        setCookie('sortRequest',JSON.stringify({'sortDir':ui.dataModel.sortDir,'sortIndx':ui.dataModel.sortIndx}),100);
     },
     trackModel: {on: true},
     showTitle: false,

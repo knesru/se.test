@@ -202,13 +202,13 @@
                             }
                             $requestsGrid
                                 .pqGrid("option", 'colModel', rcm_new)
-                                .pqGrid("option", 'pageModel', data.rpm).pqGrid("refresh");
+                                .pqGrid("option", 'pageModel', data.rpm).pqGrid("refreshDataAndView");
                             $componentsGrid
                                 .pqGrid("option", 'colModel', ccm_new)
-                                .pqGrid("option", 'pageModel', data.cpm).pqGrid("refresh");
+                                .pqGrid("option", 'pageModel', data.cpm).pqGrid("refreshDataAndView");
                             $storeCorrectionGrid
                                 .pqGrid("option", 'colModel', scm_new)
-                                .pqGrid("option", 'pageModel', data.spm).pqGrid("refresh");
+                                .pqGrid("option", 'pageModel', data.spm).pqGrid("refreshDataAndView");
                         }
 
                     }

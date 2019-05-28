@@ -312,6 +312,8 @@ function generalAjaxAnswer(result,msg,silent){
     const TYPE_ERROR = 'error';
     const TYPE_INFO = 'info';
     const TYPE_LOG = 'log';
+    let message_body;
+    let error_list = [];
     if(typeof msg==="undefined"){
         msg = false;
     }
@@ -326,22 +328,38 @@ function generalAjaxAnswer(result,msg,silent){
     if(typeof result.success !== "undefined") {
         // if(result.success){
         if(typeof result.message!=="undefined"){
-            if(result.success){
-                if(msg===true || msg==='success'){
-                    showMessage(result.message);
-                }
-                if(!silent) {
-                    userLog(result.message);
-                }
-            }else {
-                if(msg===true || msg==='error'){
-                    showMessage(result.message);
-                }
-                if(!silent) {
-                    userLog(result.message, TYPE_INFO);
+            message_body = result.message;
+        }
+        if(typeof result.errors === "object"){
+            for(let errindex in result.errors){
+                if(result.errors.hasOwnProperty(errindex)){
+                    if(typeof result.errors[errindex] === 'object'){
+                        for(let i=0;i<result.errors[errindex].length;i++){
+                            error_list.push(result.errors[errindex][i]);
+                        }
+                    }else if(typeof result.errors[errindex] === 'string'){
+                        error_list.push(result.errors[errindex]);
+                    }
                 }
             }
+            message_body = error_list.join("<br/>\n");
         }
+        if(result.success){
+            if(msg===true || msg==='success'){
+                showMessage(message_body);
+            }
+            if(!silent) {
+                userLog(message_body);
+            }
+        }else {
+            if(msg===true || msg==='error'){
+                showMessage(message_body);
+            }
+            if(!silent) {
+                userLog(message_body, TYPE_INFO);
+            }
+        }
+
         return true;
         // }
     }
@@ -467,4 +485,36 @@ function loadUserHistory(){
             footerLog(getDateTime()+' | Не удалось загрузить историю действий. Возможная причина:'+err.responseText,100,'error');
         }
     });
+}
+
+function setCookie(cname, cvalue, exdays) {
+    var d = new Date();
+    d.setTime(d.getTime() + (exdays*24*60*60*1000));
+    var expires = "expires="+ d.toUTCString();
+    document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+}
+
+function getCookie(cname,csubname) {
+    var name = cname + "=";
+    var decodedCookie = decodeURIComponent(document.cookie);
+    var ca = decodedCookie.split(';');
+    for(var i = 0; i <ca.length; i++) {
+        var c = ca[i];
+        while (c.charAt(0) == ' ') {
+            c = c.substring(1);
+        }
+        if (c.indexOf(name) == 0) {
+            let out = c.substring(name.length, c.length);
+            if(typeof csubname !== 'undefined'){
+                let cobj = JSON.parse(out);
+                if(typeof cobj === 'object'){
+                    if (typeof cobj[csubname]!=='undefined'){
+                        return cobj[csubname];
+                    }
+                }
+            }
+            return out;
+        }
+    }
+    return "";
 }

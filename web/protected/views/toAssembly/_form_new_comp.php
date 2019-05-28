@@ -103,7 +103,7 @@ function createLabel($attribute){
             changes.addList = [getFormData($('#fnc_form'))];
             changes.updateList = [{}];
             changes.deleteList = [{}];
-            userLog(changes);
+            // userLog(changes);
             $.ajax({
                 dataType: "json",
                 type: "POST",
@@ -117,12 +117,12 @@ function createLabel($attribute){
                     console.log(result);
                     if(typeof result.success === 'undefined'){
                         userLog('Произошла ошибка','error');
-                        userLog(result);
+                        console.log(result);
                         return;
                     }
                     if(result.success){
                         grid.refreshDataAndView();
-                        userLog('Успешно добавлен компонент');
+                        userLog('Успешно добавлен компонент '+changes.addList[0].partnumber);
                         $('#fnc_form')[0].reset();
                         $('#fnc_partnumber').removeClass('warning').removeClass('success').attr('title','');
                         $('#popup-dialog-form-new-component').dialog('close');
