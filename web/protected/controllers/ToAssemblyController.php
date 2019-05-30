@@ -402,7 +402,9 @@ class ToAssemblyController extends Controller
             $sort_attrs[] = $sort_item['dataIndx'] . ($sort_item['dir'] == 'down' ? '.desc' : '');
         }
         $_GET['sort'] = implode('-',$sort_attrs);
-
+        if($sort_item['dataIndx']!=='id'){
+            $_GET['sort'].='-'.'id';
+        }
         $dp->setSort(array(
           'class' => 'CSort',
           'multiSort' => true,
@@ -419,7 +421,7 @@ class ToAssemblyController extends Controller
             'partnumberid' => array(
               'asc' => 't.partnumberid',
               'desc' => 't.partnumberid desc',
-            )
+            ),
           ),
           'defaultOrder' => 'priority DESC, requestid asc, t.id asc'
         ));
@@ -460,6 +462,9 @@ class ToAssemblyController extends Controller
             $sort_attrs[] = $sort_item['dataIndx'] . ($sort_item['dir'] == 'down' ? '.desc' : '');
         }
         $_GET['sort'] = implode('-',$sort_attrs);
+        if($sort_item['dataIndx']!=='id'){
+            $_GET['sort'].='-'.'id';
+        }
         $dp->setSort(array(
           'class' => 'CSort',
           'multiSort' => true,
@@ -481,7 +486,7 @@ class ToAssemblyController extends Controller
               'asc' => 't.partnumberid',
               'desc' => 't.partnumberid desc',
             ),
-            '*',
+              '*',
           ),
           'defaultOrder' => 't.partnumber'
         ));

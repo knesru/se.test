@@ -191,8 +191,8 @@ let ComponentsTableDataModel = {
     sorting: "remote",
     dataType: "JSON",
     method: "POST",
-    sortIndx: getCookie('sortRequest','sortIndx'),
-    sortDir: getCookie('sortRequest','sortDir'),
+    sortIndx: getCookie('sortComponents','sortIndx'),
+    sortDir: getCookie('sortComponents','sortDir'),
     url: "/toAssembly/componentslist",
     getData: function (response) {
         return {curPage: response.curPage, totalRecords: response.totalRecords,data: response.data};
@@ -360,7 +360,7 @@ let ComponentsTable = {
         saveChangesComponents();
     },
     sort: function(event, ui){
-        setCookie('sortRequest',JSON.stringify({'sortDir':ui.dataModel.sortDir,'sortIndx':ui.dataModel.sortIndx}),100);
+        setCookie('sortComponents',JSON.stringify({'sortDir':ui.dataModel.sortDir,'sortIndx':ui.dataModel.sortIndx}),100);
     },
     trackModel: {on: true},
     showTitle: false,
