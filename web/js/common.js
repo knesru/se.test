@@ -345,7 +345,7 @@ function generalAjaxAnswer(result,msg,silent){
             message_body = error_list.join("<br/>\n");
         }
         if(result.success){
-            if(msg===true || msg==='success'){
+            if((msg===true || msg==='success') && message_body!=''){
                 showMessage(message_body);
             }
             if(!silent) {

@@ -454,6 +454,7 @@ let RequestsTable = {
                                                     if(changes.success){
                                                         userLog('Компонент в заявке '+requestid+' успешно заменен: '+oldpn+' -> '+newpn+' новая строка '+changes.id);
                                                     }else{
+                                                        showError(changes.error);
                                                         userLog(changes.error,'error');
                                                     }
                                                 }
@@ -500,7 +501,7 @@ let RequestsTable = {
                                     height: 400,
                                     width: 1000,
                                     //width: 'auto',
-                                    title: $("#popup_grid_store_correction").attr('title')+' '+row['partnumber'],
+                                    title: 'История коррекций для '+row['partnumber'],
                                     modal: true,
                                     open: function (evt, ui) {
                                         $("#grid_store_correction").pqGrid(StoreCorrectionTable).pqGrid('refreshDataAndView');

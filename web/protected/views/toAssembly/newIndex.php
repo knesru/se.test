@@ -307,7 +307,7 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
             $("#popup-dialog-message").addClass('ui-state-error');
         }
         $("#popup-dialog-message").dialog({
-            title: params.title,
+            title: tdt(params.title),
             buttons: params.buttons,
             modal: true
             // dialogClass: "ui-state-highlight",
@@ -316,6 +316,18 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
             //     "ui-dialog-title": "ui-state-highlight"
             // }
         }).dialog("open");
+    }
+    //translate dialog title
+    function tdt(title) {
+        let titles = {
+            'error': 'ошибка',
+            'info': 'инфо',
+            'warning': 'предупреждение',
+        };
+        if(typeof titles[title] !== 'undefined'){
+            return titles[title];
+        }
+        return title;
     }
 
     function requestsAction(action,force_id) {

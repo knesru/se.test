@@ -33,11 +33,11 @@ class ToAssemblyController extends Controller
     {
         return array(
             array('allow',  // allow all users to perform 'index' and 'view' actions
-                'actions' => array('index', 'newIndex', 'view', 'export', 'requestslist', 'componentslist', 'storecorrectionlist','statuseslist'),
+                'actions' => array('index'),
                 'users' => array('*'),
             ),
             array('allow', // allow authenticated user to perform 'create' and 'update' actions
-                'actions' => array('create', 'update', 'receive', 'request', 'replace', 'removecomponent', 'storecorrectionlist'),
+                'actions' => array('index', 'newIndex', 'view', 'export', 'requestslist', 'componentslist', 'storecorrectionlist','statuseslist','create', 'update', 'receive', 'request', 'replace', 'removecomponent', 'storecorrectionlist'),
                 'users' => array('@'),
             ),
             array('allow', // allow admin user to perform 'admin' and 'delete' actions
@@ -107,6 +107,22 @@ class ToAssemblyController extends Controller
                     $model->priority = 0;
                 }elseif($model->priority=='on'){
                     $model->priority = 1;
+                }
+                $criteria = new CDbCriteria();
+                $criteria->addCondition('requestid is null');
+                $criteria->compare('partnumber',$model->partnumber);
+                $criteria->compare('partnumberid',$model->partnumberid);
+                if(count($collection = Extcomponents::model()->findAll($criteria))>0){
+                    $lines = array();
+                    foreach ($collection as $extcomp){
+                        $lines[] = $extcomp->id;
+                    }
+                    if(count($lines)>1){
+                        $lines = 'строки: '.implode(',',$lines);
+                    }else{
+                        $lines = 'строка: '.$lines[0];
+                    }
+                    $this->j(array('message'=>'Такой компонент уже существует, '.$lines),false);
                 }
                 if ($model->save()) {
                     if (Yii::app()->request->isAjaxRequest) {
@@ -270,16 +286,24 @@ class ToAssemblyController extends Controller
 			print json_encode(array('success' => false, 'error' => 'Не найден заменяемый компонент.'));
 			Yii::app()->end();
 		}
-		$newModel = new Extcomponents();
-		$newModel->attributes = $model->attributes;
-		$newModel->id = null;
-		$newModel->partnumber = Yii::app()->request->getPost('partnumber');
-		$newModel->partnumberid = Yii::app()->request->getPost('partnumberid');
-		$newModel->status = 0;
-		$newModel->amount = max(1,$model->amount - $model->delivered);
-		$newModel->delivered = 0;
-		$model->amount = empty($model->delivered)?0:$model->delivered;
+		$newModel = new Extcomponents('replace');
+        $newModel->attributes = $model->attributes;
+        $newModel->id = null;
+        $newModel->partnumber = Yii::app()->request->getPost('partnumber');
+        $newModel->partnumberid = Yii::app()->request->getPost('partnumberid');
+        $newModel->status = 0;
+        $newModel->amount = max(1,$model->amount - $model->delivered);
+        $newModel->delivered = 0;
+        $newModel->scenario = 'replace';
+        $model->saveState();
+        $model->amount = empty($model->delivered)?0:$model->delivered;
 		$model->status = 5;
+
+		if($newModel->partnumber==$model->partnumber && $newModel->partnumberid==$model->partnumberid){
+            print json_encode(array('success' => false, 'error' => 'Нельзя менять компонент сам на себя. ' ));
+            Yii::app()->end();
+        }
+
         $transaction=Yii::app()->db->beginTransaction();
 		if ($newModel->save()) {
 		    if(!empty($model->description)){
@@ -291,12 +315,12 @@ class ToAssemblyController extends Controller
                 print json_encode(array('success' => true, 'requestid' => $newModel->requestid, 'id'=>$newModel->id));
             }else{
 		        $transaction->rollback();
-                print json_encode(array('success' => false, 'error' => 'Не получилось сохранить. ' .
-                    'NM'.print_r($newModel->errors, 1).'M'.print_r($model->errors, 1).'Attrs:'.print_r($newModel->attributes,1).print_r($model->attributes,1)));
+                print json_encode(array('success' => false, 'error' => 'Не получилось обновить текущую строку. ' .
+                    print_r($newModel->errors, 1).print_r($model->errors, 1)));
             }
 		} else {
-			print json_encode(array('success' => false, 'error' => 'Не получилось сохранить. ' .
-                'NM'.print_r($newModel->errors, 1).'M'.print_r($model->errors, 1).'Attrs:'.print_r($newModel->attributes,1).print_r($model->attributes,1)));
+            print json_encode(array('success' => false, 'error' => 'Не получилось создать новую строку. ' .
+                print_r($newModel->errors, 1).print_r($model->errors, 1)));
             $transaction->rollback();
 			Yii::app()->end();
 		}

@@ -468,3 +468,9 @@ li .toc_text{
 }
 
 /*END status-colors*/
+.ui-state-highlight{
+	outline: 0 !important;
+}
+.ui-state-highlight td{
+	background-image: url("/help-images/selection.png") !important;
+}

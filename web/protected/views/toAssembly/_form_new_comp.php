@@ -142,6 +142,9 @@ function createLabel($attribute){
                                 }
                             }
                         }
+                        if(typeof result.message !== 'undefined'){
+                            showMessage(result.message);
+                        }
                     }
                 },
                 error: function(err){

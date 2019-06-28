@@ -77,7 +77,7 @@ class SiteController extends Controller
             // validate user input and redirect to the previous page if valid
             if ($model->validate() && $model->login()) {
                 if(Yii::app()->request->isAjaxRequest){
-                    $this->j(array('name'=>Yii::app()->user->name,'url'=>Yii::app()->user->returnUrl));
+                    $this->j(array('name'=>Yii::app()->user->name,'url'=>Yii::app()->user->returnUrl,'message'=>''));
                     Yii::app()->end();
                 }else {
                     $this->redirect(Yii::app()->user->returnUrl);

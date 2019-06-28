@@ -321,7 +321,7 @@ let ComponentsTable = {
                                 .dialog({
                                     height: 400,
                                     width: 1000,
-                                    title: $("#popup_grid_store_correction").attr('title')+' '+row['partnumber'],
+                                    title: 'История коррекций для '+row['partnumber'],
                                     //width: 'auto',
                                     modal: true,
                                     open: function (evt, ui) {
