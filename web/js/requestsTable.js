@@ -57,7 +57,7 @@ function saveChangesRequests() {
                 return null;
             }else{
                 if(!confirm('Действительно переименовать компонент?')){
-                    userLog('Отменил переименование', 'log');
+                    // userLog('Отменил переименование', 'log');
                     grid.rollback();
                     return null;
                 }
@@ -281,7 +281,7 @@ let RequestsTable = {
                                     }
                                 }
                             } );
-                            userLog('Принимаю компонент '+row['partnumber']+', строка '+row['id']+', заявка '+row.requestid+' на склад');
+                            //userLog('Принимаю компонент '+row['partnumber']+', строка '+row['id']+', заявка '+row.requestid+' на склад');
                             if(row.status==0 || row.status==5 || row.status==4 || row.status==6){
                                 userLog('Нельзя принять из этого статуса','info');
                                 return;
@@ -311,14 +311,14 @@ let RequestsTable = {
                                             installername: $frm.find("#installerid").find(':selected').text()
                                         };
 
-                                        userLog('Заполнил форму.');
-                                        userLog('Строка:'+sendData.requestid);
-                                        userLog('Заявка:'+row['requestid'].replace(/^0+/, ''));
-                                        userLog('Компонент:'+row['partnumber']);
-                                        userLog('Склад:'+sendData.storeid);
-                                        userLog('Место:'+sendData.place);
+                                        // userLog('Заполнил форму.');
+                                        // userLog('Строка:'+sendData.requestid);
+                                        // userLog('Заявка:'+row['requestid'].replace(/^0+/, ''));
+                                        // userLog('Компонент:'+row['partnumber']);
+                                        // userLog('Склад:'+sendData.storeid);
+                                        // userLog('Место:'+sendData.place);
                                         let isNewInstaller = ((sendData.installerid>0)?'':' (новый сборщик)');
-                                        userLog('Сборщик:'+sendData.installername+isNewInstaller);
+                                        // userLog('Сборщик:'+sendData.installername+isNewInstaller);
                                         // console.log($frm.find("input[name='installer']").val());
                                         // console.log($frm.find("input[name='installer']").val());
                                         $.ajax({
@@ -353,7 +353,7 @@ let RequestsTable = {
                                         $(this).dialog("close");
                                     },
                                     "Отмена": function () {
-                                        userLog('Закрыл окно.');
+                                        //userLog('Закрыл окно.');
                                         $(this).dialog("close");
                                     }
                                 }
@@ -426,6 +426,8 @@ let RequestsTable = {
                         let $frm = $("form#replace-form");
                         $frm.find("#replace_request").text(row['requestid'].replace(/^0+/, ''));
                         $frm.find("#old_component").text(row['partnumber']);
+                        $frm.find("#replace_component").val('');
+                        $frm.find("#newpartnumberid").val('');
 
                         $("#popup-dialog-replace").dialog({
                             title: row['requestid'].replace(/^0+/, '') + ': ' + row['partnumber'], buttons: {

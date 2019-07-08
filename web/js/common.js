@@ -261,7 +261,8 @@ function footerLog(message,maxLogLength,severity){
     let $footer = $('#footer');
     if($footer.find('a').length>0){
         $footer.html('').css({'text-align':'left'}).resizable({
-            handles: "n, s"
+            handles: "s",
+            helper: "ui-resizable-helper"
         }).css({'height':60});
     }
     $footer.prepend('<div class="userlog_message '+hl_class+'">'+message+'</div>');

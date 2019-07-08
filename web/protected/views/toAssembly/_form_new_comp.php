@@ -52,7 +52,7 @@ function createLabel($attribute){
         </tr>
         <tr>
             <td colspan="2" style="text-align: center"><p class="note">Поля, обозначенные <span
-                            class="required">*</span>, обязательны для заполнения.</p><button type="button"
+                            class="required">*</span>, обязательны для заполнения.</p><input type="hidden" name="form-hash" id="new-comp-form-hash" /><button type="button"
                                                                                               id="fnc_submit">Сохранить</button></td>
         </tr>
     </table>
@@ -98,6 +98,11 @@ function createLabel($attribute){
             $('#fnc_partnumberid').val('');
         });
         $('#fnc_submit').click(function(){
+            let hash = 'h'+$('#new-comp-form-hash').val();
+            if(typeof formHashes[hash]!=='undefined'){
+                console.log('Форма уже отправлялась');
+                return;
+            }
             let grid = $componentsGrid.pqGrid('getInstance').grid;
             let changes = {};
             changes.addList = [getFormData($('#fnc_form'))];
@@ -110,6 +115,7 @@ function createLabel($attribute){
                 async: true,
                 beforeSend: function (jqXHR, settings) {
                     grid.showLoading();
+                    formHashes[hash] = true;
                 },
                 url: "/toAssembly/update", //for ASP.NET, java
                 data: {list: JSON.stringify(changes)},
@@ -127,6 +133,7 @@ function createLabel($attribute){
                         $('#fnc_partnumber').removeClass('warning').removeClass('success').attr('title','');
                         $('#popup-dialog-form-new-component').dialog('close');
                     }else{
+                        delete formHashes[hash];
                         $('#fnc_form').find('input,textarea').attr('title','');
                         if(typeof result.data !== 'undefined' && result.data.length>0){
                             for(let i=0; i<result.data.length; i++){
@@ -148,6 +155,7 @@ function createLabel($attribute){
                     }
                 },
                 error: function(err){
+                    delete formHashes[hash];
                     userLog(err.responseText,'error');
                 },
                 complete: function () {

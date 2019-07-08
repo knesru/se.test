@@ -22,6 +22,7 @@ $cs = Yii::app()->getClientScript();
     let $requestsGrid;
     let $componentsGrid;
     let $storeCorrectionGrid;
+    let formHashes = {};
     isAdmin = <?php print ((Yii::app()->user->name=='admin')?'true':'false'); ?>;
     isGuest = <?php print ((Yii::app()->user->isGuest)?'true':'false'); ?>;
     function getStatusesArray() {
@@ -273,7 +274,46 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
             .on('click','.change-priority-down',changePriority)
             .on('click','.change-priority-up',changePriority)
             .on('click','.create_request_btn',createRow);
+        setInterval(function(){
+            let delta;
+            let footer_height = $('#footer').height();
+            let nc_height = $('#grid_new_components').height();
+            let req_height = $('#grid_requests').height();
 
+            function changeHeights(fh, nh, rh) {
+                $('#footer').height(fh);
+                $('#grid_new_components').pqGrid('option',{height:nh}).pqGrid( "refresh" );
+                $('#grid_requests').pqGrid('option',{height:rh}).pqGrid( "refresh" );
+            }
+
+            if(typeof $('#footer').data('heights') !== "undefined"){
+                let prev_h = $('#footer').data('heights');
+                delta = $('#footer').data('total')-(footer_height+nc_height+req_height);
+                if(prev_h.fh!=footer_height){
+                    //changed footer
+                    nc_height+=Math.floor(delta/2);
+                    req_height+=delta-Math.floor(delta/2);
+                    changeHeights(footer_height,nc_height,req_height);
+                }else
+                if(prev_h.nh!=nc_height){
+                    //changed footer
+                    footer_height+=Math.floor(delta/2);
+                    req_height+=delta-Math.floor(delta/2);
+                    changeHeights(footer_height,nc_height,req_height);
+                }else
+                if(prev_h.rh!=req_height){
+                    //changed footer
+                    nc_height+=Math.floor(delta/2);
+                    footer_height+=delta-Math.floor(delta/2);
+                    changeHeights(footer_height,nc_height,req_height);
+                }
+
+            }else{
+                $('#footer').data('total',$('#page').height()-$('#header').height()-28);
+            }
+
+            $('#footer').data('heights',{fh:footer_height,nh:nc_height,rh:req_height});
+        },200);
     });
     function showMessage(message, type) {
         if(typeof type === 'undefined'){
@@ -331,7 +371,7 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
     }
 
     function requestsAction(action,force_id) {
-        userLog(force_id);
+        // userLog(force_id);
         if (typeof controlData.selection !== 'undefined') {
             let grid = $("#grid_requests").pqGrid();
             let data = {};
@@ -366,10 +406,10 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
                 }else{
                     components = 'компоненты';
                 }
-                userLog('Добавляю '+components+' '+pns.join(',')+' к заявке '+row['requestid'].replace(/^0+/, ''));
+                // userLog('Добавляю '+components+' '+pns.join(',')+' к заявке '+row['requestid'].replace(/^0+/, ''));
                 data.requestid = controlData.requestSelection;
                 if(!confirm('Добавить компоненты к заявке '+row['requestid'].replace(/^0+/, '')+'?')){
-                    userLog('Отменил');
+                    // userLog('Отменил');
                     return;
                 }
             }else{
@@ -378,7 +418,7 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
                 }else{
                     components = 'компонентами';
                 }
-                userLog('Создаю заявку с '+components+' '+pns.join(','));
+                // userLog('Создаю заявку с '+components+' '+pns.join(','));
             }
             $.ajax({
                 url: '/toassembly/request',

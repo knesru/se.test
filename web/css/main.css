@@ -11,6 +11,7 @@ body
 	color: #555;
 	font: normal 10pt Arial,Helvetica,sans-serif;
 	background: #EFEFEF;
+	overflow: hidden;
 }
 
 #page
@@ -473,4 +474,9 @@ li .toc_text{
 }
 .ui-state-highlight td{
 	background-image: url("/help-images/selection.png") !important;
+}
+.ui-resizable-helper {
+	border: 1px solid #336699;
+	opacity: 0.5;
+	background: #b5b8c8;
 }
