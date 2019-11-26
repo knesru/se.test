@@ -275,43 +275,43 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
             .on('click','.change-priority-up',changePriority)
             .on('click','.create_request_btn',createRow);
         setInterval(function(){
-            let delta;
-            let footer_height = $('#footer').height();
-            let nc_height = $('#grid_new_components').height();
-            let req_height = $('#grid_requests').height();
-
             function changeHeights(fh, nh, rh) {
                 $('#footer').height(fh);
                 $('#grid_new_components').pqGrid('option',{height:nh}).pqGrid( "refresh" );
                 $('#grid_requests').pqGrid('option',{height:rh}).pqGrid( "refresh" );
             }
-
+            let delta;
+            let total = $('body').height()-80;
+            let footer_height = $('#footer').height();
+            let nc_height = $('#grid_new_components').height();
+            let req_height = $('#grid_requests').height();
             if(typeof $('#footer').data('heights') !== "undefined"){
                 let prev_h = $('#footer').data('heights');
-                delta = $('#footer').data('total')-(footer_height+nc_height+req_height);
-                if(prev_h.fh!=footer_height){
+                delta = total-(footer_height+nc_height+req_height);
+                if(Math.abs(prev_h.fh-footer_height)>1){
                     //changed footer
                     nc_height+=Math.floor(delta/2);
                     req_height+=delta-Math.floor(delta/2);
                     changeHeights(footer_height,nc_height,req_height);
                 }else
-                if(prev_h.nh!=nc_height){
-                    //changed footer
-                    footer_height+=Math.floor(delta/2);
-                    req_height+=delta-Math.floor(delta/2);
+                if(Math.abs(prev_h.nh-nc_height)>1){
+                    //changed new components
+                    footer_height+=Math.floor(delta);
+                    //req_height+=delta-Math.floor(delta/2);
                     changeHeights(footer_height,nc_height,req_height);
                 }else
-                if(prev_h.rh!=req_height){
-                    //changed footer
-                    nc_height+=Math.floor(delta/2);
-                    footer_height+=delta-Math.floor(delta/2);
+                if(Math.abs(prev_h.rh-req_height)>1 || Math.abs($('#footer').data('total')-total)>3){
+                    //changed requests
+                    nc_height+=Math.floor(delta);
+                    //footer_height+=Math.floor(delta);
                     changeHeights(footer_height,nc_height,req_height);
                 }
-
-            }else{
-                $('#footer').data('total',$('#page').height()-$('#header').height()-28);
+            }else if(Math.abs($('#footer').data('total')-total)>3){
+                nc_height+=Math.floor(delta/2);
+                footer_height+=delta-Math.floor(delta/2);
+                changeHeights(footer_height,nc_height,req_height);
             }
-
+            $('#footer').data('total',total);
             $('#footer').data('heights',{fh:footer_height,nh:nc_height,rh:req_height});
         },200);
     });
@@ -491,6 +491,7 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
                                 class="required">*</span></label></td>
                 <td><?php print CHtml::dropDownList('installerid', '', CHtml::listData(Installer::model()->findAll(),'id','name')); ?></td>
             </tr>
+            <tr><td colspan="2" id="random_component_info"></td></tr>
             </tbody>
         </table>
         </div>

@@ -161,12 +161,15 @@ function renderDateOnly(ui) {
     }
 }
 
-function renderShortText(ui) {
+function renderShortText(ui, add_class) {
     let cellData = ui.cellData;
     if(cellData===null){
         cellData = '';
     }
-    return '<div class="shorttext folded-text" title="'+cellData+'">'+cellData+'</div>';
+    if(typeof add_class === 'undefined' || add_class===null){
+        add_class = '';
+    }
+    return '<div class="shorttext folded-text '+add_class+'" title="'+cellData+'">'+cellData.replace(/\n/g,'<br/>')+'</div>';
 }
 
 function clearFilter() {

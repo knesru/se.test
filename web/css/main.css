@@ -337,7 +337,7 @@ span.saving
 }
 
 .folded-text {
-	height: 1em;
+	height: 1.2em;
 	width: 100%;
 	overflow: hidden;
 }
@@ -479,4 +479,19 @@ li .toc_text{
 	border: 1px solid #336699;
 	opacity: 0.5;
 	background: #b5b8c8;
+}
+.ui-resizable-s{
+	bottom: 0px !important;
+}
+.ui-resizable-s:hover{
+	background-image: url("/help-images/resizer.png") !important;
+}
+.ui-tooltip{
+	word-break: keep-all;
+}
+.random_component{
+	/*font-style: italic;*/
+	font-weight: bold;
+	color: #330000;
+	text-shadow: #faa 0px 0px 2px;
 }

@@ -96,6 +96,20 @@ function createLabel($attribute){
         }).keyup(function(){
             $(this).addClass('warning').attr('title','Произвольный компонент').tooltip();
             $('#fnc_partnumberid').val('');
+            $.ajax({
+                url: '/component/ajaxComponent',
+                data: {partnumber: $(this).val()},
+                success: function (res) {
+                    if (typeof res === 'string' && res.match(/\d+/)) {
+                        $('#fnc_partnumberid').val(res).addClass('success');
+                        $('#fnc_partnumber').removeClass('warning').addClass('success').attr('title','Компонент ' +
+                            'найден в STMS')
+                            .tooltip();
+                    }else{
+                        userLog('component not');
+                    }
+                }
+            });
         });
         $('#fnc_submit').click(function(){
             let hash = 'h'+$('#new-comp-form-hash').val();

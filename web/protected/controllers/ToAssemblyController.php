@@ -570,20 +570,53 @@ class ToAssemblyController extends Controller
                 ->setKeywords("components requests stms")
                 ->setCategory("Export info");
             $activeSheet = $objPHPExcel->setActiveSheetIndex(0);
-
-            $rows = explode("\n", $_POST['excel']);
+            $xxx = str_replace("\"\n\"","\"###NEWLINE###\"",$_POST['excel']);
+            $yyy = str_replace("\n","#NL#",$xxx);
+            $rows = explode("\n", str_replace("###NEWLINE###","\n",$yyy));
             $cell = 'A1';
-            foreach ($rows as $row) {
+            $status_cell_id = -1;
+            $pr_cell_id = -1;
+            /** @var Settings $settings */
+            $settings = Settings::model()->findByAttributes(array('user_id'=>Yii::app()->user->id,'name'=>'extcomponents_to_assembly'));
+            $tables = json_decode(base64_decode($settings->value),true);
+            if(count(str_getcsv($rows[0]))==16){
+                $t = 'rcm';
+            }else{
+                $t = 'ccm';
+            }
+            foreach ($rows as $n=>$row) {
                 $row_data = str_getcsv($row);
                 $i = 0;
-                foreach ($row_data as $cell_value) {
-                    $cell_value = str_replace('null','',$cell_value);
-                    $cell_value = str_replace('undefined','',$cell_value);
-                    $cell_value = preg_replace('/^(\d{4})-(\d{2})-(\d{2})\s\d{2}:\d{2}:\d{2}(\.\d+)?/','$3-$2-$1',$cell_value);
-                    $cell_value = preg_match('/^\d+\.СБ\.\d{2}$/',$cell_value)?trim($cell_value,'0'):$cell_value;
-                    $activeSheet->setCellValue($cell, $cell_value);
-                    $cell = $this->dc($cell, array(1, 0));
-                    $i++;
+                foreach ($row_data as $m=>$cell_value) {
+                    if($tables[$t][$m]['hidden']=='false') {
+                        if ($n == 0 && $cell_value == 'Статус') {
+                            $status_cell_id = $m;
+                        }
+                        if ($n == 0 && $cell_value == 'Пр.') {
+                            $pr_cell_id = $m;
+                        }
+                        if ($n > 0 && $status_cell_id > 0 && $m == $status_cell_id) {
+                            $statuses = Extcomponents::getStatuses();
+                            $cell_value = $statuses[$cell_value];
+                        }
+                        if ($n > 0 && $pr_cell_id > 0 && $m == $pr_cell_id) {
+                            $cell_value = ($cell_value == '1' ? 'Выс.' : '');
+                        }
+                        $cell_value = str_replace('null', '', $cell_value);
+                        $cell_value = str_replace('undefined', '', $cell_value);
+                        $cell_value = str_replace('#NL#', "\n", $cell_value);
+                        $cell_value = preg_replace('/^(\d{4})-(\d{2})-(\d{2})\s\d{2}:\d{2}:\d{2}(\.\d+)?/', '$3-$2-$1', $cell_value);
+                        $cell_value = preg_match('/^\d+\.СБ\.\d{2}$/', $cell_value) ? trim($cell_value, '0') : $cell_value;
+                        $activeSheet->setCellValue($cell, $cell_value);
+                        $column = preg_replace('/\d+/', '', $cell);
+                        $activeSheet->getColumnDimension($column)->setAutoSize(true);
+                        if (strpos($cell_value, "\n") !== false) {
+//                        $activeSheet->getColumnDimension($column)->setWidth("400");
+                            $activeSheet->getStyle($cell)->getAlignment()->setWrapText(true);
+                        }
+                        $cell = $this->dc($cell, array(1, 0));
+                        $i++;
+                    }
                 }
                 $cell = $this->dc($cell, array(-$i, 1));
             }
@@ -785,9 +818,11 @@ class ToAssemblyController extends Controller
      */
     public function loadModel($id)
     {
+        /** @var Extcomponents $model */
         $model = Extcomponents::model()->findByPk($id);
         if ($model === null)
             throw new CHttpException(404, 'The requested page does not exist.');
+        $model->SaveState();
         return $model;
     }
 

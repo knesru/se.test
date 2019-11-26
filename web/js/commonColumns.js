@@ -22,7 +22,11 @@ function getPartnumberColumn() {
         dataIndx: 'partnumber',
         dataType: "string",
         render: function(ui){
-            return renderShortText(ui);
+            let add_class = '';
+            if(ui.rowData['partnumberid']===null){
+                add_class = 'random_component';
+            }
+            return renderShortText(ui,add_class);
         },
         editor: {
             type: 'textbox',
@@ -189,11 +193,13 @@ function getDeficiteColumn() {
         render: function(ui){
             return renderShortText(ui);
         },
+        editor: { type: "textarea", attr: "rows=6", style:'width:400px !important' },
         filter: {
             type: 'textbox',
             condition: 'contain',
             listeners: ['change']
-        }
+        },
+        editModel: { keyUpDown: false, saveKey: '' },
     };
 }
 
