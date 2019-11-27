@@ -1,0 +1,71 @@
+diff --git a/web/protected/controllers/ToAssemblyController.php b/web/protected/controllers/ToAssemblyController.php
+index ee4b11a..7d11c7b 100644
+--- a/web/protected/controllers/ToAssemblyController.php
++++ b/web/protected/controllers/ToAssemblyController.php
+@@ -785,9 +785,11 @@ class ToAssemblyController extends Controller
+      */
+     public function loadModel($id)
+     {
++        /** @var Extcomponents $model */
+         $model = Extcomponents::model()->findByPk($id);
+         if ($model === null)
+             throw new CHttpException(404, 'The requested page does not exist.');
++        $model->SaveState();
+         return $model;
+     }
+ 
+diff --git a/web/protected/views/toAssembly/newIndex.php b/web/protected/views/toAssembly/newIndex.php
+index 2c3e4a5..a85f251 100644
+--- a/web/protected/views/toAssembly/newIndex.php
++++ b/web/protected/views/toAssembly/newIndex.php
+@@ -275,20 +275,19 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
+             .on('click','.change-priority-up',changePriority)
+             .on('click','.create_request_btn',createRow);
+         setInterval(function(){
+-            let delta;
+-            let footer_height = $('#footer').height();
+-            let nc_height = $('#grid_new_components').height();
+-            let req_height = $('#grid_requests').height();
+-
+             function changeHeights(fh, nh, rh) {
+                 $('#footer').height(fh);
+                 $('#grid_new_components').pqGrid('option',{height:nh}).pqGrid( "refresh" );
+                 $('#grid_requests').pqGrid('option',{height:rh}).pqGrid( "refresh" );
+             }
+-
++            let delta;
++            let total = $('body').height()-80;
++            let footer_height = $('#footer').height();
++            let nc_height = $('#grid_new_components').height();
++            let req_height = $('#grid_requests').height();
+             if(typeof $('#footer').data('heights') !== "undefined"){
+                 let prev_h = $('#footer').data('heights');
+-                delta = $('#footer').data('total')-(footer_height+nc_height+req_height);
++                delta = total-(footer_height+nc_height+req_height);
+                 if(prev_h.fh!=footer_height){
+                     //changed footer
+                     nc_height+=Math.floor(delta/2);
+@@ -301,17 +300,18 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
+                     req_height+=delta-Math.floor(delta/2);
+                     changeHeights(footer_height,nc_height,req_height);
+                 }else
+-                if(prev_h.rh!=req_height){
++                if(prev_h.rh!=req_height || $('#footer').data('total')!=total){
+                     //changed footer
+                     nc_height+=Math.floor(delta/2);
+                     footer_height+=delta-Math.floor(delta/2);
+                     changeHeights(footer_height,nc_height,req_height);
+                 }
+-
+-            }else{
+-                $('#footer').data('total',$('#page').height()-$('#header').height()-28);
++            }else if($('#footer').data('total')!=total){
++                nc_height+=Math.floor(delta/2);
++                footer_height+=delta-Math.floor(delta/2);
++                changeHeights(footer_height,nc_height,req_height);
+             }
+-
++            $('#footer').data('total',total);
+             $('#footer').data('heights',{fh:footer_height,nh:nc_height,rh:req_height});
+         },200);
+     });

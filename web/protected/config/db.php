@@ -6,10 +6,10 @@
 // This is the main Web application configuration. Any writable
 // CWebApplication properties can be configured here.
 return array(
-  'connectionString' => 'pgsql:host=se.test;port=5432;dbname=stms',
-  'emulatePrepare' => true,
-  'username' => 'postgres',
-  'password' => 'postgres',
+  'connectionString' => 'pgsql:host=localhost;port=5432;dbname=stms_prod',
+  //'emulatePrepare' => false,
+  'username' => 'stms_dev',
+  'password' => 'p@ssword',
   'tablePrefix' => 't',
   'enableProfiling' => true
 );

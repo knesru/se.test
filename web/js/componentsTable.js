@@ -201,7 +201,7 @@ let ComponentsTableDataModel = {
 let ComponentsTable = {
     scrollModel: {autoFit: true, horizontal: false},
     pageModel: getPageModel(),
-    collapsible: false,
+    collapsible: true,
     resizable: true,
     stringify: false, //for PHP
     dataModel: ComponentsTableDataModel,

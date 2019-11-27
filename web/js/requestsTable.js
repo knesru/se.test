@@ -49,6 +49,10 @@ function saveChangesRequests() {
         let changes = grid.getChanges({format: "byVal"});
         let oldData = grid.getChanges({format: "raw"}).updateList[0].oldRow;
         let newData = grid.getChanges({format: "raw"}).updateList[0]['rowData'];
+        if(typeof oldData['requestid']!=="undefined" && newData['requestid']!==oldData['requestid']){
+            grid.rollback();
+            return;
+        }
         if(typeof oldData['partnumber']!=="undefined" && newData['partnumber']!==oldData['partnumber']){
             if(!isNaN(newData['partnumberid']) && newData['partnumberid']!==null) {
                 showMessage('Нельзя переименовать компонент из STMS. Но можно назначить замену.', 'warning');
@@ -138,7 +142,9 @@ let RequestsTableColumnModel = [
         title: "Заявка",
         dataIndx: 'requestid',
         dataType: "string",
-        editable: false,
+        editable: true,
+        editor: { type: "text", attr: 'readonly="readonly"' },
+        editModel: { keyUpDown: false, saveKey: '' },
         render: function (ui) {
             let rowData = ui.rowData,
                 dataIndx = ui.dataIndx;
@@ -219,7 +225,7 @@ let RequestsTableDataModel = {
 let RequestsTable = {
     scrollModel: {autoFit: true, horizontal: false},
     pageModel: getPageModel(),
-    collapsible: false,
+    collapsible: true,
     resizable: true,
     stringify: false, //for PHP
     dataModel: RequestsTableDataModel,
@@ -269,6 +275,12 @@ let RequestsTable = {
                             $frm.find("#received_request").text(row['requestid'].replace(/^0+/, ''));
                             $frm.find("input[name='partnumberid']").val(row['partnumberid']);
                             $frm.find("#received_component").text(row['partnumber']);
+                            $frm.find("#received_component").removeClass('random_component');
+                            $("#random_component_info").text('').removeClass('random_component');
+                            if(row['partnumberid']==null){
+                                $frm.find("#received_component").addClass('random_component');
+                                $("#random_component_info").text('Компонент ['+row['partnumber']+'] не будет принят на основной склад, т.к. не является компонентом STMS.').addClass('random_component');
+                            }
                             $frm.find('#place').val('');
                             $.getJSON( '/component/getPlace', {
                                 term: '',
