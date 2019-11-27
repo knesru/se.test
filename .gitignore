@@ -1,4 +1,5 @@
 /.idea*
 /framework*
 /web/assets*
+/web/protected/runtime
 /demos*
