@@ -210,7 +210,7 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
             classes: {
                 "ui-selectmenu-button": "ui-button-icon-only splitbutton-select"
             },
-            change: function(){
+            select: function(){
                 $( ".output" ).append( "<li>" + this.value + "</li>" );
                 // $(this).parent().find('button').text($(this).find(':selected').text());
                 let action = $(this).val();
@@ -331,6 +331,25 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
             $('#footer').data('total',total);
             $('#footer').data('heights',{fh:footer_height,nh:nc_height,rh:req_height});
         },200);
+        $('#popup-password, #popup-login').keypress(function (e) {
+            var key = e.which;
+            if(key == 13)  // the enter key code
+            {
+                $('#popup-dialog-login').parent().find('.ui-dialog-buttonset').find('button').click();
+                return false;
+            }
+        });
+        setInterval(function(){
+            $.ajax({
+                url: '/toAssembly/checkLogin',
+                data: {},
+                success: function (res) {
+                    if(!res || !res.logged){
+                        $('#open_popup_login a').click();
+                    }
+                }
+            })
+        },1000);
     });
     function showMessage(message, type) {
         if(typeof type === 'undefined'){

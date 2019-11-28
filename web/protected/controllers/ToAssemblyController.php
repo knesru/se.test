@@ -33,7 +33,7 @@ class ToAssemblyController extends Controller
     {
         return array(
             array('allow',  // allow all users to perform 'index' and 'view' actions
-                'actions' => array('index'),
+                'actions' => array('index','checklogin'),
                 'users' => array('*'),
             ),
             array('allow', // allow authenticated user to perform 'create' and 'update' actions
@@ -48,6 +48,11 @@ class ToAssemblyController extends Controller
                 'users' => array('*'),
             ),
         );
+    }
+
+    public function actionCheckLogin(){
+        $user = Yii::app()->user;
+        return $this->j(array('logged'=>!is_null($user->id)));
     }
 
     /**
@@ -112,6 +117,13 @@ class ToAssemblyController extends Controller
                 $criteria->addCondition('requestid is null');
                 $criteria->compare('partnumber',$model->partnumber);
                 $criteria->compare('partnumberid',$model->partnumberid);
+
+                /** @var Component $component */
+                $component = Component::model()->getComponentByPN($model->partnumber);
+                if(!is_null($component)){
+                    $model->partnumber = $component->partnumber;
+                }
+
                 if(count($collection = Extcomponents::model()->findAll($criteria))>0){
                     $lines = array();
                     foreach ($collection as $extcomp){
@@ -291,7 +303,13 @@ class ToAssemblyController extends Controller
         $newModel->attributes = $model->attributes;
         $newModel->id = null;
         $newModel->partnumber = Yii::app()->request->getPost('partnumber');
-        $newModel->partnumberid = Yii::app()->request->getPost('partnumberid');
+        /** @var Component $component */
+        $component = Component::model()->getComponentByPN($newModel->partnumber);
+        if(!is_null($component)){
+            $newModel->partnumber = $component->partnumber;
+            $newModel->partnumberid = $component->partnumberid;
+        }
+        //$newModel->partnumberid = Yii::app()->request->getPost('partnumberid');
         $newModel->status = 0;
         $newModel->amount = max(1,$model->amount - $model->delivered);
         $newModel->delivered = 0;

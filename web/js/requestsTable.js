@@ -143,8 +143,8 @@ let RequestsTableColumnModel = [
         dataIndx: 'requestid',
         dataType: "string",
         editable: true,
-        editor: { type: "text", attr: 'readonly="readonly"' },
-        editModel: { keyUpDown: false, saveKey: '' },
+        editor: { type: "textbox" },
+        //editModel: { keyUpDown: false, saveKey: '' },
         render: function (ui) {
             let rowData = ui.rowData,
                 dataIndx = ui.dataIndx;
@@ -211,6 +211,7 @@ let RequestsTableDataModel = {
     sortDir: getCookie('sortRequest','sortDir'),
     url: "/toAssembly/requestslist",
     getData: function (response) {
+        console.log(response);
         return {curPage: response.curPage, totalRecords: response.totalRecords,data: response.data};
     },
     beforeSend: function (jqXHR, settings) {
