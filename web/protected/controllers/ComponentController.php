@@ -191,6 +191,7 @@ class ComponentController extends Controller
             ':term' => Yii::app()->request->getParam('term') . "%",
         );
         $partnumberid = intval(Yii::app()->request->getParam('partnumberid'));
+//        $store = intval(Yii::app()->request->getParam('partnumberid'));
         if (!empty($partnumberid)) {
             $criteria->addCondition('partnumberid=:partnumberid');
             $criteria->params[':partnumberid'] = $partnumberid;
@@ -216,10 +217,14 @@ class ComponentController extends Controller
 
     public function actionAjaxComponent()
     {
-        /** @var Component $model */
-        $model = Component::model();
-        $model->getComponentByPN(Yii::app()->request->getParam('partnumber'));
-        echo json_encode($model->partnumberid);
+        $criteria = new CDbCriteria();
+        $criteria->condition = 'upper(partnumber) = upper(\''.Yii::app()->request->getParam('partnumber').'\')';
+        $model = Component::model()->findAll($criteria);
+        if(is_null($model)){
+            print '';
+            Yii::app()->end();
+        }
+        echo json_encode($model[0]->partnumberid);
         Yii::app()->end();
     }
 

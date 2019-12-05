@@ -165,12 +165,28 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
         function extractLast( term ) {
             return term.split( /,\s*/ ).pop();
         }
+        $('#storeid').change(function(){
+            let storeid = $(this).val();
+            let partnumberid = $(this).parents('form').find('input[name="partnumberid"]').val();
+            $.ajax({
+                url: '/component/getPlace',
+                data: {partnumberid: partnumberid, storeid: storeid},
+                dataType: "json",
+                success: function (res) {
+                    if(typeof res!=='undefined' && res.length>0 && typeof res[0].label!=='undefined'){
+                        $('#place').val(res[0].label);
+                    }else{
+                        $('#place').val('');
+                    }
+                }
+            });
+        });
         $('#place').autocomplete({
             //appendTo: ui.$cell, //for grid in maximized state.
             source: function( request, response ) {
                 $.getJSON( '/component/getPlace', {
                     term: extractLast( request.term ),
-                    storeid: $('input[name="storeid"]').val(),
+                    storeid: $('select[name="storeid"]').val(),
                     partnumberid: $('input[name="partnumberid"]').val()
                 }, response );
             },
@@ -349,7 +365,7 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
                     }
                 }
             })
-        },1000);
+        },5000);
     });
     function showMessage(message, type) {
         if(typeof type === 'undefined'){

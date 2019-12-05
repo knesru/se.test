@@ -712,6 +712,10 @@ class ToAssemblyController extends Controller
         $this->lettersArray = array($lettersArray, $numbersArray);
     }
 
+    /**
+     * @throws CException
+     * @throws CHttpException
+     */
     public function actionReceive()
     {
        /** @var Extcomponents $model */
@@ -733,14 +737,18 @@ $store_errors = array();
         $condition = new CDbCriteria();
         $condition->compare('partnumberid', $model->partnumberid);
         $condition->compare('storeid', $_POST['storeid']);
-        $condition->compare('place', $_POST['place']);
+        //Место убрано. Теперь при указании места, старое автоматически заменяется новым!
+        //$condition->compare('place', $_POST['place']);
         if(Extcomponents::C_DENY===$model->canChangeStatus(Extcomponents::S_CLOSED)){
             $this->j(sprintf('Нельзя принять из статуса «%s»',$model->tStatus()),false);
         }
-        $transaction=Yii::app()->db->beginTransaction();
+        $transaction = Yii::app()->db->beginTransaction();
         if(!empty($model->partnumberid)) {
+            //Ищем первое попавшееся место с этим компонентом.
+            //В базе ограничения нет, но в Юрионе пообещали, что множественные записи для одного компонента будут устранены.
             $store = Store::model()->find($condition);
             if (is_null($store)) {
+                //Такой склад ВООБЩЕ не найден
                 $store = new Store();
                 $store->partnumberid = $model->partnumberid;
                 $store->storeid = $_POST['storeid'];

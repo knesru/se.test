@@ -285,7 +285,7 @@ let RequestsTable = {
                             $frm.find('#place').val('');
                             $.getJSON( '/component/getPlace', {
                                 term: '',
-                                storeid: $frm.find('input[name="storeid"]').val(),
+                                storeid: $frm.find('select[name="storeid"]').val(),
                                 partnumberid: $frm.find('input[name="partnumberid"]').val()
                             }, function(result){
                                 if(typeof result === 'object'){

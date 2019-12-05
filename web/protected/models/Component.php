@@ -163,10 +163,10 @@ class Component extends CActiveRecord
         ));
 	}
 
-	public function getComponentByPN($pn){
+	public static function getComponentByPN($pn){
         $criteria = new CDbCriteria();
         $criteria->condition = 'upper(partnumber) = upper(\''.$pn.'\')';
-        return $this->find($criteria);
+        return Component::model()->find($criteria);
     }
 
 	/**
