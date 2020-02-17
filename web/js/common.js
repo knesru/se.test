@@ -433,7 +433,7 @@ function deleteRow() {
                 grid.commit();
                 grid.history({method: 'reset'});
             }else{
-                grid.removeClass({ rowData: rowData, cls: 'pq-row-delete' });
+                //grid.removeClass({ rowData: rowData, cls: 'pq-row-delete' });
                 grid.rollback();
                 userLog(result.error,'error');
             }

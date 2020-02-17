@@ -318,6 +318,9 @@ span.saving
 .row label{
 	width: 100px;
 }
+.row.wide-label label{
+	width: 230px;
+}
 .row {
 	border-top: 1px solid #eee;
 }
@@ -493,5 +496,15 @@ li .toc_text{
 	/*font-style: italic;*/
 	font-weight: bold;
 	color: #330000;
-	text-shadow: #faa 0px 0px 2px;
+	text-shadow: #faa 0 0 2px;
+}
+.ui-tabs .ui-tabs-nav .ui-tabs-anchor {
+	padding: 0.1em 0.2em !important;
+}
+
+.ui-tabs .ui-tabs-panel{
+	padding: 0 !important;
+}
+.wide-field{
+	width: 450px;
 }

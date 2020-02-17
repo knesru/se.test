@@ -438,3 +438,48 @@ function getPageModel(type) {
         }()
     };
 }
+
+
+function getInstall_fromColumn() {
+    return {
+        title: "Монтаж с",
+        dataIndx: 'install_from',
+        dataType: "date",
+        editor: {
+            type: 'textbox',
+            init: dateEditor
+        },
+        render: function (ui) {
+            return renderDateOnly(ui);
+        },
+        filter: {
+            type: 'textbox',
+            condition: 'between',
+            init: pqDatePicker,
+            listeners: ['change']
+        }
+    };
+}
+
+function generalDateColumn(params){
+    let defaultParams = {
+        title: "Дата",
+        dataIndx: 'date',
+        dataType: "date",
+        editor: {
+            type: 'textbox',
+            init: dateEditor
+        },
+        render: function (ui) {
+            return renderDateOnly(ui);
+        },
+        filter: {
+            type: 'textbox',
+            condition: 'between',
+            init: pqDatePicker,
+            listeners: ['change']
+        }
+    };
+    $.extend(defaultParams,params);
+    return defaultParams;
+}

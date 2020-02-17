@@ -354,14 +354,15 @@ class ToAssemblyController extends Controller
             $pn = $model->partnumber;
             $pnid = $model->partnumberid;
             if(!empty($model->requestid)) {
-
-                $requestid = $model->requestid;
-                $model->requestid = null;
-                if($model->save()){
-                    print json_encode(array('success' => true, 'requestid' => $requestid, 'pn'=>$pn, 'pnid'=>$pnid));
-                }else{
-                    print json_encode(array('success' => false, 'error' => 'Не получилось сохранить. ' .print_r($model->errors, 1).'Attrs:'.print_r($model->attributes,1)));
-                }
+                print json_encode(array('success' => false, 'error' => 'Данные устарели. Компонент уже добавлен в заявку ' .ltrim($model->requestid,'0').' Обновите страницу'));
+                Yii::app()->end();
+//                $requestid = $model->requestid;
+//                $model->requestid = null;
+//                if($model->save()){
+//                    print json_encode(array('success' => true, 'requestid' => $requestid, 'pn'=>$pn, 'pnid'=>$pnid));
+//                }else{
+//                    print json_encode(array('success' => false, 'error' => 'Не получилось сохранить. ' .print_r($model->errors, 1).'Attrs:'.print_r($model->attributes,1)));
+//                }
             }else{
                 try {
                     if($model->delete()){
