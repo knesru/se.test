@@ -522,3 +522,62 @@ function getCookie(cname,csubname) {
     }
     return "";
 }
+
+function showMessage(message, type) {
+    if(typeof type === 'undefined'){
+        type = 'info';
+    }
+    showDialogMessage({title: type, message: message});
+}
+function showWarning(message) {
+    showMessage(message,'warning');
+}
+function showError(message) {
+    showMessage(message,'error');
+}
+function showDialogMessage(params) {
+    defaultParams = {
+        header: 'info',
+        type: 'info',
+        message: 'info',
+        buttons: {
+            ok: function () {
+                $(this).dialog("close");
+            }
+        }
+    };
+    params = $.extend(defaultParams,params);
+    if($("#popup-dialog-message").length!=0) {
+        $("#popup-dialog-message").html(params.message).removeClass('ui-state-error').removeClass('ui-state-highlight');
+        if (params.type === 'warning') {
+            $("#popup-dialog-message").addClass('ui-state-highlight');
+        }
+        if (params.type === 'error') {
+            $("#popup-dialog-message").addClass('ui-state-error');
+        }
+        $("#popup-dialog-message").dialog({
+            title: tdt(params.title),
+            buttons: params.buttons,
+            modal: true
+            // dialogClass: "ui-state-highlight",
+            // classes: {
+            //     "ui-dialog": "ui-state-highlight",
+            //     "ui-dialog-title": "ui-state-highlight"
+            // }
+        }).dialog("open");
+    }else{
+        alert(params.message);
+    }
+}
+//translate dialog title
+function tdt(title) {
+    let titles = {
+        'error': 'ошибка',
+        'info': 'инфо',
+        'warning': 'предупреждение',
+    };
+    if(typeof titles[title] !== 'undefined'){
+        return titles[title];
+    }
+    return title;
+}

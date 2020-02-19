@@ -14,6 +14,7 @@
  *
  * The followings are the available model relations:
  * @property Tasks $task
+ * @property Acceptors acceptor
  */
 class Products extends CActiveRecord
 {
@@ -51,6 +52,7 @@ class Products extends CActiveRecord
 		// class name for the relations automatically generated below.
 		return array(
 			'task' => array(self::BELONGS_TO, 'Tasks', 'taskid'),
+            'acceptor' => array(self::BELONGS_TO, 'Acceptors', 'acceptorid')
 		);
 	}
 

@@ -92,7 +92,7 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
         return matrix[from][to]==='allow';
     }
 </script>
-
+    <div id="popup-dialog-message"></div>
 <div id="tasks_tabs">
     <ul>
         <li><a href="#tabs-1">Реестр заказов</a></li>

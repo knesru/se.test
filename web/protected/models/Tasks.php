@@ -26,20 +26,21 @@
  * The followings are the available model relations:
  * @property User $user
  * @property Products[] $products
+ * @property array $packages
+ * @property Acceptors[] $acceptors
  */
 class Tasks extends CActiveRecord
 {
     const PREFIX = 'СР';
 
 
-
     //C_ for CHANGE_
-    const C_ALLOW     = 'allow';
-    const C_NO        = 'no';
-    const C_AUTO      = 'auto';
-    const C_DENY      = 'deny';
-    const C_SAME      = 'same';
-    const C_INVALID   = 'invalid';
+    const C_ALLOW = 'allow';
+    const C_NO = 'no';
+    const C_AUTO = 'auto';
+    const C_DENY = 'deny';
+    const C_SAME = 'same';
+    const C_INVALID = 'invalid';
 
     //S_ for STATUS_
     const S_NEW = 0;
@@ -53,7 +54,7 @@ class Tasks extends CActiveRecord
         $options = array(
             self::S_NEW => 'Открыт',
             self::S_SUSPENDED => 'Приостановлен',
-            self::S_CANCEL => 'Отменаен',
+            self::S_CANCEL => 'Отменён',
             self::S_RESTORE => 'Восстановить',
             self::S_CLOSED => 'Закрыт',
         );
@@ -72,9 +73,10 @@ class Tasks extends CActiveRecord
         return $options;
     }
 
-    public static function getStatusName($status){
+    public static function getStatusName($status)
+    {
         $options = self::getStatuses();
-        if(isset($options[$status])){
+        if (isset($options[$status])) {
             return $options[$status];
         }
         return '';
@@ -88,11 +90,11 @@ class Tasks extends CActiveRecord
     public static function getStatusesMatrix()
     {
         $matrix = array(
-            self::S_NEW      =>array(                           self::S_SUSPENDED=>self::C_ALLOW,self::S_CANCEL=>self::C_ALLOW,self::S_RESTORE=>self::C_ALLOW,self::S_CLOSED=>self::C_AUTO),
-            self::S_SUSPENDED=>array(self::S_NEW=>self::C_ALLOW,                                 self::S_CANCEL=>self::C_ALLOW,self::S_RESTORE=>self::C_ALLOW,self::S_CLOSED=>self::C_AUTO),
-            self::S_CANCEL   =>array(self::S_NEW=>self::C_ALLOW,self::S_SUSPENDED=>self::C_ALLOW,                              self::S_RESTORE=>self::C_ALLOW,self::S_CLOSED=>self::C_AUTO),
-            self::S_RESTORE  =>array(self::S_NEW=>self::C_ALLOW,self::S_SUSPENDED=>self::C_ALLOW,self::S_CANCEL=>self::C_ALLOW,                               self::S_CLOSED=>self::C_AUTO),
-            self::S_CLOSED   =>array(self::S_NEW=>self::C_ALLOW,self::S_SUSPENDED=>self::C_ALLOW,self::S_CANCEL=>self::C_ALLOW,self::S_RESTORE=>self::C_ALLOW                             ),
+            self::S_NEW => array(self::S_SUSPENDED => self::C_ALLOW, self::S_CANCEL => self::C_ALLOW, self::S_RESTORE => self::C_ALLOW, self::S_CLOSED => self::C_AUTO),
+            self::S_SUSPENDED => array(self::S_NEW => self::C_ALLOW, self::S_CANCEL => self::C_ALLOW, self::S_RESTORE => self::C_ALLOW, self::S_CLOSED => self::C_AUTO),
+            self::S_CANCEL => array(self::S_NEW => self::C_ALLOW, self::S_SUSPENDED => self::C_ALLOW, self::S_RESTORE => self::C_ALLOW, self::S_CLOSED => self::C_AUTO),
+            self::S_RESTORE => array(self::S_NEW => self::C_ALLOW, self::S_SUSPENDED => self::C_ALLOW, self::S_CANCEL => self::C_ALLOW, self::S_CLOSED => self::C_AUTO),
+            self::S_CLOSED => array(self::S_NEW => self::C_ALLOW, self::S_SUSPENDED => self::C_ALLOW, self::S_CANCEL => self::C_ALLOW, self::S_RESTORE => self::C_ALLOW),
 
         );
         return $matrix;
@@ -104,21 +106,21 @@ class Tasks extends CActiveRecord
      * @param null $from
      * @return bool
      */
-    public function canChangeStatus($to, $from=null)
+    public function canChangeStatus($to, $from = null)
     {
-        if(is_null($from)){
+        if (is_null($from)) {
             $from = $this->status;
         }
 
-        if($from==$to){
+        if ($from == $to) {
             return self::C_SAME;
         }
 
         $matrix = self::getStatusesMatrix();
-        if(!isset($matrix[$from])){
+        if (!isset($matrix[$from])) {
             return self::C_INVALID;
         }
-        if(!isset($matrix[$from][$to])){
+        if (!isset($matrix[$from][$to])) {
             return self::C_INVALID;
         }
         return $matrix[$from][$to];
@@ -159,6 +161,7 @@ class Tasks extends CActiveRecord
         return array(
             'user' => array(self::BELONGS_TO, 'User', 'userid'),
             'products' => array(self::HAS_MANY, 'Products', 'taskid'),
+            'acceptors' => array(self::HAS_MANY, 'Acceptors', array('acceptorid' => 'taskid'), 'through' => 'packages'),
         );
     }
 
@@ -264,88 +267,114 @@ class Tasks extends CActiveRecord
         return str_pad($new_id, 6, 0, STR_PAD_LEFT) . '.' . self::PREFIX . '.' . date('y');
     }
 
-    public function getTasks($params=false)
+    public function getTasks($params = false)
     {
         $default_params = array(
             'show_closed' => false,
             'page_size' => 10000,
             'page' => 0,
-            'filter'=>array()
+            'filter' => array()
         );
-        $params = array_merge($default_params,$params);
+        $params = array_merge($default_params, $params);
         $show_closed = $params['show_closed'];
         $criteria = new CDbCriteria();
-        if(!empty($params['filter'])){
+        if (!empty($params['filter'])) {
             $filter = $params['filter'];
             $mode = $filter['mode'];
             $tables = array(
-//                'partnumber'=>'t',
-                'user'=>'userinfo',
+                'packages' => 'p',
+                'aceptors' => 'a',
+                'user' => 'userinfo',
             );
             $search_columns = array(
-                'user'=>'fullname',
+                'user' => 'fullname',
             );
 
-            foreach ($filter['data'] as $datum){
+            foreach ($filter['data'] as $datum) {
                 $table = 't';
                 $search_column = $datum['dataIndx'];
-                if(isset($tables[$datum['dataIndx']])) {
+                if (isset($tables[$datum['dataIndx']])) {
                     $table = $tables[$datum['dataIndx']];
                 }
-                if(isset($search_columns[$datum['dataIndx']])) {
+                if (isset($search_columns[$datum['dataIndx']])) {
                     $search_column = $search_columns[$datum['dataIndx']];
                 }
 
-                if($datum['dataType']=='date'){
-                    $search_column.='::date';
-                    if(!empty($datum['value'])) {
+                if ($datum['dataType'] == 'date') {
+                    $search_column .= '::date';
+                    if (!empty($datum['value'])) {
                         $datum['value'] = date('Y-m-d', date_create_from_format('m/d/Y', $datum['value'])->getTimestamp());
                     }
-                    if(!empty($datum['value2'])) {
+                    if (!empty($datum['value2'])) {
                         $datum['value2'] = date('Y-m-d', date_create_from_format('m/d/Y', $datum['value2'])->getTimestamp());
                     }
                 }
 
-                if($datum['dataType']=='bool') {
-                    $datum['value'] = ($datum['value']=='true'?1:0);
+                if ($datum['dataType'] == 'bool') {
+                    $datum['value'] = ($datum['value'] == 'true' ? 1 : 0);
                 }
 
-                if($datum['condition']=='contain'){
-                    $criteria->addCondition($table.'.'.$search_column.' ilike \'%'.$datum['value'].'%\'',$mode);
-                }elseif ($datum['condition']=='between'){
-                    $criteria->addBetweenCondition($table.'.'.$search_column,$datum['value'],$datum['value2'],$mode);
-                }elseif ($datum['condition']=='equal'){
-                    $criteria->compare($table.'.'.$search_column,$datum['value'],false,$mode);
-                }elseif ($datum['condition']=='gte'){
+                if ($datum['condition'] == 'contain') {
+                    $criteria->addCondition($table . '.' . $search_column . ' ilike \'%' . $datum['value'] . '%\'', $mode);
+                } elseif ($datum['condition'] == 'between') {
+                    $criteria->addBetweenCondition($table . '.' . $search_column, $datum['value'], $datum['value2'], $mode);
+                } elseif ($datum['condition'] == 'equal') {
+                    $criteria->compare($table . '.' . $search_column, $datum['value'], false, $mode);
+                } elseif ($datum['condition'] == 'gte') {
                     //NOT correct, but Oleg asked for that
-                    $criteria->compare($table.'.'.$search_column,$datum['value'],false,$mode);
+                    $criteria->compare($table . '.' . $search_column, $datum['value'], false, $mode);
                 }
 
             }
         }
 //        $criteria->addCondition('requestid is not null');
-        if(!$show_closed) {
-            $criteria->addCondition('statusid != '.Tasks::S_CLOSED.' and statusid != '.Tasks::S_CANCEL);
+        if (!$show_closed) {
+            $criteria->addCondition('statusid != ' . Tasks::S_CLOSED . ' and statusid != ' . Tasks::S_CANCEL);
         }
         $criteria->with = array(
-            'user.userinfo' => array('together' => true, ),
+            'user.userinfo' => array('together' => true,),
 //            'component' => array('together' => true, ),
         );
-        return $this->findbyCriteria($criteria,$params['page_size']);
+        return $this->findbyCriteria($criteria, $params['page_gsize']);
     }
 
     /**
      * @param $criteria
      * @return CActiveDataProvider
      */
-    public function findbyCriteria($criteria,$pagesize=10000)
+    public function findbyCriteria($criteria, $pagesize = 10000)
     {
         return new CActiveDataProvider($this, array(
-            'criteria'=>$criteria,
-            'pagination'=>array(
-                'pageSize'=>$pagesize,
-                'pageVar'=>'pq_curpage'
+            'criteria' => $criteria,
+            'pagination' => array(
+                'pageSize' => $pagesize,
+                'pageVar' => 'pq_curpage'
             ),
         ));
+    }
+
+    public function getPackages()
+    {
+        /** @var Products[] $products */
+        $products = $this->products;
+        if (is_null($products)) {
+            return array();
+        }
+        $packages = array();
+        foreach ($products as $product) {
+            if (!is_null($product->acceptor) && !empty($product->acceptor->name)) {
+                if (!isset($packages[$product->acceptor->name])) {
+                    $packages[$product->acceptor->name] = array();
+                }
+                $packages[$product->acceptor->name][] = array('name' => $product->name, 'amount' => $product->amount, 'units' => $product->units);
+            }
+        }
+        array_walk($packages, function($v,$k){
+            usort($v,function($a,$b){
+                return strcasecmp($a['name'],$b['name']);
+            });
+        });
+        ksort($packages);
+        return $packages;
     }
 }

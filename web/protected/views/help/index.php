@@ -282,6 +282,51 @@ $cs->registerCssFile($baseUrl . '/css/redmond/jquery-ui.css');
         <tr><td>После</td><td>Количество после.</td><td>Натуральное число</td><td>Число компонентов на складе после произведения корректировки. Для компонентов не <span class="goto" data-ref="Из STMS">из STMS</span> всегда равно количеству добавляемых единиц</td></tr>
         <tr><td>Примечание</td><td></td><td>Текст</td><td>Заполняется автоматически.<br/> Шаблон - <span class="goto" data-ref="Поля таблицы заявок">Заявка</span>; Сборщик; <span class="goto" data-ref="Поля таблицы компонентов">Примечание компонента</span></td></tr>
     </table>
+    <h3>Статусы заказов</h3>
+    <table class="lighttable">
+        <tr><th>Статус</th><th>Номер</th></tr>
+        <?php
+        $statuses = Tasks::getStatuses();
+        $statuses_colors = Tasks::getStatusesColors();
+        foreach ($statuses as $statusid => $status) {
+            printf('<tr class="%s"><td>%s</td><td>%d</td></tr>',$statuses_colors[$statusid],$status,$statusid);
+        }
+        ?>
+    </table>
+    <h3>Матрица переходов статусов заказов</h3>
+    <table class="lighttable">
+        <?php
+        $statusesMatrix = Tasks::getStatusesMatrix();
+        $statusesCount = count($statusesMatrix);
+        $row = array('');
+        for($i=0;$i<$statusesCount;$i++){
+            $row[] = $statuses[$i];
+        }
+        printf('<tr><td>%s</td></tr>',implode('</td><td>',$row));
+        $labels = array(
+            Tasks::C_ALLOW=>'разрешен',
+            Tasks::C_DENY=>'запрещен',
+            Tasks::C_SAME=>'',
+            Tasks::C_AUTO=>'автоматический',
+        );
+        for($i=0;$i<$statusesCount;$i++){
+            $row = array('<td>'.$statuses[$i].'</td>');
+            for($j=0;$j<$statusesCount;$j++){
+                if(!isset($statusesMatrix[$i][$j])){
+                    $statusesMatrix[$i][$j] = 'same';
+                }
+                $label = sprintf('<span class="hidden-td-label">%s</span>',$labels[$statusesMatrix[$i][$j]]);
+                $title = '';
+                //«“Задания в производство” ExtComp»
+                if(!empty($labels[$statusesMatrix[$i][$j]])) {
+                    $title = sprintf('Из состояния «%s» в состояние «%s» переход %s',$statuses[$i],$statuses[$j],$labels[$statusesMatrix[$i][$j]]);
+                }
+                $row[] = sprintf('<td class="transition-%s" title="%s">%s</td>',$statusesMatrix[$i][$j],$title,$label);
+            }
+            printf('<tr>%s</tr>',implode('',$row));
+        }
+        ?>
+    </table>
 </div>
 <script type="application/javascript">
     $.fn.tagName = function () {

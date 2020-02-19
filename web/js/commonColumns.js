@@ -89,9 +89,12 @@ function getAmountColumn(dataIndx,title) {
     };
 }
 
-function getUserColumn() {
+function getUserColumn(custom_title) {
+    if(typeof custom_title == 'undefined'){
+        custom_title = "Пользователь";
+    }
     return {
-        title: "Пользователь",
+        title: custom_title,
         dataIndx: 'user',
         dataType: "string",
         editable: false,

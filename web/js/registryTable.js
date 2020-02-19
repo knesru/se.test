@@ -160,9 +160,9 @@ let RegistryTableColumnModel = [
                 listeners: ['change']
             }
         },
-        getUserColumn(),
+        getUserColumn("Руководитель"),
         {
-            title: "Руководитель",
+            title: "Ведущий",
             dataIndx: 'manager_name',
             dataType: "string",
             editable: false,
@@ -195,6 +195,36 @@ let RegistryTableColumnModel = [
                 type: 'textbox',
                 condition: 'contain',
                 listeners: ['change']
+            }
+        },
+        {
+            title: "Наименование товара",
+            dataIndx: 'packages',
+            dataType: 'string',
+            width: 300,
+            sortable: false,
+            render: function (ui) {
+                let rowData = ui.rowData,
+                    dataIndx = ui.dataIndx;
+                // if(rowData['status'] == 4 || rowData['status'] == 5){
+                //     return '';
+                // }
+                let out = '<table>';
+                for (let acceptor_name in rowData['packages']) {
+                    if (rowData['packages'].hasOwnProperty(acceptor_name)) {
+                        out += '<th colspan="3" class="acceptor-name-incell" ><div>' + acceptor_name + '</div>';
+                        let acceptor = rowData['packages'][acceptor_name];
+                        let odd = false;
+                        for (let j = 0; j < acceptor.length; j++) {
+                            let package = acceptor[j];
+                            out += '<tr class="package-name-incell ' + (odd ? 'odd' : 'even') + '"><td>' + package['name'] + '</td><td style="width: 10%; text-align: right; ">' + package['amount'] + '</td><td style="width: 10%; text-align: center">' + package['units'] + '</td></tr>';
+                            odd = !odd;
+                        }
+                        out += '';
+                    }
+                }
+                out += '</table>';
+                return out;
             }
         },
         generalDateColumn({title: "Дата внесения заказа", dataIndx: 'created_at'}),
@@ -336,6 +366,89 @@ let RegistryTable = {
                         'click': function (evt, ui) {
                             //append empty row at the end.
                             $('#new-comp-form-hash').val(Math.random());
+                            openTaskForm('Добавить заказ');
+                        },
+                    }
+                ]
+            },
+            {
+                type: 'button',
+                label: 'Изменить заказ',
+                listeners: [
+                    {
+                        'click': function (evt, ui) {
+                            //append empty row at the end.
+                            $('#new-comp-form-hash').val(Math.random());
+                            let grid = $registryGrid.pqGrid('getInstance').grid;
+                            let rowIndx = getSelectedRegistryRowsIndx();
+                            console.log(rowIndx);
+                            if (rowIndx.length === 0) {
+                                return;
+                            }
+                            let row = $registryGrid.pqGrid('getRowData', {rowIndx: rowIndx});
+                            console.log(row);
+                            $.ajax({
+                                'url': '/tasks/getTask',
+                                'method': 'POST',
+                                'dataType': 'json',
+                                'data': {taskid: row['id']},
+                                success: function (response) {
+                                    if (typeof response !== 'undefined') {
+                                        if (typeof response.data !== "undefined") {
+                                            for (let field in response.data) {
+                                                if (response.data.hasOwnProperty(field)) {
+                                                    let $field = $('#' + response.data.model + '_' + field);
+                                                    if ($field.prop("tagName") == 'SELECT' || $field.prop("tagName") == 'INPUT') {
+                                                        $field.val(response.data[field]);
+                                                    } else {
+                                                        $field.text(response.data[field]);
+                                                    }
+
+                                                }
+                                            }
+                                            let acceptors_amount = 0;
+                                            for (let acceptor in response.data.packages){
+                                                if (response.data.packages.hasOwnProperty(acceptor)) {
+                                                    acceptors_amount++;
+                                                    if(acceptors_amount>1){
+                                                        $('.addAcceptor').click();
+                                                    }
+                                                    let $acceptor = response.data.packages[acceptor];
+                                                    let $acceptor_block = $('.acceptor-block').last().prev();
+                                                    $acceptor_block.find('.product-acceptor').val(acceptor);
+                                                    let packages = 0;
+                                                    for(let i=0;i<$acceptor.length;i++){
+                                                        packages++;
+                                                        if((acceptors_amount===1 && packages>1) || (acceptors_amount>1 && packages>0)){
+                                                            $acceptor_block.find('.addPackage').click();
+                                                        }
+                                                        let $package_block = $acceptor_block.find(".packages-list li").last();
+                                                        $package_block.find('.product-package').val($acceptor[i].name);
+                                                        $package_block.find('.product-package-amount').val($acceptor[i].amount);
+                                                        $package_block.find('.product-package-units').val($acceptor[i].units);
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                error: function (a, b, c) {
+                                    console.error(a, b, c);
+                                }
+                            });
+                            openTaskForm('Изменить заказ ' + row['name']);
+                        },
+                    }
+                ]
+            },
+            {
+                type: 'button',
+                label: 'Удалить заказ',
+                listeners: [
+                    {
+                        'click': function (evt, ui) {
+                            //append empty row at the end.
+                            $('#new-comp-form-hash').val(Math.random());
                             $('#popup_dialog_new_task').dialog(
                                 {
                                     title: 'Добавить заказ',
@@ -374,6 +487,7 @@ let RegistryTable = {
                                             packages_data.remove();
                                             packages_tree = {};
                                             $(this).dialog("close");
+
                                         }/*,
                                             "Отмена": function() {
                                                 $( this ).dialog( "close" );
@@ -485,6 +599,66 @@ function getSelectedRegistryRowsIndx(silent) {
         }
     }
     return rowIndexes;
+}
+
+function openTaskForm(title){
+    //init form
+    $('#new-task-form input').val('');
+    $('.acceptor-block').not(':first').not(':last').remove();
+    $('.product-acceptor').val('');
+    $('.packages-list li').not(':first').remove();
+    $('.product-package').val('');
+    $('.product-package-amount').val('');
+    $('.product-package-units').val('');
+    $('#Tasks_updated_at').text('');
+    //open dialog
+    $('#popup_dialog_new_task').dialog(
+        {
+            title: title,
+            width: 700,
+            height: 700,
+            buttons: {
+                "Сохранить": function () {
+                    let packages_tree = {};
+                    $('.acceptor-block').each(function () {
+                        if ($(this).find('.product-acceptor').length > 0) {
+                            let acceptor = $(this).find('.product-acceptor').val();
+                            packages_tree[acceptor] = [];
+                            $(this).find('.packages-list').find('li').each(function () {
+                                let package_data = {
+                                    'name': $(this).find('.product-package').val(),
+                                    'amount': $(this).find('.product-package-amount').val(),
+                                    'units': $(this).find('.product-package-units').val()
+                                };
+                                packages_tree[acceptor].push(package_data);
+                            });
+                        }
+                    });
+                    let packages_data = $('<input>').attr({
+                        'name': 'products_tree',
+                        'type': 'hidden'
+                    });
+                    packages_data.val(JSON.stringify(packages_tree));
+                    $('#new-task-form').append(packages_data);
+                    let form_data = $('#new-task-form').serialize();
+                    $.ajax({
+                        'url': '/tasks/update',
+                        'method': 'POST',
+                        'dataType': 'json',
+                        'data': form_data
+                    });
+                    packages_data.remove();
+                    packages_tree = {};
+                    $(this).dialog("close");
+                    let grid = $registryGrid.pqGrid('getInstance').grid;
+                    grid.refreshDataAndView();
+                }/*,
+                                            "Отмена": function() {
+                                                $( this ).dialog( "close" );
+                                            }*/
+            }
+        }
+    ).dialog('open');
 }
 
 $registryGrid = $("#grid_registry").pqGrid(RegistryTable);

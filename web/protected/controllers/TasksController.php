@@ -57,6 +57,7 @@ class TasksController extends Controller
         /** @var Tasks $request */
         $colors = Tasks::getStatusesColors();
 
+        /** @var Tasks $task */
         foreach ($dp->getData() as $task) {
             $row = $task->attributes;
             if (isset($task->user) && isset($task->user->userinfo) && isset($task->user->userinfo->fullname)) {
@@ -66,6 +67,7 @@ class TasksController extends Controller
             if (empty($row['user'])) {
                 $row['user'] = $task->user->username;
             }
+            $row['packages'] = $task->packages;
             $result['data'][] = $row;
         }
         $result['totalRecords'] = $dp->totalItemCount;
@@ -107,6 +109,21 @@ class TasksController extends Controller
         print json_encode($result);
     }
 
+    public function actionGetTask()
+    {
+        $taksid = Yii::app()->request->getPost('taskid');
+        /** @var Tasks $taskModel */
+        $taskModel = Tasks::model()->findByPk($taksid);
+        $properties = array();
+        if(!is_null($taskModel)){
+            $properties = $taskModel->attributes;
+            $properties['packages'] = $taskModel->packages;
+            $properties['model'] = get_class($taskModel);
+            $this->j(array('data'=>$properties));
+        }
+        $this->j($properties,false);
+    }
+
     public function actionUpdate()
     {
         $task_data = Yii::app()->request->getPost('Tasks');
@@ -138,6 +155,7 @@ class TasksController extends Controller
             $this->j(array('message' => 'Не удалось сохранить задачу', 'error' => $task->errors), false);
         }
         $products_tree = json_decode(Yii::app()->request->getPost('products_tree'));
+        Products::model()->deleteAllByAttributes(array('taskid'=>$task->id));
         foreach ($products_tree as $acceptor => $items) {
             if (!empty($acceptor) && $acceptor != '_empty_') {
                 $acceptorModel = Acceptors::model()->findByAttributes(array('name' => $acceptor));
@@ -151,7 +169,10 @@ class TasksController extends Controller
                     }
                 }
                 foreach ($items as $item) {
-                    $productsModel = new Products();
+//                    $productsModel = Products::model()->findByAttributes(array('name'=>$item->name,'taskid'=>$task->id,'acceptorid'=>$acceptorModel->id));
+//                    if(empty($productsModel)) {
+                        $productsModel = new Products();
+//                    }
                     $productsModel->name = $item->name;
                     $productsModel->amount = $item->amount;
                     $productsModel->units = $item->units;

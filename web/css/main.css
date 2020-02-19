@@ -508,3 +508,30 @@ li .toc_text{
 .wide-field{
 	width: 450px;
 }
+.acceptor-name-incell{
+	margin: 3px;
+	border: 1px solid #ddd;
+}
+.acceptor-name-incell div{
+	font-size: 1.1em;
+	text-align: center
+}
+.ui-state-highlight .acceptor-name-incell{
+	border: 1px solid #777;
+}
+.package-name-incell{
+	font-size: 0.9em;
+	margin-left: 12px;
+}
+.package-name-incell.odd td{
+	border:solid #ddd;
+	border-width: 1px 0 1px 0;
+	background-color: #eee;
+	opacity: 0.9;
+}
+.ui-state-highlight .package-name-incell td{
+	border-color: #777;
+	background-color: transparent;
+	opacity: 0.9;
+	background-image: none !important;
+}

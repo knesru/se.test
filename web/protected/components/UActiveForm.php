@@ -52,6 +52,29 @@ class UActiveForm extends CActiveForm
         return $out;
     }
 
+    public function rowDropDownField($model,$attribute,$data, $html_options,$css_row_class='',$print=true)
+    {
+        $input = $this->dropDownList($model, $attribute, $data, $html_options);
+        $out = $this->rowField($input,$model,$attribute,$css_row_class);
+        if($print){
+            print $out;
+        }
+        return $out;
+    }
+
+    public function rowROField($model,$attribute, $html_options,$css_row_class='',$print=true)
+    {
+        if(!isset($html_options['id'])){
+            $html_options['id'] = get_class($model).'_'.$attribute;
+        }
+        $input = CHtml::tag('span',$html_options,$model->updated_at);
+        $out = $this->rowField($input,$model,$attribute,$css_row_class);
+        if($print){
+            print $out;
+        }
+        return $out;
+    }
+
     public function rowTextArea($model,$attribute,$html_options,$css_row_class='',$print=true)
     {
         $input = $this->textArea($model, $attribute,$html_options);
