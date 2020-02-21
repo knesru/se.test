@@ -203,6 +203,7 @@ let RegistryTableColumnModel = [
             dataType: 'string',
             width: 300,
             sortable: false,
+            editable: false,
             render: function (ui) {
                 let rowData = ui.rowData,
                     dataIndx = ui.dataIndx;
@@ -227,9 +228,9 @@ let RegistryTableColumnModel = [
                 return out;
             }
         },
-        generalDateColumn({title: "Дата внесения заказа", dataIndx: 'created_at'}),
-        generalDateColumn({title: "Срок поставки", dataIndx: 'delivery_date'}),
-        generalDateColumn({title: "Срок сдачи на склад", dataIndx: 'store_delivery_date'}),
+        generalDateColumn({title: "Дата внесения заказа", dataIndx: 'created_at',editable: false}),
+        generalDateColumn({title: "Срок поставки", dataIndx: 'delivery_date',editable: false}),
+        generalDateColumn({title: "Срок сдачи на склад", dataIndx: 'store_delivery_date',editable: false}),
         {
             title: "Тип приемки",
             dataIndx: 'inspection_type',
@@ -266,8 +267,8 @@ let RegistryTableColumnModel = [
                 listeners: ['change']
             }
         },
-        generalDateColumn({title: "Дата поступления на склад", dataIndx: 'store_acceptance_date'}),
-        generalDateColumn({title: "Дата отгрузки по документам", dataIndx: 'official_delivery_date'}),
+        generalDateColumn({title: "Дата поступления на склад", dataIndx: 'store_acceptance_date',editable: false}),
+        generalDateColumn({title: "Дата отгрузки по документам", dataIndx: 'official_delivery_date',editable: false}),
         {
             title: "Статус",
             dataIndx: 'statusid',
@@ -277,9 +278,9 @@ let RegistryTableColumnModel = [
                 type: 'select',
                 init: function (ui) {
                     ui.$cell.find("select").find('option').each(function () {
-                        if (!canChangeStatus($(this).val(), ui.rowData.status)) {
-                            $(this).attr('disabled', 'disabled');
-                        }
+                        // if (!canChangeStatus($(this).val(), ui.rowData.status)) {
+                        //     $(this).attr('disabled', 'disabled');
+                        // }
                     });
                 },
                 valueIndx: "value",
@@ -305,7 +306,7 @@ let RegistryTableColumnModel = [
                 options: getStatusesArray()
             }
         },
-        generalDateColumn({title: "Обновлено", dataIndx: 'updated_at'}),
+        generalDateColumn({title: "Обновлено", dataIndx: 'updated_at',editable: false}),
     ]
 ;
 
@@ -533,15 +534,15 @@ let RegistryTable = {
         ]
     },
     history: function (evt, ui) {
-        let $grid = $(this);
-        if (ui.canUndo != null) {
-            $("button.changes", $grid).button("option", {disabled: !ui.canUndo || isGuest});
-        }
-        if (ui.canRedo != null) {
-            $("button:contains('Redo')", $grid).button("option", "disabled", !ui.canRedo || isGuest);
-        }
-        $("button:contains('Undo')", $grid).button("option", {label: 'Undo (' + ui.num_undo + ')'});
-        $("button:contains('Redo')", $grid).button("option", {label: 'Redo (' + ui.num_redo + ')'});
+        // let $grid = $(this);
+        // if (ui.canUndo != null) {
+        //     $("button.changes", $grid).button("option", {disabled: !ui.canUndo || isGuest});
+        // }
+        // if (ui.canRedo != null) {
+        //     $("button:contains('Redo')", $grid).button("option", "disabled", !ui.canRedo || isGuest);
+        // }
+        // $("button:contains('Undo')", $grid).button("option", {label: 'Undo (' + ui.num_undo + ')'});
+        // $("button:contains('Redo')", $grid).button("option", {label: 'Redo (' + ui.num_redo + ')'});
     },
     editable: true,
     editor: {
