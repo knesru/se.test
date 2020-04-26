@@ -32,7 +32,7 @@ return array(
         ),
     ),
 
-	'defaultController'=>'toassembly',
+	'defaultController'=>'ToAssembly',
 
 	// application components
 	'components'=>array(
@@ -72,7 +72,7 @@ return array(
 				),
                 array(
                     'class'=>'CWebLogRoute',
-                    'enabled' =>FALSE,
+                    'enabled' =>false,
                     'categories' => 'system.db.*',
                 ),
                 array(

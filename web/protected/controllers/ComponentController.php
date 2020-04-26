@@ -217,9 +217,13 @@ class ComponentController extends Controller
     public function actionAjaxComponent()
     {
         $criteria = new CDbCriteria();
-        $criteria->compare('partnumber', Yii::app()->request->getParam('partnumber'));
-        $model = Component::model()->find($criteria);
-        echo json_encode($model->partnumberid);
+        $criteria->condition = 'upper(partnumber) = upper(\''.Yii::app()->request->getParam('partnumber').'\')';
+        $model = Component::model()->findAll($criteria);
+        if(is_null($model)){
+            print '';
+            Yii::app()->end();
+        }
+        echo json_encode($model[0]->partnumberid);
         Yii::app()->end();
     }
 

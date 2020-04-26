@@ -28,9 +28,10 @@
     <div id="header" class="ui-widget-header">
         <div id="userMenu"><?php $this->widget('zii.widgets.CMenu', array(
                 'items' => array(
-                    array('label' => 'Журнал всех пользователей', 'url' => array('/actionhistory/log')),
-                    array('label' => 'Настройки', 'itemOptions' => array('id' => 'open_settigs_menu'), 'visible' => $this->id == 'toassembly'),
-                    array('label' => 'Главная', 'url' => array('/toassembly'), 'visible' => $this->id != 'toassembly'),
+                    array('label' => 'Задачи', 'url' => array('/tasks')),
+                    array('label' => 'Журнал всех пользователей','template'=>'<a href="/actionhistory/log" target="_blank">Журнал всех пользователей</a>', 'url' => array('/actionhistory/log')),
+                    array('label' => 'Настройки', 'itemOptions' => array('id' => 'open_settigs_menu'), 'visible' => $this->id == 'toAssembly'),
+                    array('label' => 'Главная', 'url' => array('/toAssembly'), 'visible' => $this->id != 'toAssembly'),
 //				array('label'=>'Contact', 'url'=>array('/site/contact')),
                     array('label' => 'Войти', 'itemOptions' => array('id' => 'open_popup_login'), 'url' => array('/site/login'), 'visible' => Yii::app()->user->isGuest),
                     array('label' => 'Выйти (' . Yii::app()->user->name . ')', 'url' => array('/site/logout'), 'visible' => !Yii::app()->user->isGuest),
@@ -59,7 +60,9 @@
     </div><!-- mainmenu -->
 
 
-    <?php echo $content; ?>
+    <?php
+    /** @var string $content */
+    echo $content; ?>
 
     <div id="footer">
         Copyright &copy; <?php echo date('Y'); ?> FBarinov for Yurion.<br/>

@@ -11,6 +11,7 @@ body
 	color: #555;
 	font: normal 10pt Arial,Helvetica,sans-serif;
 	background: #EFEFEF;
+	overflow: hidden;
 }
 
 #page

@@ -142,7 +142,7 @@ class ActionhistoryController extends Controller
         $criteria = new CDbCriteria();
         $criteria->order = 't.created_at asc';
         $result = array('data' => array());
-        $criteria->limit = 100;
+        $criteria->limit = 10000;
         if (!$allusers && !empty(Yii::app()->user->id)) {
             $criteria->limit = 1000;
             $criteria->compare('initiatoruserid', Yii::app()->user->id);
@@ -154,7 +154,9 @@ class ActionhistoryController extends Controller
         );
         $model = Actionhistory::model()->findAll($criteria);
         foreach ($model as $item) {
-            $username = $item->user->userinfo->fullname;
+	    if(isset($item->user->userinfo) && isset($item->user->userinfo->fullname)){
+	      $username = $item->user->userinfo->fullname;
+	    }
             if(empty($username)){
                 $username = $item->user->username;
             }

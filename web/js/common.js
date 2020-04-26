@@ -161,12 +161,15 @@ function renderDateOnly(ui) {
     }
 }
 
-function renderShortText(ui) {
+function renderShortText(ui, add_class) {
     let cellData = ui.cellData;
     if(cellData===null){
         cellData = '';
     }
-    return '<div class="shorttext folded-text" title="'+cellData+'">'+cellData+'</div>';
+    if(typeof add_class === 'undefined' || add_class===null){
+        add_class = '';
+    }
+    return '<div class="shorttext folded-text '+add_class+'" title="'+cellData+'">'+cellData.replace(/\n/g,'<br/>')+'</div>';
 }
 
 function clearFilter() {
@@ -261,7 +264,8 @@ function footerLog(message,maxLogLength,severity){
     let $footer = $('#footer');
     if($footer.find('a').length>0){
         $footer.html('').css({'text-align':'left'}).resizable({
-            handles: "n, s"
+            handles: "s",
+            helper: "ui-resizable-helper"
         }).css({'height':60});
     }
     $footer.prepend('<div class="userlog_message '+hl_class+'">'+message+'</div>');
@@ -345,7 +349,7 @@ function generalAjaxAnswer(result,msg,silent){
             message_body = error_list.join("<br/>\n");
         }
         if(result.success){
-            if(msg===true || msg==='success'){
+            if((msg===true || msg==='success') && message_body!=''){
                 showMessage(message_body);
             }
             if(!silent) {
@@ -429,7 +433,7 @@ function deleteRow() {
                 grid.commit();
                 grid.history({method: 'reset'});
             }else{
-                grid.removeClass({ rowData: rowData, cls: 'pq-row-delete' });
+                //grid.removeClass({ rowData: rowData, cls: 'pq-row-delete' });
                 grid.rollback();
                 userLog(result.error,'error');
             }
@@ -517,4 +521,63 @@ function getCookie(cname,csubname) {
         }
     }
     return "";
+}
+
+function showMessage(message, type) {
+    if(typeof type === 'undefined'){
+        type = 'info';
+    }
+    showDialogMessage({title: type, message: message});
+}
+function showWarning(message) {
+    showMessage(message,'warning');
+}
+function showError(message) {
+    showMessage(message,'error');
+}
+function showDialogMessage(params) {
+    defaultParams = {
+        header: 'info',
+        type: 'info',
+        message: 'info',
+        buttons: {
+            ok: function () {
+                $(this).dialog("close");
+            }
+        }
+    };
+    params = $.extend(defaultParams,params);
+    if($("#popup-dialog-message").length!=0) {
+        $("#popup-dialog-message").html(params.message).removeClass('ui-state-error').removeClass('ui-state-highlight');
+        if (params.type === 'warning') {
+            $("#popup-dialog-message").addClass('ui-state-highlight');
+        }
+        if (params.type === 'error') {
+            $("#popup-dialog-message").addClass('ui-state-error');
+        }
+        $("#popup-dialog-message").dialog({
+            title: tdt(params.title),
+            buttons: params.buttons,
+            modal: true
+            // dialogClass: "ui-state-highlight",
+            // classes: {
+            //     "ui-dialog": "ui-state-highlight",
+            //     "ui-dialog-title": "ui-state-highlight"
+            // }
+        }).dialog("open");
+    }else{
+        alert(params.message);
+    }
+}
+//translate dialog title
+function tdt(title) {
+    let titles = {
+        'error': 'ошибка',
+        'info': 'инфо',
+        'warning': 'предупреждение',
+    };
+    if(typeof titles[title] !== 'undefined'){
+        return titles[title];
+    }
+    return title;
 }

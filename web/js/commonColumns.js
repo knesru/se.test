@@ -22,7 +22,11 @@ function getPartnumberColumn() {
         dataIndx: 'partnumber',
         dataType: "string",
         render: function(ui){
-            return renderShortText(ui);
+            let add_class = '';
+            if(ui.rowData['partnumberid']===null){
+                add_class = 'random_component';
+            }
+            return renderShortText(ui,add_class);
         },
         editor: {
             type: 'textbox',
@@ -85,9 +89,12 @@ function getAmountColumn(dataIndx,title) {
     };
 }
 
-function getUserColumn() {
+function getUserColumn(custom_title) {
+    if(typeof custom_title == 'undefined'){
+        custom_title = "Пользователь";
+    }
     return {
-        title: "Пользователь",
+        title: custom_title,
         dataIndx: 'user',
         dataType: "string",
         editable: false,
@@ -189,11 +196,13 @@ function getDeficiteColumn() {
         render: function(ui){
             return renderShortText(ui);
         },
+        editor: { type: "textarea", attr: "rows=6", style:'width:400px !important' },
         filter: {
             type: 'textbox',
             condition: 'contain',
             listeners: ['change']
-        }
+        },
+        editModel: { keyUpDown: false, saveKey: '' },
     };
 }
 
@@ -431,4 +440,49 @@ function getPageModel(type) {
             return rpp;
         }()
     };
+}
+
+
+function getInstall_fromColumn() {
+    return {
+        title: "Монтаж с",
+        dataIndx: 'install_from',
+        dataType: "date",
+        editor: {
+            type: 'textbox',
+            init: dateEditor
+        },
+        render: function (ui) {
+            return renderDateOnly(ui);
+        },
+        filter: {
+            type: 'textbox',
+            condition: 'between',
+            init: pqDatePicker,
+            listeners: ['change']
+        }
+    };
+}
+
+function generalDateColumn(params){
+    let defaultParams = {
+        title: "Дата",
+        dataIndx: 'date',
+        dataType: "date",
+        editor: {
+            type: 'textbox',
+            init: dateEditor
+        },
+        render: function (ui) {
+            return renderDateOnly(ui);
+        },
+        filter: {
+            type: 'textbox',
+            condition: 'between',
+            init: pqDatePicker,
+            listeners: ['change']
+        }
+    };
+    $.extend(defaultParams,params);
+    return defaultParams;
 }

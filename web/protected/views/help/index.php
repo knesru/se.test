@@ -33,11 +33,12 @@ $cs->registerCssFile($baseUrl . '/css/redmond/jquery-ui.css');
     <p>Компонент, имеющий карточку в системе STMS называется «Из STMS»</p>
     <p>Система позволяет работать как с компонентами, имеющими карточку в системе STMS, так и с любыми сторонними</p>
     <p>Компонент, который получил карточку в STMS после заведения в системе “Задания в производство” не считается компонентом «Из STMS»</p>
+    <p>При переименовании компонента «Из STMS» в STMS, автоматически производится переименование в производстве. Непосредственно в системе менять наименование таких компонентов нельзя</p>
     <h5>Идентичные компоненты</h5>
     <p>Компоненты считаются идентичными</p>
     <ul>
         <li>Для компонентов «Из STMS» - в случае совпадения <span class="goto" data-ref="Поля таблицы компонентов">ID компонента</span></li>
-        <li>Для компонентов не «Из STMS» - в случае совпадения <span class="goto" data-ref="Поля таблицы компонентов">Наименованиеа</span></li>
+        <li>Для компонентов не «Из STMS» - в случае совпадения <span class="goto" data-ref="Поля таблицы компонентов">Наименования</span></li>
     </ul>
     <h4>Основные элементы управления</h4>
     <p>Расположение колонок можно менять перетаскиванием заголовков мышью.<img src="/help-images/move_columns.PNG"/></p>
@@ -88,10 +89,10 @@ $cs->registerCssFile($baseUrl . '/css/redmond/jquery-ui.css');
     <p>Экспорт может занимать значительное время на формирование до нескольких минут на максимальном(10000) количестве
         записей. В случае, если экспорт производится более 180 секунд(3 минуты), в журнале будет отображено
         соответствующее сообщение.</p>
-    <p>(i) Автоматическая установка ширины колонок экспортируемого документа не производится по техническим причинам.
+    <p><i>(i) Автоматическая установка ширины колонок экспортируемого документа не производится по техническим причинам.
         Чтобы произвести автоматическую установку ширины для всего документа, надо выделить все колонки, нажатием на
         левый верхний угол таблицы в Excel или openOffice Calc, и дважды щелкнуть по границе между заголовками
-        таблицы.</p>
+            таблицы.</i></p>
     <h4>История коррекции на складе</h4>
     <p><span class="goto" data-ref="Таблица корректировок склада">Описание таблицы</span></p>
     <p>Для просмотра истории коррекции непосредственно в приложении, требуется выделить строку с компонентом и нажать на кнопку с изображением часов в той же таблице.</p>
@@ -103,16 +104,16 @@ $cs->registerCssFile($baseUrl . '/css/redmond/jquery-ui.css');
     <p>Отсутствует возможность автоматически отменять действия.</p>
     <p>Строчки, отмеченные желтым цветом, требуют повышенного внимания.</p>
     <p>Строчки, отмеченные красным цветом содержат сообщения о произошедших серьезных ошибках, как правило, не позволяющих завершить действие при текущих условиях. Большинство ошибок содержат пояснения на русском языке.</p>
-    <p>В базе данных хранятся все действия всех пользователей.</p>
+    <p>В базе данных хранятся все записанные действия всех пользователей.</p>
     <h3>Настройки</h3>
     <p>Окно настроек</p>
     <p style="text-align: center"><img src="/help-images/settings.PNG" /></p>
     <p>Галочки соответствуют колонкам в таблицах. Чтобы отобразить колонку, требуется отметить соответствующую галочку. Чтобы скрыть - снять выделение.</p>
     <p>Кнопки управления</p>
     <table class="lighttable">
-        <tr><td>Сбросить</td><td>Удаляет все сохраненные настройки. Для применения требуется перезагрузка приложения.</td></tr>
+        <tr><td>Сбросить расположение</td><td>Удаляет все сохраненные настройки. Для применения требуется перезагрузка приложения.</td></tr>
         <tr>
-            <td>Сохранить</td>
+            <td>Сохранить расположение</td>
             <td>Сохраняет текущие настройки.
                 <ul>
                     <li>Ширина колонок</li>
@@ -123,7 +124,7 @@ $cs->registerCssFile($baseUrl . '/css/redmond/jquery-ui.css');
                 Автосохранения нет.
             </td>
         </tr>
-        <tr><td>Загрузить</td><td>Загружает последнюю сохраненную конфигурацию</td></tr>
+        <tr><td>Вернуть пользовательские значения</td><td>Загружает последнюю сохраненную конфигурацию</td></tr>
     </table>
     <h3>Таблица заявок</h3>
     <p>Верхняя таблица</p>
@@ -184,8 +185,9 @@ $cs->registerCssFile($baseUrl . '/css/redmond/jquery-ui.css');
         <tr><th>Статус</th><th>Номер</th></tr>
         <?php
         $statuses = Extcomponents::getStatuses();
+        $statuses_colors = Extcomponents::getStatusesColors();
         foreach ($statuses as $statusid => $status) {
-            printf('<tr><td>%s</td><td>%d</td></tr>',$status,$statusid);
+            printf('<tr class="%s"><td>%s</td><td>%d</td></tr>',$statuses_colors[$statusid],$status,$statusid);
             }
         ?>
     </table>
@@ -280,12 +282,61 @@ $cs->registerCssFile($baseUrl . '/css/redmond/jquery-ui.css');
         <tr><td>После</td><td>Количество после.</td><td>Натуральное число</td><td>Число компонентов на складе после произведения корректировки. Для компонентов не <span class="goto" data-ref="Из STMS">из STMS</span> всегда равно количеству добавляемых единиц</td></tr>
         <tr><td>Примечание</td><td></td><td>Текст</td><td>Заполняется автоматически.<br/> Шаблон - <span class="goto" data-ref="Поля таблицы заявок">Заявка</span>; Сборщик; <span class="goto" data-ref="Поля таблицы компонентов">Примечание компонента</span></td></tr>
     </table>
+    <h3>Статусы заказов</h3>
+    <table class="lighttable">
+        <tr><th>Статус</th><th>Номер</th></tr>
+        <?php
+        $statuses = Tasks::getStatuses();
+        $statuses_colors = Tasks::getStatusesColors();
+        foreach ($statuses as $statusid => $status) {
+            printf('<tr class="%s"><td>%s</td><td>%d</td></tr>',$statuses_colors[$statusid],$status,$statusid);
+        }
+        ?>
+    </table>
+    <h3>Матрица переходов статусов заказов</h3>
+    <table class="lighttable">
+        <?php
+        $statusesMatrix = Tasks::getStatusesMatrix();
+        $statusesCount = count($statusesMatrix);
+        $row = array('');
+        for($i=0;$i<$statusesCount;$i++){
+            $row[] = $statuses[$i];
+        }
+        printf('<tr><td>%s</td></tr>',implode('</td><td>',$row));
+        $labels = array(
+            Tasks::C_ALLOW=>'разрешен',
+            Tasks::C_DENY=>'запрещен',
+            Tasks::C_SAME=>'',
+            Tasks::C_AUTO=>'автоматический',
+        );
+        for($i=0;$i<$statusesCount;$i++){
+            $row = array('<td>'.$statuses[$i].'</td>');
+            for($j=0;$j<$statusesCount;$j++){
+                if(!isset($statusesMatrix[$i][$j])){
+                    $statusesMatrix[$i][$j] = 'same';
+                }
+                $label = sprintf('<span class="hidden-td-label">%s</span>',$labels[$statusesMatrix[$i][$j]]);
+                $title = '';
+                //«“Задания в производство” ExtComp»
+                if(!empty($labels[$statusesMatrix[$i][$j]])) {
+                    $title = sprintf('Из состояния «%s» в состояние «%s» переход %s',$statuses[$i],$statuses[$j],$labels[$statusesMatrix[$i][$j]]);
+                }
+                $row[] = sprintf('<td class="transition-%s" title="%s">%s</td>',$statusesMatrix[$i][$j],$title,$label);
+            }
+            printf('<tr>%s</tr>',implode('',$row));
+        }
+        ?>
+    </table>
 </div>
 <script type="application/javascript">
     $.fn.tagName = function () {
         return this.prop("tagName");
     };
     $(function () {
+        $('body').css({
+            'overflow': 'auto',
+            'overflow-x': 'hidden'
+        });
         let toc = $('#toc');
         let level = 0;
         let current_toc_item = toc;

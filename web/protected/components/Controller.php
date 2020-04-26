@@ -5,6 +5,10 @@
  */
 class Controller extends CController
 {
+    const USER_ADMIN = 'admin';
+    const USER_ALL = '*';
+    const USER_LOGGED = '@';
+
 	/**
 	 * @var string the default layout for the controller view. Defaults to 'column1',
 	 * meaning using a single column layout. See 'protected/views/layouts/column1.php'.
@@ -25,11 +29,11 @@ class Controller extends CController
      * @param $data
      * @param bool $success
      */
-    public function j($data, $success=true){
-	    $this->jsonAnswer($data,$success);
+    public static function j($data, $success=true){
+	    self::jsonAnswer($data,$success);
     }
 
-	public function jsonAnswer($data,$success=true){
+	public static function jsonAnswer($data,$success=true){
 	    if(is_string($data)){
 	        $data = array('message'=>$data);
         }

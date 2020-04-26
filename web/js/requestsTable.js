@@ -49,6 +49,10 @@ function saveChangesRequests() {
         let changes = grid.getChanges({format: "byVal"});
         let oldData = grid.getChanges({format: "raw"}).updateList[0].oldRow;
         let newData = grid.getChanges({format: "raw"}).updateList[0]['rowData'];
+        if(typeof oldData['requestid']!=="undefined" && newData['requestid']!==oldData['requestid']){
+            grid.rollback();
+            return;
+        }
         if(typeof oldData['partnumber']!=="undefined" && newData['partnumber']!==oldData['partnumber']){
             if(!isNaN(newData['partnumberid']) && newData['partnumberid']!==null) {
                 showMessage('Нельзя переименовать компонент из STMS. Но можно назначить замену.', 'warning');
@@ -57,7 +61,7 @@ function saveChangesRequests() {
                 return null;
             }else{
                 if(!confirm('Действительно переименовать компонент?')){
-                    userLog('Отменил переименование', 'log');
+                    // userLog('Отменил переименование', 'log');
                     grid.rollback();
                     return null;
                 }
@@ -138,7 +142,9 @@ let RequestsTableColumnModel = [
         title: "Заявка",
         dataIndx: 'requestid',
         dataType: "string",
-        editable: false,
+        editable: true,
+        editor: { type: "textbox" },
+        //editModel: { keyUpDown: false, saveKey: '' },
         render: function (ui) {
             let rowData = ui.rowData,
                 dataIndx = ui.dataIndx;
@@ -205,6 +211,7 @@ let RequestsTableDataModel = {
     sortDir: getCookie('sortRequest','sortDir'),
     url: "/toAssembly/requestslist",
     getData: function (response) {
+        console.log(response);
         return {curPage: response.curPage, totalRecords: response.totalRecords,data: response.data};
     },
     beforeSend: function (jqXHR, settings) {
@@ -219,7 +226,7 @@ let RequestsTableDataModel = {
 let RequestsTable = {
     scrollModel: {autoFit: true, horizontal: false},
     pageModel: getPageModel(),
-    collapsible: false,
+    collapsible: true,
     resizable: true,
     stringify: false, //for PHP
     dataModel: RequestsTableDataModel,
@@ -269,10 +276,16 @@ let RequestsTable = {
                             $frm.find("#received_request").text(row['requestid'].replace(/^0+/, ''));
                             $frm.find("input[name='partnumberid']").val(row['partnumberid']);
                             $frm.find("#received_component").text(row['partnumber']);
+                            $frm.find("#received_component").removeClass('random_component');
+                            $("#random_component_info").text('').removeClass('random_component');
+                            if(row['partnumberid']==null){
+                                $frm.find("#received_component").addClass('random_component');
+                                $("#random_component_info").text('Компонент ['+row['partnumber']+'] не будет принят на основной склад, т.к. не является компонентом STMS.').addClass('random_component');
+                            }
                             $frm.find('#place').val('');
                             $.getJSON( '/component/getPlace', {
                                 term: '',
-                                storeid: $frm.find('input[name="storeid"]').val(),
+                                storeid: $frm.find('select[name="storeid"]').val(),
                                 partnumberid: $frm.find('input[name="partnumberid"]').val()
                             }, function(result){
                                 if(typeof result === 'object'){
@@ -281,7 +294,7 @@ let RequestsTable = {
                                     }
                                 }
                             } );
-                            userLog('Принимаю компонент '+row['partnumber']+', строка '+row['id']+', заявка '+row.requestid+' на склад');
+                            //userLog('Принимаю компонент '+row['partnumber']+', строка '+row['id']+', заявка '+row.requestid+' на склад');
                             if(row.status==0 || row.status==5 || row.status==4 || row.status==6){
                                 userLog('Нельзя принять из этого статуса','info');
                                 return;
@@ -311,14 +324,14 @@ let RequestsTable = {
                                             installername: $frm.find("#installerid").find(':selected').text()
                                         };
 
-                                        userLog('Заполнил форму.');
-                                        userLog('Строка:'+sendData.requestid);
-                                        userLog('Заявка:'+row['requestid'].replace(/^0+/, ''));
-                                        userLog('Компонент:'+row['partnumber']);
-                                        userLog('Склад:'+sendData.storeid);
-                                        userLog('Место:'+sendData.place);
+                                        // userLog('Заполнил форму.');
+                                        // userLog('Строка:'+sendData.requestid);
+                                        // userLog('Заявка:'+row['requestid'].replace(/^0+/, ''));
+                                        // userLog('Компонент:'+row['partnumber']);
+                                        // userLog('Склад:'+sendData.storeid);
+                                        // userLog('Место:'+sendData.place);
                                         let isNewInstaller = ((sendData.installerid>0)?'':' (новый сборщик)');
-                                        userLog('Сборщик:'+sendData.installername+isNewInstaller);
+                                        // userLog('Сборщик:'+sendData.installername+isNewInstaller);
                                         // console.log($frm.find("input[name='installer']").val());
                                         // console.log($frm.find("input[name='installer']").val());
                                         $.ajax({
@@ -353,7 +366,7 @@ let RequestsTable = {
                                         $(this).dialog("close");
                                     },
                                     "Отмена": function () {
-                                        userLog('Закрыл окно.');
+                                        //userLog('Закрыл окно.');
                                         $(this).dialog("close");
                                     }
                                 }
@@ -426,6 +439,8 @@ let RequestsTable = {
                         let $frm = $("form#replace-form");
                         $frm.find("#replace_request").text(row['requestid'].replace(/^0+/, ''));
                         $frm.find("#old_component").text(row['partnumber']);
+                        $frm.find("#replace_component").val('');
+                        $frm.find("#newpartnumberid").val('');
 
                         $("#popup-dialog-replace").dialog({
                             title: row['requestid'].replace(/^0+/, '') + ': ' + row['partnumber'], buttons: {
@@ -454,6 +469,7 @@ let RequestsTable = {
                                                     if(changes.success){
                                                         userLog('Компонент в заявке '+requestid+' успешно заменен: '+oldpn+' -> '+newpn+' новая строка '+changes.id);
                                                     }else{
+                                                        showError(changes.error);
                                                         userLog(changes.error,'error');
                                                     }
                                                 }
@@ -500,7 +516,7 @@ let RequestsTable = {
                                     height: 400,
                                     width: 1000,
                                     //width: 'auto',
-                                    title: $("#popup_grid_store_correction").attr('title')+' '+row['partnumber'],
+                                    title: 'История коррекций для '+row['partnumber'],
                                     modal: true,
                                     open: function (evt, ui) {
                                         $("#grid_store_correction").pqGrid(StoreCorrectionTable).pqGrid('refreshDataAndView');

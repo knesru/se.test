@@ -163,6 +163,12 @@ class Component extends CActiveRecord
         ));
 	}
 
+	public static function getComponentByPN($pn){
+        $criteria = new CDbCriteria();
+        $criteria->condition = 'upper(partnumber) = upper(\''.$pn.'\')';
+        return Component::model()->find($criteria);
+    }
+
 	/**
 	 * Returns the static model of the specified AR class.
 	 * Please note that you should have this exact method in all your CActiveRecord descendants!

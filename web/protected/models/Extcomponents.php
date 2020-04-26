@@ -168,6 +168,10 @@ class Extcomponents extends ARModel
             return;
         }
 
+        if($this->scenario=='replace'){
+            return;
+        }
+
         if(!$this->isNewRecord){
             if($this->getOldVal($attribute)==$this->$attribute){
                 return;

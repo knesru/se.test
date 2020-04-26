@@ -22,6 +22,7 @@ $cs = Yii::app()->getClientScript();
     let $requestsGrid;
     let $componentsGrid;
     let $storeCorrectionGrid;
+    let formHashes = {};
     isAdmin = <?php print ((Yii::app()->user->name=='admin')?'true':'false'); ?>;
     isGuest = <?php print ((Yii::app()->user->isGuest)?'true':'false'); ?>;
     function getStatusesArray() {
@@ -164,12 +165,28 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
         function extractLast( term ) {
             return term.split( /,\s*/ ).pop();
         }
+        $('#storeid').change(function(){
+            let storeid = $(this).val();
+            let partnumberid = $(this).parents('form').find('input[name="partnumberid"]').val();
+            $.ajax({
+                url: '/component/getPlace',
+                data: {partnumberid: partnumberid, storeid: storeid},
+                dataType: "json",
+                success: function (res) {
+                    if(typeof res!=='undefined' && res.length>0 && typeof res[0].label!=='undefined'){
+                        $('#place').val(res[0].label);
+                    }else{
+                        $('#place').val('');
+                    }
+                }
+            });
+        });
         $('#place').autocomplete({
             //appendTo: ui.$cell, //for grid in maximized state.
             source: function( request, response ) {
                 $.getJSON( '/component/getPlace', {
                     term: extractLast( request.term ),
-                    storeid: $('input[name="storeid"]').val(),
+                    storeid: $('select[name="storeid"]').val(),
                     partnumberid: $('input[name="partnumberid"]').val()
                 }, response );
             },
@@ -209,7 +226,7 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
             classes: {
                 "ui-selectmenu-button": "ui-button-icon-only splitbutton-select"
             },
-            change: function(){
+            select: function(){
                 $( ".output" ).append( "<li>" + this.value + "</li>" );
                 // $(this).parent().find('button').text($(this).find(':selected').text());
                 let action = $(this).val();
@@ -249,7 +266,24 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
             }).focus(function () {
                 //open the autocomplete upon focus
                 $(this).autocomplete("search", "");
+            }).keyup(function(){
+            $(this).addClass('warning').attr('title','Произвольный компонент').tooltip();
+            $('#fnc_partnumberid').val('');
+            $.ajax({
+                url: '/component/ajaxComponent',
+                data: {partnumber: $(this).val()},
+                success: function (res) {
+                    if (typeof res === 'string' && res.match(/\d+/)) {
+                        $('#newpartnumberid').val(res).addClass('success');
+                        $('#replace_component').removeClass('warning').addClass('success').attr('title','Компонент ' +
+                            'найден в STMS')
+                            .tooltip();
+                    }else{
+                        userLog('component not');
+                    }
+                }
             });
+        });
         });
         $( document ).tooltip({
             tooltipClass: "toolTipDetails"
@@ -273,53 +307,69 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
             .on('click','.change-priority-down',changePriority)
             .on('click','.change-priority-up',changePriority)
             .on('click','.create_request_btn',createRow);
-
-    });
-    function showMessage(message, type) {
-        if(typeof type === 'undefined'){
-            type = 'info';
-        }
-        showDialogMessage({title: type, message: message});
-    }
-    function showWarning(message) {
-        showMessage(message,'warning');
-    }
-    function showError(message) {
-        showMessage(message,'error');
-    }
-    function showDialogMessage(params) {
-        defaultParams = {
-            header: 'info',
-            type: 'info',
-            message: 'info',
-            buttons: {
-                ok: function () {
-                    $(this).dialog("close");
-                }
+        setInterval(function(){
+            function changeHeights(fh, nh, rh) {
+                $('#footer').height(fh);
+                $('#grid_new_components').pqGrid('option',{height:nh}).pqGrid( "refresh" );
+                $('#grid_requests').pqGrid('option',{height:rh}).pqGrid( "refresh" );
             }
-        };
-        params = $.extend(defaultParams,params);
-        $("#popup-dialog-message").html(params.message).removeClass('ui-state-error').removeClass('ui-state-highlight');
-        if(params.type==='warning'){
-            $("#popup-dialog-message").addClass('ui-state-highlight');
-        }
-        if(params.type==='error'){
-            $("#popup-dialog-message").addClass('ui-state-error');
-        }
-        $("#popup-dialog-message").dialog({
-            title: params.title,
-            buttons: params.buttons,
-            modal: true
-            // dialogClass: "ui-state-highlight",
-            // classes: {
-            //     "ui-dialog": "ui-state-highlight",
-            //     "ui-dialog-title": "ui-state-highlight"
-            // }
-        }).dialog("open");
-    }
+            let delta;
+            let total = $('body').height()-80;
+            let footer_height = $('#footer').height();
+            let nc_height = $('#grid_new_components').height();
+            let req_height = $('#grid_requests').height();
+            if(typeof $('#footer').data('heights') !== "undefined"){
+                let prev_h = $('#footer').data('heights');
+                delta = total-(footer_height+nc_height+req_height);
+                if(Math.abs(prev_h.fh-footer_height)>1){
+                    //changed footer
+                    nc_height+=Math.floor(delta/2);
+                    req_height+=delta-Math.floor(delta/2);
+                    changeHeights(footer_height,nc_height,req_height);
+                }else
+                if(Math.abs(prev_h.nh-nc_height)>1){
+                    //changed new components
+                    footer_height+=Math.floor(delta);
+                    //req_height+=delta-Math.floor(delta/2);
+                    changeHeights(footer_height,nc_height,req_height);
+                }else
+                if(Math.abs(prev_h.rh-req_height)>1 || Math.abs($('#footer').data('total')-total)>3){
+                    //changed requests
+                    nc_height+=Math.floor(delta);
+                    //footer_height+=Math.floor(delta);
+                    changeHeights(footer_height,nc_height,req_height);
+                }
+            }else if(Math.abs($('#footer').data('total')-total)>3){
+                nc_height+=Math.floor(delta/2);
+                footer_height+=delta-Math.floor(delta/2);
+                changeHeights(footer_height,nc_height,req_height);
+            }
+            $('#footer').data('total',total);
+            $('#footer').data('heights',{fh:footer_height,nh:nc_height,rh:req_height});
+        },200);
+        $('#popup-password, #popup-login').keypress(function (e) {
+            var key = e.which;
+            if(key == 13)  // the enter key code
+            {
+                $('#popup-dialog-login').parent().find('.ui-dialog-buttonset').find('button').click();
+                return false;
+            }
+        });
+        setInterval(function(){
+            $.ajax({
+                url: '/toAssembly/checkLogin',
+                data: {},
+                success: function (res) {
+                    if(!res || !res.logged){
+                        $('#open_popup_login a').click();
+                    }
+                }
+            })
+        },5000);
+    });
 
     function requestsAction(action,force_id) {
-        userLog(force_id);
+        // userLog(force_id);
         if (typeof controlData.selection !== 'undefined') {
             let grid = $("#grid_requests").pqGrid();
             let data = {};
@@ -354,10 +404,10 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
                 }else{
                     components = 'компоненты';
                 }
-                userLog('Добавляю '+components+' '+pns.join(',')+' к заявке '+row['requestid'].replace(/^0+/, ''));
+                // userLog('Добавляю '+components+' '+pns.join(',')+' к заявке '+row['requestid'].replace(/^0+/, ''));
                 data.requestid = controlData.requestSelection;
                 if(!confirm('Добавить компоненты к заявке '+row['requestid'].replace(/^0+/, '')+'?')){
-                    userLog('Отменил');
+                    // userLog('Отменил');
                     return;
                 }
             }else{
@@ -366,10 +416,10 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
                 }else{
                     components = 'компонентами';
                 }
-                userLog('Создаю заявку с '+components+' '+pns.join(','));
+                // userLog('Создаю заявку с '+components+' '+pns.join(','));
             }
             $.ajax({
-                url: '/toassembly/request',
+                url: '/toAssembly/request',
                 data: data,
                 dataType: "json",
                 type: "POST",
@@ -439,6 +489,7 @@ $cs->registerCssFile($baseUrl . '/js/pq/themes/office/pqgrid.css');
                                 class="required">*</span></label></td>
                 <td><?php print CHtml::dropDownList('installerid', '', CHtml::listData(Installer::model()->findAll(),'id','name')); ?></td>
             </tr>
+            <tr><td colspan="2" id="random_component_info"></td></tr>
             </tbody>
         </table>
         </div>

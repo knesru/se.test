@@ -250,12 +250,16 @@ let RequestsTable = {
                             $frm.find("#received_request").text(row['requestid'].replace(/^0+/, ''));
                             $frm.find("input[name='partnumberid']").val(row['partnumberid']);
                             $frm.find("#received_component").text(row['partnumber']);
+                            $frm.data('form-hash',Math.random());
 
                             $("#popup-dialog-receive").dialog({
                                 title: row['requestid'].replace(/^0+/, '') + ': ' + row['partnumber'], buttons: {
                                     "Принять": function () {
-
-
+                                        let hash = $frm.data('form-hash');
+                                        if(typeof formHashes[hash]!=='undefined'){
+                                            console.log('Форма уже отправлялась');
+                                            return;
+                                        }
                                         if ($frm.find("input[name='amount']").val() == row['amount'] - row['delivered']) {
                                             if (!confirm("Заявка удовлетворена. Компонент будет закрыт.")) {
                                                 return;
@@ -272,6 +276,7 @@ let RequestsTable = {
                                             type: "POST",
                                             async: true,
                                             beforeSend: function (jqXHR, settings) {
+                                                formHashes[hash] = true;
                                                 grid.showLoading();
                                             },
                                             url: "/toAssembly/receive", //for ASP.NET, java
@@ -286,6 +291,7 @@ let RequestsTable = {
                                                 grid.history({method: 'reset'});
                                             },
                                             complete: function () {
+                                                delete formHashes[hash];
                                                 grid.hideLoading();
                                                 grid.refreshDataAndView();
                                             }

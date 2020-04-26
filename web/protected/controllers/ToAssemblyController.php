@@ -33,11 +33,11 @@ class ToAssemblyController extends Controller
     {
         return array(
             array('allow',  // allow all users to perform 'index' and 'view' actions
-                'actions' => array('index', 'newIndex', 'view', 'export', 'requestslist', 'componentslist', 'storecorrectionlist','statuseslist'),
+                'actions' => array('index','checklogin'),
                 'users' => array('*'),
             ),
             array('allow', // allow authenticated user to perform 'create' and 'update' actions
-                'actions' => array('create', 'update', 'receive', 'request', 'replace', 'removecomponent', 'storecorrectionlist'),
+                'actions' => array('index', 'newIndex', 'view', 'export', 'requestslist', 'componentslist', 'storecorrectionlist','statuseslist','create', 'update', 'receive', 'request', 'replace', 'removecomponent', 'storecorrectionlist'),
                 'users' => array('@'),
             ),
             array('allow', // allow admin user to perform 'admin' and 'delete' actions
@@ -47,6 +47,13 @@ class ToAssemblyController extends Controller
             array('deny',  // deny all users
                 'users' => array('*'),
             ),
+        );
+    }
+
+    public function actions()
+    {
+        return array(
+            'CheckLogin'=>'application.controllers.actions.CheckLoginAction',
         );
     }
 
@@ -107,6 +114,29 @@ class ToAssemblyController extends Controller
                     $model->priority = 0;
                 }elseif($model->priority=='on'){
                     $model->priority = 1;
+                }
+                $criteria = new CDbCriteria();
+                $criteria->addCondition('requestid is null');
+                $criteria->compare('partnumber',$model->partnumber);
+                $criteria->compare('partnumberid',$model->partnumberid);
+
+                /** @var Component $component */
+                $component = Component::model()->getComponentByPN($model->partnumber);
+                if(!is_null($component)){
+                    $model->partnumber = $component->partnumber;
+                }
+
+                if(count($collection = Extcomponents::model()->findAll($criteria))>0){
+                    $lines = array();
+                    foreach ($collection as $extcomp){
+                        $lines[] = $extcomp->id;
+                    }
+                    if(count($lines)>1){
+                        $lines = 'строки: '.implode(',',$lines);
+                    }else{
+                        $lines = 'строка: '.$lines[0];
+                    }
+                    $this->j(array('message'=>'Такой компонент уже существует, '.$lines),false);
                 }
                 if ($model->save()) {
                     if (Yii::app()->request->isAjaxRequest) {
@@ -222,9 +252,10 @@ class ToAssemblyController extends Controller
     {
         $ids = $_POST['ids'];
         //Это просто ID строки. Requestid он только чтобы отличать от id компонента
-        $requestids = $_POST['requestid'];
+        $requestids = empty($_POST['requestid'])?array():$_POST['requestid'];
         $model = new Extcomponents();
         $criteria = new CDbCriteria;
+
         //select requestid from extcomponents where requestid is not null order by substr(requestid,10) desc, requestid desc limit 1
         $criteria->select = 'requestid';
         $criteria->condition = 'requestid is not null';
@@ -270,16 +301,30 @@ class ToAssemblyController extends Controller
 			print json_encode(array('success' => false, 'error' => 'Не найден заменяемый компонент.'));
 			Yii::app()->end();
 		}
-		$newModel = new Extcomponents();
-		$newModel->attributes = $model->attributes;
-		$newModel->id = null;
-		$newModel->partnumber = Yii::app()->request->getPost('partnumber');
-		$newModel->partnumberid = Yii::app()->request->getPost('partnumberid');
-		$newModel->status = 0;
-		$newModel->amount = max(1,$model->amount - $model->delivered);
-		$newModel->delivered = 0;
-		$model->amount = empty($model->delivered)?0:$model->delivered;
+		$newModel = new Extcomponents('replace');
+        $newModel->attributes = $model->attributes;
+        $newModel->id = null;
+        $newModel->partnumber = Yii::app()->request->getPost('partnumber');
+        /** @var Component $component */
+        $component = Component::model()->getComponentByPN($newModel->partnumber);
+        if(!is_null($component)){
+            $newModel->partnumber = $component->partnumber;
+            $newModel->partnumberid = $component->partnumberid;
+        }
+        //$newModel->partnumberid = Yii::app()->request->getPost('partnumberid');
+        $newModel->status = 0;
+        $newModel->amount = max(1,$model->amount - $model->delivered);
+        $newModel->delivered = 0;
+        $newModel->scenario = 'replace';
+        $model->saveState();
+        $model->amount = empty($model->delivered)?0:$model->delivered;
 		$model->status = 5;
+
+		if($newModel->partnumber==$model->partnumber && $newModel->partnumberid==$model->partnumberid){
+            print json_encode(array('success' => false, 'error' => 'Нельзя менять компонент сам на себя. ' ));
+            Yii::app()->end();
+        }
+
         $transaction=Yii::app()->db->beginTransaction();
 		if ($newModel->save()) {
 		    if(!empty($model->description)){
@@ -291,12 +336,12 @@ class ToAssemblyController extends Controller
                 print json_encode(array('success' => true, 'requestid' => $newModel->requestid, 'id'=>$newModel->id));
             }else{
 		        $transaction->rollback();
-                print json_encode(array('success' => false, 'error' => 'Не получилось сохранить. ' .
-                    'NM'.print_r($newModel->errors, 1).'M'.print_r($model->errors, 1).'Attrs:'.print_r($newModel->attributes,1).print_r($model->attributes,1)));
+                print json_encode(array('success' => false, 'error' => 'Не получилось обновить текущую строку. ' .
+                    print_r($newModel->errors, 1).print_r($model->errors, 1)));
             }
 		} else {
-			print json_encode(array('success' => false, 'error' => 'Не получилось сохранить. ' .
-                'NM'.print_r($newModel->errors, 1).'M'.print_r($model->errors, 1).'Attrs:'.print_r($newModel->attributes,1).print_r($model->attributes,1)));
+            print json_encode(array('success' => false, 'error' => 'Не получилось создать новую строку. ' .
+                print_r($newModel->errors, 1).print_r($model->errors, 1)));
             $transaction->rollback();
 			Yii::app()->end();
 		}
@@ -311,14 +356,15 @@ class ToAssemblyController extends Controller
             $pn = $model->partnumber;
             $pnid = $model->partnumberid;
             if(!empty($model->requestid)) {
-
-                $requestid = $model->requestid;
-                $model->requestid = null;
-                if($model->save()){
-                    print json_encode(array('success' => true, 'requestid' => $requestid, 'pn'=>$pn, 'pnid'=>$pnid));
-                }else{
-                    print json_encode(array('success' => false, 'error' => 'Не получилось сохранить. ' .print_r($model->errors, 1).'Attrs:'.print_r($model->attributes,1)));
-                }
+                print json_encode(array('success' => false, 'error' => 'Данные устарели. Компонент уже добавлен в заявку ' .ltrim($model->requestid,'0').' Обновите страницу'));
+                Yii::app()->end();
+//                $requestid = $model->requestid;
+//                $model->requestid = null;
+//                if($model->save()){
+//                    print json_encode(array('success' => true, 'requestid' => $requestid, 'pn'=>$pn, 'pnid'=>$pnid));
+//                }else{
+//                    print json_encode(array('success' => false, 'error' => 'Не получилось сохранить. ' .print_r($model->errors, 1).'Attrs:'.print_r($model->attributes,1)));
+//                }
             }else{
                 try {
                     if($model->delete()){
@@ -402,7 +448,9 @@ class ToAssemblyController extends Controller
             $sort_attrs[] = $sort_item['dataIndx'] . ($sort_item['dir'] == 'down' ? '.desc' : '');
         }
         $_GET['sort'] = implode('-',$sort_attrs);
-
+        if($sort_item['dataIndx']!=='id'){
+            $_GET['sort'].='-'.'id';
+        }
         $dp->setSort(array(
           'class' => 'CSort',
           'multiSort' => true,
@@ -419,7 +467,7 @@ class ToAssemblyController extends Controller
             'partnumberid' => array(
               'asc' => 't.partnumberid',
               'desc' => 't.partnumberid desc',
-            )
+            ),
           ),
           'defaultOrder' => 'priority DESC, requestid asc, t.id asc'
         ));
@@ -428,7 +476,9 @@ class ToAssemblyController extends Controller
 
         foreach ($dp->getData() as $request) {
             $row = $request->attributes;
-            $row['user'] = $request->user->userinfo->fullname;
+	    if(isset($request->user) && isset($request->user->userinfo) && isset($request->user->userinfo->fullname)){
+	      $row['user'] = $request->user->userinfo->fullname;
+	    }
             $row['pq_rowcls'] = $colors[$row['status']];
             if(empty($row['user'])){
                 $row['user'] = $request->user->username;
@@ -460,6 +510,9 @@ class ToAssemblyController extends Controller
             $sort_attrs[] = $sort_item['dataIndx'] . ($sort_item['dir'] == 'down' ? '.desc' : '');
         }
         $_GET['sort'] = implode('-',$sort_attrs);
+        if($sort_item['dataIndx']!=='id'){
+            $_GET['sort'].='-'.'id';
+        }
         $dp->setSort(array(
           'class' => 'CSort',
           'multiSort' => true,
@@ -481,7 +534,7 @@ class ToAssemblyController extends Controller
               'asc' => 't.partnumberid',
               'desc' => 't.partnumberid desc',
             ),
-            '*',
+              '*',
           ),
           'defaultOrder' => 't.partnumber'
         ));
@@ -491,7 +544,9 @@ class ToAssemblyController extends Controller
         /** @var Extcomponents $requestedComponent */
         foreach ($dp->getData() as $requestedComponent) {
             $row = $requestedComponent->attributes;
-            $row['user'] = $requestedComponent->user->userinfo->fullname;
+	    if(isset($requestedComponent->user) && isset($requestedComponent->user->userinfo) && isset($requestedComponent->user->userinfo->fullname)){
+	      $row['user'] = $requestedComponent->user->userinfo->fullname;
+	    }
             if(empty($row['user'])){
                 $row['user'] = $requestedComponent->user->username;
             }
@@ -541,20 +596,53 @@ class ToAssemblyController extends Controller
                 ->setKeywords("components requests stms")
                 ->setCategory("Export info");
             $activeSheet = $objPHPExcel->setActiveSheetIndex(0);
-
-            $rows = explode("\n", $_POST['excel']);
+            $xxx = str_replace("\"\n\"","\"###NEWLINE###\"",$_POST['excel']);
+            $yyy = str_replace("\n","#NL#",$xxx);
+            $rows = explode("\n", str_replace("###NEWLINE###","\n",$yyy));
             $cell = 'A1';
-            foreach ($rows as $row) {
+            $status_cell_id = -1;
+            $pr_cell_id = -1;
+            /** @var Settings $settings */
+            $settings = Settings::model()->findByAttributes(array('user_id'=>Yii::app()->user->id,'name'=>'extcomponents_to_assembly'));
+            $tables = json_decode(base64_decode($settings->value),true);
+            if(count(str_getcsv($rows[0]))==16){
+                $t = 'rcm';
+            }else{
+                $t = 'ccm';
+            }
+            foreach ($rows as $n=>$row) {
                 $row_data = str_getcsv($row);
                 $i = 0;
-                foreach ($row_data as $cell_value) {
-                    $cell_value = str_replace('null','',$cell_value);
-                    $cell_value = str_replace('undefined','',$cell_value);
-                    $cell_value = preg_replace('/^(\d{4})-(\d{2})-(\d{2})\s\d{2}:\d{2}:\d{2}(\.\d+)?/','$3-$2-$1',$cell_value);
-                    $cell_value = preg_match('/^\d+\.СБ\.\d{2}$/',$cell_value)?trim($cell_value,'0'):$cell_value;
-                    $activeSheet->setCellValue($cell, $cell_value);
-                    $cell = $this->dc($cell, array(1, 0));
-                    $i++;
+                foreach ($row_data as $m=>$cell_value) {
+                    if($tables[$t][$m]['hidden']=='false') {
+                        if ($n == 0 && $cell_value == 'Статус') {
+                            $status_cell_id = $m;
+                        }
+                        if ($n == 0 && $cell_value == 'Пр.') {
+                            $pr_cell_id = $m;
+                        }
+                        if ($n > 0 && $status_cell_id > 0 && $m == $status_cell_id) {
+                            $statuses = Extcomponents::getStatuses();
+                            $cell_value = $statuses[$cell_value];
+                        }
+                        if ($n > 0 && $pr_cell_id > 0 && $m == $pr_cell_id) {
+                            $cell_value = ($cell_value == '1' ? 'Выс.' : '');
+                        }
+                        $cell_value = str_replace('null', '', $cell_value);
+                        $cell_value = str_replace('undefined', '', $cell_value);
+                        $cell_value = str_replace('#NL#', "\n", $cell_value);
+                        $cell_value = preg_replace('/^(\d{4})-(\d{2})-(\d{2})\s\d{2}:\d{2}:\d{2}(\.\d+)?/', '$3-$2-$1', $cell_value);
+                        $cell_value = preg_match('/^\d+\.СБ\.\d{2}$/', $cell_value) ? trim($cell_value, '0') : $cell_value;
+                        $activeSheet->setCellValue($cell, $cell_value);
+                        $column = preg_replace('/\d+/', '', $cell);
+                        $activeSheet->getColumnDimension($column)->setAutoSize(true);
+                        if (strpos($cell_value, "\n") !== false) {
+//                        $activeSheet->getColumnDimension($column)->setWidth("400");
+                            $activeSheet->getStyle($cell)->getAlignment()->setWrapText(true);
+                        }
+                        $cell = $this->dc($cell, array(1, 0));
+                        $i++;
+                    }
                 }
                 $cell = $this->dc($cell, array(-$i, 1));
             }
@@ -627,11 +715,15 @@ class ToAssemblyController extends Controller
         $this->lettersArray = array($lettersArray, $numbersArray);
     }
 
+    /**
+     * @throws CException
+     * @throws CHttpException
+     */
     public function actionReceive()
     {
-        /** @var Extcomponents $model */
+       /** @var Extcomponents $model */
         $model = $this->loadModel($_POST['requestid']);
-
+$store_errors = array();
         /**
          * @property integer $id
          * @property integer $initiatoruserid
@@ -648,14 +740,18 @@ class ToAssemblyController extends Controller
         $condition = new CDbCriteria();
         $condition->compare('partnumberid', $model->partnumberid);
         $condition->compare('storeid', $_POST['storeid']);
-        $condition->compare('place', $_POST['place']);
+        //Место убрано. Теперь при указании места, старое автоматически заменяется новым!
+        //$condition->compare('place', $_POST['place']);
         if(Extcomponents::C_DENY===$model->canChangeStatus(Extcomponents::S_CLOSED)){
             $this->j(sprintf('Нельзя принять из статуса «%s»',$model->tStatus()),false);
         }
-        $transaction=Yii::app()->db->beginTransaction();
+        $transaction = Yii::app()->db->beginTransaction();
         if(!empty($model->partnumberid)) {
+            //Ищем первое попавшееся место с этим компонентом.
+            //В базе ограничения нет, но в Юрионе пообещали, что множественные записи для одного компонента будут устранены.
             $store = Store::model()->find($condition);
             if (is_null($store)) {
+                //Такой склад ВООБЩЕ не найден
                 $store = new Store();
                 $store->partnumberid = $model->partnumberid;
                 $store->storeid = $_POST['storeid'];
@@ -674,29 +770,41 @@ class ToAssemblyController extends Controller
             $correction_model->postqty = $store->qty;
             $correction_model->storeid = $store->storeid;
 
+
+	    if(is_null($model->installer)){
+	    $installer = Installer::model()->findByPk($_POST['installerid']);
+	    }else{
+	    $installer = $model->installer;
+	    }
             //14. В коментарий в историю коррекции должны добавляться два поля: 1. Заявка, 2. Сборщик. Лишнего не надо.
+            //throw new Exception(print_r($model->installer->attributes,1));
             $correction_model->description = implode(";\n", array(
                 ltrim($model->requestid, '0'),
-                $model->installer->name
+                $installer->name,
             ));
             $correction_model_saved = $correction_model->save();
             $correction_model_errors = $correction_model->errors;
             $store_saved = $store->save();
             $store_errors = $store->errors;
         }else{
+
             $correction_model = new StorecorrectionExt();
             $correction_model->initiatoruserid = Yii::app()->user->id;
             $correction_model->created_at = date('Y.m.d H:i:s.000000');
             $correction_model->partnumber = $model->partnumber;
             $correction_model->qty = $_POST['amount'];
-
+	    if(is_null($model->installer)){
+	    $installer = Installer::model()->findByPk($_POST['installerid']);
+	    }else{
+	    $installer = $model->installer;
+	    }
             $correction_model->description = implode(";\n", array(
               ltrim($model->requestid, '0'),
-              $model->installer->name,
+              $installer->name,
               $model->description,
               $model->deficite
             ));
-            $correction_model_saved = $correction_model->save();
+            $correction_model_saved = $correction_model->save(false);
             $correction_model_errors = $correction_model->errors;
             $store_saved = true;
         }
@@ -715,7 +823,7 @@ class ToAssemblyController extends Controller
 
 
 
-        if ($store_saved && $correction_model_saved && $model->save()) {
+        if ($store_saved && $correction_model_saved && $model->save(false)) {
             print json_encode(array('success'=>true));
             $transaction->commit();
         } else {
@@ -756,9 +864,11 @@ class ToAssemblyController extends Controller
      */
     public function loadModel($id)
     {
+        /** @var Extcomponents $model */
         $model = Extcomponents::model()->findByPk($id);
         if ($model === null)
             throw new CHttpException(404, 'The requested page does not exist.');
+        $model->SaveState();
         return $model;
     }
 

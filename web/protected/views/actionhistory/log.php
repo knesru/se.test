@@ -25,3 +25,10 @@ foreach ($data as $i=>$datum){
         );
 }
 print '</table>';
+?>
+<script type="application/javascript" src="/js/jquery.js"></script>
+<script type="application/javascript">
+  $(function(){
+  $('body').css({'overflow':'scroll'});
+});
+</script>

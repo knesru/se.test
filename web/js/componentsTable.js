@@ -191,8 +191,8 @@ let ComponentsTableDataModel = {
     sorting: "remote",
     dataType: "JSON",
     method: "POST",
-    sortIndx: getCookie('sortRequest','sortIndx'),
-    sortDir: getCookie('sortRequest','sortDir'),
+    sortIndx: getCookie('sortComponents','sortIndx'),
+    sortDir: getCookie('sortComponents','sortDir'),
     url: "/toAssembly/componentslist",
     getData: function (response) {
         return {curPage: response.curPage, totalRecords: response.totalRecords,data: response.data};
@@ -201,7 +201,7 @@ let ComponentsTableDataModel = {
 let ComponentsTable = {
     scrollModel: {autoFit: true, horizontal: false},
     pageModel: getPageModel(),
-    collapsible: false,
+    collapsible: true,
     resizable: true,
     stringify: false, //for PHP
     dataModel: ComponentsTableDataModel,
@@ -241,6 +241,7 @@ let ComponentsTable = {
                     {
                         'click': function (evt, ui) {
                             //append empty row at the end.
+                            $('#new-comp-form-hash').val(Math.random());
                             $('#popup-dialog-form-new-component').dialog({title: 'Добавить компонент'}).dialog('open');
                         },
                     }
@@ -321,7 +322,7 @@ let ComponentsTable = {
                                 .dialog({
                                     height: 400,
                                     width: 1000,
-                                    title: $("#popup_grid_store_correction").attr('title')+' '+row['partnumber'],
+                                    title: 'История коррекций для '+row['partnumber'],
                                     //width: 'auto',
                                     modal: true,
                                     open: function (evt, ui) {
@@ -360,7 +361,7 @@ let ComponentsTable = {
         saveChangesComponents();
     },
     sort: function(event, ui){
-        setCookie('sortRequest',JSON.stringify({'sortDir':ui.dataModel.sortDir,'sortIndx':ui.dataModel.sortIndx}),100);
+        setCookie('sortComponents',JSON.stringify({'sortDir':ui.dataModel.sortDir,'sortIndx':ui.dataModel.sortIndx}),100);
     },
     trackModel: {on: true},
     showTitle: false,

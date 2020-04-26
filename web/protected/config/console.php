@@ -9,6 +9,6 @@ return array(
 	'basePath'=>dirname(__FILE__).DIRECTORY_SEPARATOR.'..',
 	'name'=>'My Console Application',
     'components'=>array(
-        'db'=>$db
+        'db'=>$db,
     ),
 );
